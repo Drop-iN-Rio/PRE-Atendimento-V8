@@ -3897,13 +3897,12 @@
         console.log('data         :', json.data);
         console.groupEnd();
 
-        /* ── Polling: QR ainda não está disponível (HTTP 202) ── */
+        /* ── QR ainda não está disponível (HTTP 202) ── */
         if (res.status === 202 && json.polling) {
-          if (!isPollingRetry) {
-            _setQrImg(_qrPlaceholder('⏳', '#475569'));
-          }
-          _setQrStatus('⏳ Gerando QR Code, aguarde…', '#94a3b8');
-          _scheduleQrPoll(name);
+          _setQrImg(_qrPlaceholder('⏳', '#475569'));
+          _setQrStatus('⏳ QR Code ainda sendo gerado. Clique em "Atualizar" para tentar novamente.', '#94a3b8');
+          document.getElementById('qr-btn-refresh').disabled = false;
+          document.getElementById('qr-timer').textContent = '';
           return;
         }
 
