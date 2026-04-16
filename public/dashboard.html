@@ -8,12 +8,8 @@
   <!-- Aplica o tema antes do render para evitar flash -->
   <script>
     (function () {
-      var t = localStorage.getItem('pa_theme') || 'system';
-      var r = t === 'system'
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        : t;
-      document.documentElement.setAttribute('data-theme', r);
-      document.documentElement.setAttribute('data-theme-mode', t);
+      var t = localStorage.getItem('pa_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
   <style>
@@ -1952,24 +1948,10 @@
     <!-- Seletor de tema (desktop sidebar) -->
     <div class="sidebar-theme-row">
       <span class="sidebar-theme-label">Tema</span>
-      <div class="theme-menu-wrap">
-        <button class="btn-theme" id="btn-theme-side"
-          onclick="toggleThemeMenu('side')" aria-label="Tema" aria-haspopup="true">
-          <span class="btn-theme-icon">🌙</span>
-        </button>
-        <div class="theme-dropdown" id="theme-dd-side" role="menu"
-          style="right:0;top:calc(100% + 6px)">
-          <button class="theme-opt" data-theme="light" onclick="applyTheme('light')">
-            <span class="theme-opt-dot"></span> Claro
-          </button>
-          <button class="theme-opt" data-theme="dark" onclick="applyTheme('dark')">
-            <span class="theme-opt-dot"></span> Escuro
-          </button>
-          <button class="theme-opt" data-theme="system" onclick="applyTheme('system')">
-            <span class="theme-opt-dot"></span> Sistema
-          </button>
-        </div>
-      </div>
+      <button class="btn-theme" id="btn-theme-side"
+        onclick="toggleTheme()" aria-label="Alternar tema">
+        <span class="btn-theme-icon">🌙</span>
+      </button>
     </div>
 
     <div class="sidebar-footer">
@@ -2041,24 +2023,11 @@
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:0.45rem">
-        <!-- Botão de tema -->
-        <div class="theme-menu-wrap">
-          <button class="btn-theme" id="btn-theme-top"
-            onclick="toggleThemeMenu('top')" aria-label="Tema" aria-haspopup="true">
-            <span class="btn-theme-icon">🌙</span>
-          </button>
-          <div class="theme-dropdown" id="theme-dd-top" role="menu">
-            <button class="theme-opt" data-theme="light" onclick="applyTheme('light')">
-              <span class="theme-opt-dot"></span> Claro
-            </button>
-            <button class="theme-opt" data-theme="dark" onclick="applyTheme('dark')">
-              <span class="theme-opt-dot"></span> Escuro
-            </button>
-            <button class="theme-opt" data-theme="system" onclick="applyTheme('system')">
-              <span class="theme-opt-dot"></span> Sistema
-            </button>
-          </div>
-        </div>
+        <!-- Botão de tema (alternância direta) -->
+        <button class="btn-theme" id="btn-theme-top"
+          onclick="toggleTheme()" aria-label="Alternar tema">
+          <span class="btn-theme-icon">🌙</span>
+        </button>
         <button class="btn-hamburger" onclick="openDrawer()" aria-label="Abrir menu">☰</button>
       </div>
     </nav>
@@ -2360,94 +2329,41 @@
 
   <script>
     /* ══════════════════════════════════════════
-       TEMA — inicialização, aplicação, dropdown
+       TEMA — alternância direta: Claro / Escuro
        ══════════════════════════════════════════ */
 
     const THEME_KEY = 'pa_theme';
-    let _themeMediaQuery = null;
 
-    function _getSystemTheme() {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
+    function applyTheme(mode) {
+      /* mode: 'light' | 'dark' */
+      localStorage.setItem(THEME_KEY, mode);
+      document.documentElement.setAttribute('data-theme', mode);
 
-    function _resolvedTheme(mode) {
-      return mode === 'system' ? _getSystemTheme() : mode;
-    }
-
-    function _themeIcon(resolved) {
-      return resolved === 'dark' ? '🌙' : '☀️';
-    }
-
-    function _syncThemeUI(mode) {
-      const resolved = _resolvedTheme(mode);
-      document.documentElement.setAttribute('data-theme', resolved);
-      document.documentElement.setAttribute('data-theme-mode', mode);
-
-      /* Ícone em todos os botões */
-      const icon = _themeIcon(resolved);
+      /* Ícone: lua = escuro, sol = claro */
+      const icon = mode === 'dark' ? '🌙' : '☀️';
       document.querySelectorAll('.btn-theme-icon').forEach(el => { el.textContent = icon; });
 
-      /* Marca opção ativa nos dropdowns */
-      document.querySelectorAll('.theme-opt').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.theme === mode);
-      });
-
-      /* Abre/fecha botão visual */
+      /* Tooltip acessível no botão */
+      const label = mode === 'dark' ? 'Mudar para Claro' : 'Mudar para Escuro';
       document.querySelectorAll('.btn-theme').forEach(btn => {
-        btn.classList.remove('open');
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
       });
 
       /* Atualiza meta theme-color */
       const metaColor = document.getElementById('meta-theme-color');
-      if (metaColor) {
-        metaColor.content = resolved === 'dark' ? '#0f172a' : '#f1f5f9';
-      }
+      if (metaColor) metaColor.content = mode === 'dark' ? '#0f172a' : '#f1f5f9';
     }
 
-    function applyTheme(mode) {
-      localStorage.setItem(THEME_KEY, mode);
-      _syncThemeUI(mode);
-      closeAllThemeMenus();
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
     }
 
     function initTheme() {
-      const saved = localStorage.getItem(THEME_KEY) || 'system';
-      _syncThemeUI(saved);
-
-      /* Reage a mudança no tema do sistema quando mode === 'system' */
-      if (_themeMediaQuery) {
-        _themeMediaQuery.removeEventListener('change', _onSystemThemeChange);
-      }
-      _themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      _themeMediaQuery.addEventListener('change', _onSystemThemeChange);
+      const saved = localStorage.getItem(THEME_KEY) || 'dark';
+      applyTheme(saved);
     }
-
-    function _onSystemThemeChange() {
-      const mode = localStorage.getItem(THEME_KEY) || 'system';
-      if (mode === 'system') _syncThemeUI('system');
-    }
-
-    function toggleThemeMenu(id) {
-      const dd  = document.getElementById('theme-dd-' + id);
-      const btn = document.getElementById('btn-theme-' + id);
-      if (!dd || !btn) return;
-      const isOpen = dd.classList.contains('open');
-      closeAllThemeMenus();
-      if (!isOpen) {
-        dd.classList.add('open');
-        btn.classList.add('open');
-      }
-    }
-
-    function closeAllThemeMenus() {
-      document.querySelectorAll('.theme-dropdown').forEach(d => d.classList.remove('open'));
-      document.querySelectorAll('.btn-theme').forEach(b => b.classList.remove('open'));
-    }
-
-    /* Fecha dropdown ao clicar fora */
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.theme-menu-wrap')) closeAllThemeMenus();
-    });
 
     /* ─── AUTH GUARD ─── */
     const raw = localStorage.getItem('pa_session');
