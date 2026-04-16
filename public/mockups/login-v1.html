@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Divisão Horizontal</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { display: flex; align-items: center; justify-content: center; background: #0a0d1a; }
+
+    .card {
+      display: flex;
+      width: 700px;
+      min-height: 460px;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+    }
+
+    /* ── PAINEL ESQUERDO: IDENTIDADE ── */
+    .brand-panel {
+      width: 44%;
+      background: linear-gradient(150deg, #1e1b4b 0%, #312e81 40%, #4c1d95 100%);
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-panel::before {
+      content: '';
+      position: absolute;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: rgba(99,102,241,0.15);
+      top: -80px; left: -80px;
+    }
+
+    .brand-panel::after {
+      content: '';
+      position: absolute;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(139,92,246,0.12);
+      bottom: -40px; right: -40px;
+    }
+
+    .brand-logo {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 6px 24px rgba(99,102,241,0.5);
+      position: relative; z-index: 1;
+    }
+
+    .brand-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      margin-top: 1.2rem;
+      letter-spacing: -0.02em;
+      position: relative; z-index: 1;
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: #a5b4fc;
+      margin-top: 2px;
+      position: relative; z-index: 1;
+    }
+
+    .brand-tagline {
+      font-size: 0.95rem;
+      color: #c4b5fd;
+      line-height: 1.6;
+      margin-top: 1.5rem;
+      position: relative; z-index: 1;
+    }
+
+    .features {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      position: relative; z-index: 1;
+    }
+
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .feature-dot {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      background: rgba(99,102,241,0.25);
+      border: 1px solid rgba(99,102,241,0.4);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .feature-text {
+      font-size: 0.78rem;
+      color: #a5b4fc;
+      font-weight: 500;
+    }
+
+    /* ── PAINEL DIREITO: FORMULÁRIO ── */
+    .form-panel {
+      flex: 1;
+      background: #1e293b;
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: -0.02em;
+    }
+
+    .form-sub {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-top: 1.5rem;
+      border-bottom: 1px solid #334155;
+    }
+
+    .tab {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+
+    .tab.active {
+      color: #818cf8;
+      border-bottom-color: #6366f1;
+    }
+
+    .form-group { margin-top: 1.1rem; }
+
+    label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 0.45rem;
+    }
+
+    input {
+      width: 100%;
+      font-size: 0.9rem;
+      padding: 0.75rem 1rem;
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      color: #f1f5f9;
+      outline: none;
+    }
+
+    input:focus { border-color: #6366f1; }
+
+    .forgot {
+      text-align: right;
+      font-size: 0.75rem;
+      color: #6366f1;
+      margin-top: 0.5rem;
+      cursor: pointer;
+    }
+
+    .btn {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 1.25rem;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover { opacity: 0.9; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+    }
+
+    .divider-line { flex: 1; height: 1px; background: #334155; }
+    .divider-text { font-size: 0.72rem; color: #475569; }
+
+    .social-row {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.85rem;
+    }
+
+    .social-btn {
+      flex: 1;
+      height: 40px;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand-panel">
+      <div class="brand-logo">⚡</div>
+      <div class="brand-name">PRE-Atendimento</div>
+      <div class="brand-sub">Evolution GO · v8</div>
+      <p class="brand-tagline">Gerencie instâncias WhatsApp de forma simples e eficiente.</p>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-dot">📱</div>
+          <span class="feature-text">Instâncias WhatsApp em segundos</span>
+        </div>
+        <div class="feature">
+          <div class="feature-dot">🔒</div>
+          <span class="feature-text">Controle de acesso por perfil</span>
+        </div>
+        <div class="feature">
+          <div class="feature-dot">📊</div>
+          <span class="feature-text">Dashboard centralizado</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-title">Bem-vindo</div>
+      <div class="form-sub">Entre na sua conta para continuar</div>
+
+      <div class="tabs">
+        <div class="tab active">Entrar</div>
+        <div class="tab">Criar conta</div>
+      </div>
+
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" placeholder="seu@email.com" value="" />
+      </div>
+
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" placeholder="••••••••" />
+      </div>
+
+      <div class="forgot">Esqueceu a senha?</div>
+
+      <button class="btn">Entrar →</button>
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">ou continue com</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <div class="social-row">
+        <button class="social-btn">🌐 Google</button>
+        <button class="social-btn">🐙 GitHub</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

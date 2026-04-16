@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Card Imersivo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+      background: #050714;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* FUNDO ANIMADO */
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(99,102,241,0.35) 0%, transparent 70%);
+      top: -100px; left: -100px;
+      animation: drift1 8s ease-in-out infinite alternate;
+    }
+
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(139,92,246,0.3) 0%, transparent 70%);
+      bottom: -80px; right: -80px;
+      animation: drift2 10s ease-in-out infinite alternate;
+    }
+
+    .orb-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%);
+      top: 50%; left: 60%;
+      animation: drift3 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes drift1 { from { transform: translate(0, 0); } to { transform: translate(60px, 40px); } }
+    @keyframes drift2 { from { transform: translate(0, 0); } to { transform: translate(-50px, -30px); } }
+    @keyframes drift3 { from { transform: translate(0, 0); } to { transform: translate(-40px, 60px); } }
+
+    /* CARD GLASSMORPHISM */
+    .card {
+      position: relative;
+      z-index: 10;
+      width: 380px;
+      padding: 2.5rem 2rem;
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 28px;
+      box-shadow:
+        0 0 0 1px rgba(99,102,241,0.1),
+        0 40px 80px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.5);
+    }
+
+    .logo-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: rgba(255,255,255,0.9);
+      letter-spacing: -0.01em;
+    }
+
+    .logo-version { font-size: 0.65rem; color: rgba(255,255,255,0.35); }
+
+    h1 {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.03em;
+      margin-top: 1.5rem;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.4);
+      margin-top: 4px;
+    }
+
+    .tabs {
+      display: flex;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 3px;
+      margin-top: 1.5rem;
+      gap: 3px;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.55rem;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.35);
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: rgba(99,102,241,0.25);
+      color: #a5b4fc;
+      border: 1px solid rgba(99,102,241,0.3);
+    }
+
+    .form-group { margin-top: 1.1rem; }
+
+    label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      margin-bottom: 0.45rem;
+    }
+
+    input {
+      width: 100%;
+      font-size: 0.95rem;
+      padding: 0.8rem 1rem;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      color: rgba(255,255,255,0.9);
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    input::placeholder { color: rgba(255,255,255,0.2); }
+    input:focus {
+      border-color: rgba(99,102,241,0.6);
+      background: rgba(99,102,241,0.08);
+    }
+
+    .btn {
+      width: 100%;
+      height: 52px;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      box-shadow: 0 4px 24px rgba(99,102,241,0.45), inset 0 1px 0 rgba(255,255,255,0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '→';
+      margin-left: 6px;
+    }
+
+    .btn:hover { opacity: 0.92; }
+
+    .footer-text {
+      text-align: center;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.25);
+      margin-top: 1.25rem;
+    }
+
+    .footer-text a {
+      color: #818cf8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .security-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 1.25rem;
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <div class="card">
+    <div class="logo-row">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-name">PRE-Atendimento</div>
+        <div class="logo-version">Evolution GO · v8</div>
+      </div>
+    </div>
+
+    <h1>Acesse sua<br/>conta</h1>
+    <p class="subtitle">Gerencie suas instâncias WhatsApp</p>
+
+    <div class="tabs">
+      <div class="tab active">Entrar</div>
+      <div class="tab">Criar conta</div>
+    </div>
+
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" placeholder="seu@email.com" />
+    </div>
+
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" placeholder="••••••••" />
+    </div>
+
+    <button class="btn">Entrar</button>
+
+    <div class="footer-text">
+      Não tem conta? <a href="#">Criar gratuitamente</a>
+    </div>
+
+    <div class="security-badge">
+      🔒 Conexão segura e criptografada
+    </div>
+  </div>
+</body>
+</html>
