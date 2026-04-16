@@ -21,7 +21,7 @@ import {
   pairInstance,
 } from './services/evolutionGo.js';
 import { supabaseAdmin } from './services/supabase.js';
-import { loginUser, registerUser } from './services/authService.js';
+import { loginUser, registerUser, requestPasswordReset, resetPassword } from './services/authService.js';
 
 dotenv.config();
 
@@ -169,6 +169,44 @@ app.post('/api/auth/register', async (req, res) => {
     /* Perfil fixo 'user' — criação de admin é exclusiva do painel administrativo */
     const result = await registerUser(name, email, password, 'user', tenantId);
     res.status(result.success ? 201 : 409).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Auth: Recuperar senha — envia e-mail via Supabase ───────────────── */
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body as { email?: string };
+  if (!email) {
+    res.status(400).json({ success: false, error: 'E-mail é obrigatório.' });
+    return;
+  }
+  try {
+    const protocol = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
+    const host     = (req.headers['x-forwarded-host'] as string) || req.headers.host || 'localhost:5000';
+    const redirectTo = `${protocol}://${host}/reset-password.html`;
+    const result = await requestPasswordReset(email, redirectTo);
+    /* Sempre retornar 200 para não revelar se o e-mail existe */
+    res.json({ success: result.success, error: result.error });
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Auth: Redefinir senha com token do Supabase ─────────────────────── */
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { access_token, password } = req.body as { access_token?: string; password?: string };
+  if (!access_token || !password) {
+    res.status(400).json({ success: false, error: 'Token e senha são obrigatórios.' });
+    return;
+  }
+  if (password.length < 6) {
+    res.status(400).json({ success: false, error: 'A senha deve ter pelo menos 6 caracteres.' });
+    return;
+  }
+  try {
+    const result = await resetPassword(access_token, password);
+    res.status(result.success ? 200 : 401).json(result);
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });
   }

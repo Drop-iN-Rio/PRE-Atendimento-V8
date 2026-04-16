@@ -320,6 +320,42 @@
       width: fit-content;
     }
 
+    /* ── LINK ESQUECI SENHA ── */
+    .forgot-wrap {
+      text-align: center;
+      margin-top: 0.85rem;
+    }
+
+    .forgot-link {
+      font-size: 0.82rem;
+      color: #6366F1;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .forgot-link:hover { color: #4F46E5; text-decoration: underline; }
+
+    /* ── VIEW RECUPERAR SENHA ── */
+    #view-forgot { display: none; }
+
+    .btn-back-login {
+      width: 100%;
+      min-height: 44px;
+      margin-top: 0.75rem;
+      background: none;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 12px;
+      color: #6B7280;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.18s, color 0.18s;
+    }
+
+    .btn-back-login:hover { border-color: #6366F1; color: #4F46E5; }
+
     /* ── RODAPÉ ── */
     .card-footer {
       margin-top: 1.25rem;
@@ -402,7 +438,21 @@
           autocomplete="current-password" required />
       </div>
       <button type="submit" class="btn" id="btn-login">Entrar</button>
+      <div class="forgot-wrap">
+        <a class="forgot-link" href="#" id="forgot-link">Esqueci minha senha</a>
+      </div>
     </form>
+
+    <!-- VIEW: RECUPERAR SENHA -->
+    <div id="view-forgot">
+      <div class="form-group">
+        <label for="forgot-email">E-mail cadastrado</label>
+        <input type="email" id="forgot-email" placeholder="seu@email.com"
+          autocomplete="email" inputmode="email" />
+      </div>
+      <button type="button" class="btn" id="btn-forgot">Enviar link de recuperação</button>
+      <button type="button" class="btn-back-login" id="btn-back-login">← Voltar ao login</button>
+    </div>
 
     <!-- FORMULÁRIO: CADASTRO -->
     <form id="form-register" style="display:none" novalidate>
@@ -438,7 +488,56 @@
   </div>
 
   <script>
-    let serverReady = false;
+    let serverReady  = false;
+    let currentView  = 'auth'; /* 'auth' | 'forgot' */
+    let currentTab   = 'login';
+
+    /* ── Trocar entre view normal e recuperação de senha ── */
+    function switchView(view) {
+      currentView = view;
+      const isForgot = view === 'forgot';
+
+      document.querySelector('.tabs').style.display       = isForgot ? 'none' : '';
+      document.getElementById('form-login').style.display    = isForgot ? 'none' : (currentTab === 'login' ? '' : 'none');
+      document.getElementById('form-register').style.display = isForgot ? 'none' : (currentTab === 'register' ? '' : 'none');
+      document.getElementById('view-forgot').style.display   = isForgot ? 'block' : 'none';
+
+      document.getElementById('page-title').innerHTML = isForgot
+        ? 'Recuperar<br/>senha'
+        : (currentTab === 'login' ? 'Acesse sua<br/>conta' : 'Crie sua<br/>conta');
+      document.getElementById('page-sub').textContent = isForgot
+        ? 'Informe seu e-mail para receber o link'
+        : (currentTab === 'login' ? 'Gerencie suas instâncias WhatsApp' : 'Preencha os dados para começar');
+
+      hideAlert();
+      if (isForgot) document.getElementById('forgot-email').focus();
+    }
+
+    /* ── Enviar link de recuperação ── */
+    async function submitForgot() {
+      const email = document.getElementById('forgot-email').value.trim();
+      if (!email) { showAlert('error', 'Informe seu e-mail.'); return; }
+
+      setLoading('btn-forgot', true, 'Enviando...');
+      try {
+        const res  = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!data.success && data.error) {
+          showAlert('error', data.error);
+          return;
+        }
+        showAlert('success', 'Se este e-mail estiver cadastrado, você receberá o link em instantes. Verifique também a pasta de spam.');
+        document.getElementById('forgot-email').value = '';
+      } catch {
+        showAlert('error', 'Erro de conexão. Tente novamente.');
+      } finally {
+        setLoading('btn-forgot', false, 'Enviar link de recuperação');
+      }
+    }
 
     function showConfigWarning(missing) {
       const box  = document.getElementById('config-warning');
@@ -469,6 +568,8 @@
     }
 
     function switchTab(tab) {
+      currentTab = tab;
+      if (currentView !== 'auth') return; /* não trocar tab enquanto na view de recuperação */
       const isLogin = tab === 'login';
 
       document.getElementById('tab-login').classList.toggle('active', isLogin);
@@ -488,6 +589,7 @@
 
     function showAlert(type, msg) {
       const el = document.getElementById('alert');
+      el.style.display = '';
       el.className = 'alert ' + type;
       el.textContent = msg;
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -590,6 +692,19 @@
       } finally {
         setLoading('btn-register', false, 'Criar conta');
       }
+    });
+
+    document.getElementById('forgot-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      switchView('forgot');
+    });
+    document.getElementById('btn-back-login').addEventListener('click', () => {
+      switchView('auth');
+      switchTab('login');
+    });
+    document.getElementById('btn-forgot').addEventListener('click', submitForgot);
+    document.getElementById('forgot-email').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitForgot();
     });
 
     init();

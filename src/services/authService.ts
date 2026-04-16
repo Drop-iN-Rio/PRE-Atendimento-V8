@@ -1,5 +1,6 @@
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
+import { supabaseAdmin } from './supabase.js';
 
 interface UserRow {
   id: string;
@@ -118,4 +119,83 @@ export async function registerUser(
   } finally {
     await client.end();
   }
+}
+
+/* ── Recuperação de senha ────────────────────────────────────────────── */
+
+export async function requestPasswordReset(
+  email: string,
+  redirectTo: string,
+): Promise<{ success: boolean; error?: string }> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  /* Verificar se o email existe na nossa tabela de usuários */
+  const client = getClient();
+  try {
+    await client.connect();
+    const { rows } = await client.query(
+      'SELECT id FROM public.users WHERE email = $1 LIMIT 1',
+      [normalizedEmail],
+    );
+    /* Não revelar se o email existe — retornar sucesso genérico */
+    if (!rows.length) return { success: true };
+  } finally {
+    await client.end();
+  }
+
+  /* Tentar gerar link de recuperação via Supabase Auth */
+  const generateOpts = {
+    type: 'recovery' as const,
+    email: normalizedEmail,
+    options: { redirectTo },
+  };
+
+  let result = await supabaseAdmin.auth.admin.generateLink(generateOpts);
+
+  /* Se o usuário não existe em auth.users, criar e tentar novamente */
+  if (result.error) {
+    const tmpPassword = `reset-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    await supabaseAdmin.auth.admin.createUser({
+      email: normalizedEmail,
+      email_confirm: true,
+      password: tmpPassword,
+    });
+    result = await supabaseAdmin.auth.admin.generateLink(generateOpts);
+  }
+
+  if (result.error) {
+    return { success: false, error: 'Erro ao enviar e-mail. Verifique as configurações do Supabase.' };
+  }
+
+  return { success: true };
+}
+
+export async function resetPassword(
+  accessToken: string,
+  newPassword: string,
+): Promise<{ success: boolean; error?: string }> {
+  /* Verificar token com Supabase e obter o email do usuário */
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(accessToken);
+
+  if (error || !user?.email) {
+    return { success: false, error: 'Link inválido ou expirado. Solicite um novo link.' };
+  }
+
+  /* Atualizar o hash de senha na nossa tabela de usuários */
+  const password_hash = await bcrypt.hash(newPassword, 10);
+  const client = getClient();
+  try {
+    await client.connect();
+    const { rows } = await client.query(
+      'UPDATE public.users SET password_hash = $1, updated_at = NOW() WHERE email = $2 RETURNING id',
+      [password_hash, user.email.toLowerCase()],
+    );
+    if (!rows.length) {
+      return { success: false, error: 'Usuário não encontrado.' };
+    }
+  } finally {
+    await client.end();
+  }
+
+  return { success: true };
 }
