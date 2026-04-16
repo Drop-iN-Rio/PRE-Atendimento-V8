@@ -229,6 +229,186 @@
     .bottom-nav-item.active { color: #818cf8; }
     .bottom-nav-icon { font-size: 1.4rem; line-height: 1; }
 
+    /* ═══ GLOBAL: ocultos por padrão, exibidos via JS ou breakpoint ═══ */
+    .sidebar    { display: none; }
+    .admin-only { display: none !important; }
+
+    /* ─── HAMBURGER BUTTON ─── */
+    .btn-hamburger {
+      width: 40px; height: 40px;
+      background: transparent;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      color: #94a3b8;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      touch-action: manipulation;
+      transition: all 0.2s;
+      line-height: 1;
+    }
+    .btn-hamburger:active { border-color: #6366f1; color: #818cf8; }
+
+    /* ─── MOBILE DRAWER ─── */
+    .drawer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.55);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+    }
+    .drawer-overlay.open { display: block; }
+
+    .drawer {
+      position: fixed;
+      top: 0; left: 0;
+      height: 100%;
+      width: min(290px, 85vw);
+      z-index: 201;
+      background: #1e293b;
+      border-right: 1px solid #334155;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .drawer.open { transform: translateX(0); }
+
+    .drawer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.1rem;
+      border-bottom: 1px solid #334155;
+      flex-shrink: 0;
+    }
+    .drawer-brand { display: flex; align-items: center; gap: 0.6rem; }
+    .drawer-logo {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .drawer-brand-text { font-size: 0.95rem; font-weight: 800; color: #f1f5f9; letter-spacing: -0.01em; }
+    .btn-drawer-close {
+      width: 34px; height: 34px;
+      background: transparent;
+      border: 1.5px solid #334155;
+      border-radius: 8px;
+      color: #64748b;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      touch-action: manipulation;
+    }
+    .btn-drawer-close:active { border-color: #ef4444; color: #ef4444; }
+
+    .drawer-user {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.1rem;
+      border-bottom: 1px solid #1e293b;
+      background: #0f172a;
+      flex-shrink: 0;
+    }
+    .drawer-avatar {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 800; color: white;
+      flex-shrink: 0;
+    }
+    .drawer-user-info { min-width: 0; flex: 1; }
+    .drawer-user-name { font-size: 0.9rem; font-weight: 700; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .drawer-user-role {
+      display: inline-block;
+      background: #1e3a5f;
+      color: #93c5fd;
+      border-radius: 5px;
+      padding: 1px 7px;
+      font-size: 0.63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 3px;
+    }
+    .drawer-nav {
+      flex: 1;
+      padding: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow-y: auto;
+    }
+    .drawer-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      touch-action: manipulation;
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.15s;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+    }
+    .drawer-nav-item:active { background: #0f172a; color: #94a3b8; }
+    .drawer-nav-item.active { background: rgba(99,102,241,0.12); color: #818cf8; }
+    .drawer-nav-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+    .drawer-cfg-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0 0.6rem 0.4rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: #0f172a;
+      flex-shrink: 0;
+    }
+    .drawer-cfg-status.ok  { color: #4ade80; }
+    .drawer-cfg-status.nok { color: #f87171; }
+
+    .drawer-footer {
+      padding: 0.6rem;
+      border-top: 1px solid #334155;
+      flex-shrink: 0;
+    }
+    .drawer-logout {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #64748b;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.15s;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      touch-action: manipulation;
+    }
+    .drawer-logout:active { background: rgba(239,68,68,0.1); color: #f87171; }
+
     /* ════════════════════════════════
        DESKTOP — Divisão Horizontal
        Sidebar esquerda + conteúdo direita
@@ -242,10 +422,11 @@
       }
 
       /* Oculta elementos mobile */
-      .topbar      { display: none; }
-      .user-strip  { display: none; }
-      .nav-tabs    { display: none; }
-      .bottom-nav  { display: none; }
+      .topbar        { display: none; }
+      .nav-tabs      { display: none; }
+      .bottom-nav    { display: none; }
+      .drawer-overlay{ display: none !important; }
+      .drawer        { display: none !important; }
 
       /* ─── SIDEBAR ─── */
       .sidebar {
@@ -361,9 +542,6 @@
         gap: 0.5rem;
       }
 
-      /* ─── ADMIN ONLY ─── */
-    .admin-only { display: none !important; }
-
     .sidebar-config-status {
         display: flex;
         align-items: center;
@@ -468,7 +646,8 @@
       text-transform: uppercase;
     }
 
-    input[type="text"] {
+    input[type="text"],
+    input[type="password"] {
       width: 100%;
       font-size: 16px;
       padding: 0.9rem 1rem;
@@ -482,8 +661,10 @@
       -webkit-appearance: none;
     }
 
-    input[type="text"]:focus { border-color: #6366f1; }
-    input[type="text"]::placeholder { color: #475569; }
+    input[type="text"]:focus,
+    input[type="password"]:focus { border-color: #6366f1; }
+    input[type="text"]::placeholder,
+    input[type="password"]::placeholder { color: #475569; }
 
     .btn {
       width: 100%;
@@ -824,6 +1005,52 @@
   </aside>
 
   <!-- ══════════════════════════
+       MOBILE DRAWER
+       ══════════════════════════ -->
+  <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="mobile-drawer">
+
+    <div class="drawer-header">
+      <div class="drawer-brand">
+        <div class="drawer-logo">⚡</div>
+        <div class="drawer-brand-text">Pre-Atendimento</div>
+      </div>
+      <button class="btn-drawer-close" onclick="closeDrawer()" aria-label="Fechar menu">✕</button>
+    </div>
+
+    <div class="drawer-user">
+      <div class="drawer-avatar" id="drawer-avatar">?</div>
+      <div class="drawer-user-info">
+        <div class="drawer-user-name" id="drawer-name">—</div>
+        <div class="drawer-user-role" id="drawer-role">—</div>
+      </div>
+    </div>
+
+    <nav class="drawer-nav">
+      <button class="drawer-nav-item active" id="dnav-create"
+        onclick="showPanel('panel-create', null, 'bnav-create', 'snav-create'); closeDrawer()">
+        <span class="drawer-nav-icon">➕</span> Nova Instância
+      </button>
+      <button class="drawer-nav-item" id="dnav-list"
+        onclick="showPanel('panel-list', null, 'bnav-list', 'snav-list'); closeDrawer()">
+        <span class="drawer-nav-icon">📋</span> Instâncias
+      </button>
+      <button class="drawer-nav-item admin-only" id="dnav-config"
+        onclick="showPanel('panel-config', null, 'bnav-config', 'snav-config'); closeDrawer()">
+        <span class="drawer-nav-icon">⚙️</span> Configuração
+      </button>
+    </nav>
+
+    <div class="drawer-cfg-status admin-only" id="drawer-cfg-status">○ Usando config padrão</div>
+
+    <div class="drawer-footer">
+      <button class="drawer-logout" onclick="logout()">
+        <span>🚪</span> Sair
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════
        CONTENT AREA
        ══════════════════════════ -->
   <div class="content-area">
@@ -837,24 +1064,8 @@
           <div class="logo-sub">Painel de Controle</div>
         </div>
       </div>
-      <div class="topbar-right">
-        <div class="user-avatar" id="user-avatar">?</div>
-        <button class="btn-logout" onclick="logout()">Sair</button>
-      </div>
+      <button class="btn-hamburger" onclick="openDrawer()" aria-label="Abrir menu">☰</button>
     </nav>
-
-    <!-- USER STRIP (mobile only) -->
-    <div class="user-strip">
-      <span class="user-strip-name" id="user-name">—</span>
-      <span class="user-role-badge" id="user-role">—</span>
-    </div>
-
-    <!-- NAV TABS (mobile only) -->
-    <div class="nav-tabs">
-      <div class="nav-tab active" id="tab-create" onclick="showPanel('panel-create', this)">➕ Nova Instância</div>
-      <div class="nav-tab"        id="tab-list"   onclick="showPanel('panel-list',   this)">📋 Instâncias</div>
-      <div class="nav-tab admin-only" id="tab-config" onclick="showPanel('panel-config', this)">⚙️ Config</div>
-    </div>
 
     <!-- PANELS -->
     <div class="main">
@@ -1037,12 +1248,12 @@
       const display = user.name || user.email || '?';
       const initial = display[0].toUpperCase();
 
-      /* mobile topbar */
-      document.getElementById('user-avatar').textContent = initial;
-      document.getElementById('user-name').textContent   = display;
-      document.getElementById('user-role').textContent   = user.role || 'user';
+      /* mobile drawer user info */
+      document.getElementById('drawer-avatar').textContent = initial;
+      document.getElementById('drawer-name').textContent   = display;
+      document.getElementById('drawer-role').textContent   = user.role || 'user';
 
-      /* desktop sidebar */
+      /* desktop sidebar user info */
       document.getElementById('sidebar-avatar').textContent = initial;
       document.getElementById('sidebar-name').textContent   = display;
       document.getElementById('sidebar-role').textContent   = user.role || 'user';
@@ -1055,28 +1266,43 @@
       }
     }
 
+    /* ─── MOBILE DRAWER ─── */
+    function openDrawer() {
+      document.getElementById('drawer-overlay').classList.add('open');
+      document.getElementById('mobile-drawer').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer-overlay').classList.remove('open');
+      document.getElementById('mobile-drawer').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
     function logout() {
       localStorage.removeItem('pa_session');
       window.location.href = '/';
     }
 
     /* ─── NAV ─── */
-    const panelToTab  = { 'panel-create':'tab-create', 'panel-list':'tab-list', 'panel-config':'tab-config' };
     const panelToSnav = { 'panel-create':'snav-create','panel-list':'snav-list','panel-config':'snav-config' };
+    const panelToDnav = { 'panel-create':'dnav-create','panel-list':'dnav-list','panel-config':'dnav-config' };
+    const panelToBnav = { 'panel-create':'bnav-create','panel-list':'bnav-list','panel-config':'bnav-config' };
 
     function showPanel(panelId, tabEl, bnavId, snavId) {
       /* Panels */
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.getElementById(panelId).classList.add('active');
-
-      /* Mobile top tabs */
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      if (tabEl) tabEl.classList.add('active');
-      else document.getElementById(panelToTab[panelId])?.classList.add('active');
+      document.getElementById(panelId)?.classList.add('active');
 
       /* Mobile bottom nav */
       document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-      if (bnavId) document.getElementById(bnavId)?.classList.add('active');
+      const bnavTarget = bnavId || panelToBnav[panelId];
+      if (bnavTarget) document.getElementById(bnavTarget)?.classList.add('active');
+
+      /* Mobile drawer nav */
+      document.querySelectorAll('.drawer-nav-item').forEach(d => d.classList.remove('active'));
+      const dnavTarget = panelToDnav[panelId];
+      if (dnavTarget) document.getElementById(dnavTarget)?.classList.add('active');
 
       /* Desktop sidebar nav */
       document.querySelectorAll('.sidebar-nav-item').forEach(s => s.classList.remove('active'));
@@ -1101,22 +1327,26 @@
 
       const statusUrl = document.getElementById('config-status-url');
       const statusKey = document.getElementById('config-status-key');
-      const sideStatus = document.getElementById('sidebar-cfg-status');
-      if (!statusUrl) return;
+      const sideStatus   = document.getElementById('sidebar-cfg-status');
+      const drawerStatus = document.getElementById('drawer-cfg-status');
 
-      statusUrl.className = 'config-status ' + (hasUrl ? 'ok' : 'nok');
-      document.getElementById('cfg-icon-url').textContent = hasUrl ? '✓' : '✗';
-      statusKey.className = 'config-status ' + (hasKey ? 'ok' : 'nok');
-      document.getElementById('cfg-icon-key').textContent = hasKey ? '✓' : '✗';
+      if (statusUrl) {
+        statusUrl.className = 'config-status ' + (hasUrl ? 'ok' : 'nok');
+        document.getElementById('cfg-icon-url').textContent = hasUrl ? '✓' : '✗';
+        statusKey.className = 'config-status ' + (hasKey ? 'ok' : 'nok');
+        document.getElementById('cfg-icon-key').textContent = hasKey ? '✓' : '✗';
+      }
+
+      const cfgLabel = (hasUrl && hasKey) ? '✓ API personalizada' : '○ Usando config padrão';
+      const cfgCls   = (hasUrl && hasKey) ? 'ok' : 'nok';
 
       if (sideStatus) {
-        if (hasUrl && hasKey) {
-          sideStatus.className = 'sidebar-config-status ok';
-          sideStatus.textContent = '✓ API personalizada';
-        } else {
-          sideStatus.className = 'sidebar-config-status nok';
-          sideStatus.textContent = '○ Usando config padrão';
-        }
+        sideStatus.className = 'sidebar-config-status ' + cfgCls;
+        sideStatus.textContent = cfgLabel;
+      }
+      if (drawerStatus) {
+        drawerStatus.className = 'drawer-cfg-status ' + cfgCls;
+        drawerStatus.textContent = cfgLabel;
       }
 
       if (cfg) {
