@@ -657,6 +657,9 @@
 
     .token-copy:hover { border-color: #6366f1; color: #818cf8; }
 
+    .tk-conn-yes { color: #4ade80 !important; font-weight: 700; }
+    .tk-conn-no  { color: #f87171 !important; }
+
     /* ─── INSTANCE LIST ─── */
     .instances-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
@@ -952,9 +955,13 @@
               <span class="token-value" id="tk-token">—</span>
               <button class="token-copy" onclick="copyToken()">Copiar</button>
             </div>
-            <div class="token-row" id="tk-status-row">
-              <span class="token-label">Status</span>
-              <span class="token-value" id="tk-status">—</span>
+            <div class="token-row">
+              <span class="token-label">Conexão</span>
+              <span class="token-value" id="tk-connected">—</span>
+            </div>
+            <div class="token-row">
+              <span class="token-label">Criado em</span>
+              <span class="token-value" id="tk-created">—</span>
             </div>
           </div>
 
@@ -1268,14 +1275,31 @@
           const data    = json.data || {};
           const apiResp = data.api_response || {};
 
-          /* Formato validado: { message:"success", data:{ name, token } } */
+          /* Formato confirmado: { message:"success", data:{ name, token, connected, createdAt, ... } } */
           const apiData = apiResp.data || {};
-          document.getElementById('tk-name').textContent  =
-            apiData.name  || data.instance_name || instanceName;
+
+          document.getElementById('tk-name').textContent =
+            apiData.name || data.instance_name || instanceName;
+
           document.getElementById('tk-token').textContent =
             apiData.token || '(não retornado pela API)';
-          document.getElementById('tk-status').textContent =
-            apiResp.message === 'success' ? 'success' : (data.status || 'created');
+
+          const connEl = document.getElementById('tk-connected');
+          const isConnected = apiData.connected === true;
+          connEl.textContent = isConnected ? 'Conectado' : 'Desconectado';
+          connEl.className = 'token-value tk-conn-' + (isConnected ? 'yes' : 'no');
+
+          const createdEl = document.getElementById('tk-created');
+          if (apiData.createdAt) {
+            try {
+              createdEl.textContent = new Date(apiData.createdAt).toLocaleString('pt-BR', {
+                day:'2-digit', month:'2-digit', year:'2-digit',
+                hour:'2-digit', minute:'2-digit', second:'2-digit',
+              });
+            } catch { createdEl.textContent = apiData.createdAt; }
+          } else {
+            createdEl.textContent = '—';
+          }
 
           const tb = document.getElementById('token-block');
           tb.classList.remove('warn');
@@ -1300,7 +1324,10 @@
             document.getElementById('tk-name').textContent  = apiName  || instanceName;
             document.getElementById('tk-token').textContent =
               apiResp.hash?.apikey || apiResp.token || apiResp.apikey || '(não retornado)';
-            document.getElementById('tk-status').textContent = apiStatus || 'error';
+            const connElW = document.getElementById('tk-connected');
+            connElW.textContent = apiStatus || 'error';
+            connElW.className   = 'token-value tk-conn-no';
+            document.getElementById('tk-created').textContent = '—';
 
             const tb = document.getElementById('token-block');
             tb.classList.add('visible', 'warn');
