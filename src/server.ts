@@ -152,10 +152,10 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-/* ── Auth: Register ──────────────────────────────────────────────────── */
+/* ── Auth: Register (público — sempre cria role='user') ──────────────── */
 app.post('/api/auth/register', async (req, res) => {
-  const { name, email, password, role, tenantId } = req.body as {
-    name?: string; email?: string; password?: string; role?: string; tenantId?: string;
+  const { name, email, password, tenantId } = req.body as {
+    name?: string; email?: string; password?: string; tenantId?: string;
   };
   if (!name || !email || !password) {
     res.status(400).json({ success: false, error: 'Nome, e-mail e senha são obrigatórios.' });
@@ -166,7 +166,8 @@ app.post('/api/auth/register', async (req, res) => {
     return;
   }
   try {
-    const result = await registerUser(name, email, password, role || 'user', tenantId);
+    /* Perfil fixo 'user' — criação de admin é exclusiva do painel administrativo */
+    const result = await registerUser(name, email, password, 'user', tenantId);
     res.status(result.success ? 201 : 409).json(result);
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });
@@ -206,6 +207,86 @@ app.post('/api/tenants', requireAuth, requireAdmin, async (req, res) => {
       .single();
     if (error) { res.status(409).json({ success: false, error: error.message }); return; }
     res.status(201).json({ success: true, data });
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Usuários (admin) ────────────────────────────────────────────────── */
+
+app.get('/api/users', requireAuth, requireAdmin, async (_req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .select('id, name, email, role, active, tenant_id, created_at, tenants(name, slug)')
+      .order('created_at', { ascending: true });
+    if (error) { res.status(500).json({ success: false, error: error.message }); return; }
+    res.json({ success: true, data });
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+app.post('/api/users', requireAuth, requireAdmin, async (req, res) => {
+  const { name, email, password, role, tenantId } = req.body as {
+    name?: string; email?: string; password?: string; role?: string; tenantId?: string;
+  };
+  if (!name || !email || !password) {
+    res.status(400).json({ success: false, error: 'Nome, e-mail e senha são obrigatórios.' });
+    return;
+  }
+  if (password.length < 6) {
+    res.status(400).json({ success: false, error: 'A senha deve ter pelo menos 6 caracteres.' });
+    return;
+  }
+  try {
+    const result = await registerUser(name, email, password, role || 'user', tenantId);
+    res.status(result.success ? 201 : 409).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+app.patch('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { role, name, active } = req.body as { role?: string; name?: string; active?: boolean };
+
+  const updates: Record<string, unknown> = {};
+  if (role !== undefined)   updates.role   = role;
+  if (name !== undefined)   updates.name   = name.trim();
+  if (active !== undefined) updates.active = active;
+
+  if (Object.keys(updates).length === 0) {
+    res.status(400).json({ success: false, error: 'Nenhum campo para atualizar.' });
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .update(updates)
+      .eq('id', id)
+      .select('id, name, email, role, active, tenant_id')
+      .single();
+
+    if (error) { res.status(404).json({ success: false, error: error.message }); return; }
+    res.json({ success: true, data });
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+app.delete('/api/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  /* Impedir que admin se auto-delete */
+  if (id === req.user!.userId) {
+    res.status(400).json({ success: false, error: 'Você não pode excluir a própria conta.' });
+    return;
+  }
+  try {
+    const { error } = await supabaseAdmin.from('users').delete().eq('id', id);
+    if (error) { res.status(404).json({ success: false, error: error.message }); return; }
+    res.json({ success: true, data: { message: 'Usuário removido com sucesso.' } });
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });
   }

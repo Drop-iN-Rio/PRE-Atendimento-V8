@@ -2160,6 +2160,10 @@
         onclick="showPanel('panel-list', null, 'bnav-list', 'snav-list')">
         <span class="sidebar-nav-icon">📋</span> Instâncias
       </button>
+      <button class="sidebar-nav-item admin-only" id="snav-users"
+        onclick="showPanel('panel-users', null, 'bnav-users', 'snav-users')">
+        <span class="sidebar-nav-icon">👥</span> Usuários
+      </button>
       <button class="sidebar-nav-item admin-only" id="snav-config"
         onclick="showPanel('panel-config', null, 'bnav-config', 'snav-config')">
         <span class="sidebar-nav-icon">⚙️</span> Configuração
@@ -2213,6 +2217,10 @@
       <button class="drawer-nav-item" id="dnav-list"
         onclick="showPanel('panel-list', null, 'bnav-list', 'snav-list'); closeDrawer()">
         <span class="drawer-nav-icon">📋</span> Instâncias
+      </button>
+      <button class="drawer-nav-item admin-only" id="dnav-users"
+        onclick="showPanel('panel-users', null, 'bnav-users', 'snav-users'); closeDrawer()">
+        <span class="drawer-nav-icon">👥</span> Usuários
       </button>
       <button class="drawer-nav-item admin-only" id="dnav-config"
         onclick="showPanel('panel-config', null, 'bnav-config', 'snav-config'); closeDrawer()">
@@ -2479,6 +2487,64 @@
         </div><!-- /.is-body -->
       </div><!-- /#panel-instance -->
 
+      <!-- ── USUÁRIOS (admin) ── -->
+      <div class="panel admin-only" id="panel-users">
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header">
+            <div class="card-icon icon-purple">👤</div>
+            <div>
+              <div class="card-title">Novo Usuário</div>
+              <div class="card-desc">Crie usuários e defina o perfil de acesso</div>
+            </div>
+          </div>
+          <form id="form-new-user" novalidate>
+            <label for="nu-name">Nome completo</label>
+            <div class="field-wrap">
+              <input type="text" id="nu-name" placeholder="João Silva" autocomplete="off" />
+            </div>
+            <div style="height:0.75rem"></div>
+            <label for="nu-email">E-mail</label>
+            <div class="field-wrap">
+              <input type="email" id="nu-email" placeholder="joao@email.com" autocomplete="off" inputmode="email" />
+            </div>
+            <div style="height:0.75rem"></div>
+            <label for="nu-password">Senha</label>
+            <div class="field-wrap">
+              <input type="password" id="nu-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+            </div>
+            <div style="height:0.75rem"></div>
+            <label for="nu-role">Perfil de acesso</label>
+            <div class="field-wrap">
+              <select id="nu-role" style="width:100%;padding:0.7rem 0.85rem;border-radius:0.6rem;border:1px solid rgba(99,102,241,0.25);background:var(--card);color:var(--tx1);font-size:0.9rem">
+                <option value="user">Usuário</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div style="height:0.9rem"></div>
+            <button type="submit" class="btn" id="btn-new-user"
+              style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 16px rgba(16,185,129,0.3);width:100%">
+              ➕ Criar Usuário
+            </button>
+          </form>
+          <div id="nu-alert" class="alert" style="margin-top:0.75rem"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon icon-purple">👥</div>
+            <div>
+              <div class="card-title">Usuários Cadastrados</div>
+              <div class="card-desc" id="users-count-desc">Carregando...</div>
+            </div>
+            <button class="btn-refresh" onclick="loadUsers()"
+              style="margin-left:auto;padding:0.45rem 0.9rem;font-size:0.8rem">↻ Atualizar</button>
+          </div>
+          <div id="users-list" style="margin-top:0.5rem">
+            <div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /.main -->
 
     <!-- BOTTOM NAV (mobile only) -->
@@ -2490,6 +2556,10 @@
       <div class="bottom-nav-item" id="bnav-list"
         onclick="showPanel('panel-list', null, 'bnav-list')">
         <span class="bottom-nav-icon">📋</span>Instâncias
+      </div>
+      <div class="bottom-nav-item admin-only" id="bnav-users"
+        onclick="showPanel('panel-users', null, 'bnav-users')">
+        <span class="bottom-nav-icon">👥</span>Usuários
       </div>
       <div class="bottom-nav-item admin-only" id="bnav-config"
         onclick="showPanel('panel-config', null, 'bnav-config')">
@@ -2652,9 +2722,9 @@
     }
 
     /* ─── NAV ─── */
-    const panelToSnav = { 'panel-create':'snav-create','panel-list':'snav-list','panel-config':'snav-config' };
-    const panelToDnav = { 'panel-create':'dnav-create','panel-list':'dnav-list','panel-config':'dnav-config' };
-    const panelToBnav = { 'panel-create':'bnav-create','panel-list':'bnav-list','panel-config':'bnav-config' };
+    const panelToSnav = { 'panel-create':'snav-create','panel-list':'snav-list','panel-users':'snav-users','panel-config':'snav-config' };
+    const panelToDnav = { 'panel-create':'dnav-create','panel-list':'dnav-list','panel-users':'dnav-users','panel-config':'dnav-config' };
+    const panelToBnav = { 'panel-create':'bnav-create','panel-list':'bnav-list','panel-users':'bnav-users','panel-config':'bnav-config' };
 
     function showPanel(panelId, tabEl, bnavId, snavId) {
       /* Panels */
@@ -3579,10 +3649,178 @@
       }
     }
 
+    /* ─── GESTÃO DE USUÁRIOS (admin) ─── */
+
+    function _nuAlert(msg, type) {
+      const el = document.getElementById('nu-alert');
+      if (!el) return;
+      el.className = 'alert ' + (type === 'ok' ? 'success' : 'error');
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+    }
+
+    async function loadUsers() {
+      const list = document.getElementById('users-list');
+      const desc = document.getElementById('users-count-desc');
+      if (!list) return;
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>';
+      try {
+        const res  = await fetch('/api/users', { headers: getAuthHeaders() });
+        const json = await res.json();
+        if (res.status === 401) { handle401(json); return; }
+        if (!json.success) {
+          list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>${json.error || 'Erro ao carregar usuários.'}</div>`;
+          return;
+        }
+        const users = json.data || [];
+        if (desc) desc.textContent = `${users.length} usuário${users.length !== 1 ? 's' : ''} cadastrado${users.length !== 1 ? 's' : ''}`;
+        if (!users.length) {
+          list.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div>Nenhum usuário encontrado.</div>';
+          return;
+        }
+        list.innerHTML = users.map(u => {
+          const isMe    = u.id === _currentUser.id;
+          const isAdmin = u.role === 'admin';
+          const tenant  = u.tenants?.name || '—';
+          const since   = u.created_at ? new Date(u.created_at).toLocaleDateString('pt-BR') : '—';
+          const roleLabel = isAdmin ? 'Administrador' : 'Usuário';
+          const roleBg    = isAdmin
+            ? 'background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3)'
+            : 'background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25)';
+          const activeBadge = u.active !== false
+            ? '<span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:1rem;background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25)">ativo</span>'
+            : '<span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:1rem;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25)">inativo</span>';
+
+          return `<div style="display:flex;flex-direction:column;gap:0.35rem;padding:0.85rem 0.95rem;border-bottom:1px solid rgba(99,102,241,0.1);transition:background 0.15s" onmouseover="this.style.background='rgba(99,102,241,0.04)'" onmouseout="this.style.background=''">
+            <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap">
+              <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem;color:#fff;flex-shrink:0">${(u.name||'?')[0].toUpperCase()}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-weight:600;font-size:0.9rem;color:var(--tx1);display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap">
+                  ${u.name || '—'} ${isMe ? '<span style="font-size:0.7rem;padding:0.1rem 0.45rem;border-radius:1rem;background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.3)">você</span>' : ''}
+                </div>
+                <div style="font-size:0.78rem;color:var(--tx2);margin-top:0.1rem">${u.email}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:0.4rem;flex-shrink:0">
+                <span style="font-size:0.72rem;padding:0.2rem 0.55rem;border-radius:1rem;${roleBg}">${roleLabel}</span>
+                ${activeBadge}
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;padding-left:2.6rem">
+              <span style="font-size:0.73rem;color:var(--tx3)">Tenant: ${tenant} · Desde ${since}</span>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap">
+                ${!isMe ? `
+                <button onclick="toggleUserRole('${u.id}','${isAdmin ? 'user' : 'admin'}')"
+                  style="padding:0.3rem 0.7rem;font-size:0.75rem;border-radius:0.5rem;border:1px solid ${isAdmin ? 'rgba(239,68,68,0.4)' : 'rgba(99,102,241,0.4)'};background:transparent;color:${isAdmin ? '#f87171' : '#818cf8'};cursor:pointer;transition:all 0.15s"
+                  onmouseover="this.style.background='${isAdmin ? 'rgba(239,68,68,0.1)' : 'rgba(99,102,241,0.1)'}'" onmouseout="this.style.background='transparent'">
+                  ${isAdmin ? '↓ Rebaixar' : '↑ Promover'}
+                </button>
+                <button onclick="deleteUser('${u.id}','${(u.name||'').replace(/'/g,'')}')"
+                  style="padding:0.3rem 0.7rem;font-size:0.75rem;border-radius:0.5rem;border:1px solid rgba(239,68,68,0.35);background:transparent;color:#f87171;cursor:pointer;transition:all 0.15s"
+                  onmouseover="this.style.background='rgba(239,68,68,0.1)'" onmouseout="this.style.background='transparent'">
+                  🗑️ Remover
+                </button>` : '<span style="font-size:0.72rem;color:var(--tx3);font-style:italic">conta atual</span>'}
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (err) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>Erro de conexão: ${err.message}</div>`;
+      }
+    }
+
+    async function toggleUserRole(userId, newRole) {
+      try {
+        const res  = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
+          method:  'PATCH',
+          headers: getAuthHeaders(),
+          body:    JSON.stringify({ role: newRole }),
+        });
+        const json = await res.json();
+        if (res.status === 401) { handle401(json); return; }
+        if (json.success) {
+          showToast(newRole === 'admin' ? '✅ Usuário promovido a Administrador.' : '✅ Usuário rebaixado para Usuário.', 'ok');
+          loadUsers();
+        } else {
+          showToast(`❌ ${json.error || 'Falha ao alterar perfil.'}`, 'err');
+        }
+      } catch (err) {
+        showToast(`❌ Erro: ${err.message}`, 'err');
+      }
+    }
+
+    async function deleteUser(userId, userName) {
+      openModal({
+        icon:         '⚠️',
+        title:        'Remover Usuário',
+        desc:         `Tem certeza que deseja remover o usuário "${userName}"? Esta ação não pode ser desfeita.`,
+        instanceName: '',
+        btnLabel:     'Remover',
+        btnClass:     'danger-delete',
+        onConfirm:    async () => {
+          const res  = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
+            method:  'DELETE',
+            headers: getAuthHeaders(),
+          });
+          const json = await res.json();
+          if (res.status === 401) { handle401(json); return; }
+          if (json.success) {
+            showToast('✅ Usuário removido com sucesso.', 'ok');
+            loadUsers();
+          } else {
+            showToast(`❌ ${json.error || 'Falha ao remover usuário.'}`, 'err');
+          }
+        },
+      });
+    }
+
+    document.getElementById('form-new-user')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      _nuAlert('', '');
+      const name     = document.getElementById('nu-name').value.trim();
+      const email    = document.getElementById('nu-email').value.trim();
+      const password = document.getElementById('nu-password').value;
+      const role     = document.getElementById('nu-role').value;
+
+      if (!name || !email || !password) {
+        _nuAlert('Preencha todos os campos.', 'err');
+        return;
+      }
+      if (password.length < 6) {
+        _nuAlert('A senha deve ter pelo menos 6 caracteres.', 'err');
+        return;
+      }
+
+      const btn = document.getElementById('btn-new-user');
+      btn.disabled = true;
+      btn.textContent = 'Criando...';
+      try {
+        const res  = await fetch('/api/users', {
+          method:  'POST',
+          headers: getAuthHeaders(),
+          body:    JSON.stringify({ name, email, password, role }),
+        });
+        const json = await res.json();
+        if (res.status === 401) { handle401(json); return; }
+        if (json.success) {
+          _nuAlert(`✅ Usuário "${name}" criado com sucesso.`, 'ok');
+          document.getElementById('form-new-user').reset();
+          loadUsers();
+        } else {
+          _nuAlert(json.error || 'Erro ao criar usuário.', 'err');
+        }
+      } catch (err) {
+        _nuAlert(`Erro de conexão: ${err.message}`, 'err');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '➕ Criar Usuário';
+      }
+    });
+
     /* ─── INIT ─── */
     initTheme();
     loadInstances();
     updateAdminConfigUI();
+    if (_isAdmin) loadUsers();
   </script>
 </body>
 </html>
