@@ -138,7 +138,7 @@ app.post('/api/admin/test-connection', async (req, res) => {
   const key     = (apiKey?.trim())      || process.env.GLOBAL_API_KEY    || '';
 
   if (!baseUrl) {
-    res.status(400).json({ success: false, error: 'URL da Evolution GO não informada.' });
+    res.status(400).json({ success: false, error: 'URL da API não informada.' });
     return;
   }
   if (!key) {
