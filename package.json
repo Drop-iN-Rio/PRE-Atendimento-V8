@@ -1,22 +1,20 @@
 {
-  "packageManager": "pnpm@10.26.1",
-  "name": "pre-atendimento-v7",
-  "private": "true",
+  "name": "pre-atendimento-v8",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
     "build": "echo 'Build not configured yet'"
   },
   "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
-    "nodemon": "^3.1.14",
-    "tsx": "^4.21.0",
-    "typescript": "^6.0.2"
+    "typescript": "^5.9.2",
+    "@types/node": "^22.0.0",
+    "@types/express": "^5.0.0"
   }
 }
