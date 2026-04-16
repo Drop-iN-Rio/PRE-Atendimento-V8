@@ -993,6 +993,7 @@
     }
     .conn-badge.connected    { background: #052e16; color: #4ade80; border: 1px solid #16a34a33; }
     .conn-badge.disconnected { background: #1e0a0a; color: #f87171; border: 1px solid #dc262633; }
+    .conn-badge.checking     { background: var(--surface); color: var(--tx4); border: 1px solid var(--border); letter-spacing: 0.1em; }
 
     /* ─── BOTÃO QR CREATE ─── */
     .btn-qr-create {
@@ -1823,6 +1824,7 @@
     /* Connection badges */
     [data-theme="light"] .conn-badge.connected    { background: #dcfce7; color: #15803d; border-color: #86efac; }
     [data-theme="light"] .conn-badge.disconnected { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+    [data-theme="light"] .conn-badge.checking     { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
 
     /* Botões QR (lista e painel) */
     [data-theme="light"] .btn-qr {
@@ -2334,11 +2336,7 @@
             </div>
             <div class="is-row">
               <span class="is-row-label">Status</span>
-              <span id="is-status">—</span>
-            </div>
-            <div class="is-row">
-              <span class="is-row-label">Conexão</span>
-              <span id="is-connection">—</span>
+              <span id="is-connection"><span class="conn-badge checking">···</span></span>
             </div>
             <div class="is-row">
               <span class="is-row-label">Criada em</span>
@@ -2987,22 +2985,12 @@
 
         _instances = json.data;
 
-        const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo', connected:'Conectado' };
-        const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive', connected:'badge-active' };
-
         el.innerHTML = json.data.map(inst => {
-          const sCls  = badgeClass[inst.status] || 'badge-inactive';
-          const sLbl  = statusLabel[inst.status] || inst.status;
           const date  = new Date(inst.created_at).toLocaleString('pt-BR', {
             day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit',
           });
-
-          /* Status de conexão baseado exclusivamente em inst.status === 'connected' */
-          const connected  = inst.status === 'connected';
-          const connCls    = connected ? 'connected' : 'disconnected';
-          const connLbl    = connected ? '● Conectada' : '○ Desconectada';
-
           const safeN = inst.instance_name.replace(/'/g, "\\'");
+          const bid   = `connbadge-${inst.instance_name}`;
 
           return `
             <div class="instance-item" id="inst-${CSS.escape(inst.instance_name)}">
@@ -3013,8 +3001,7 @@
                 </div>
                 <div class="inst-header-right">
                   <div class="inst-badges">
-                    <span class="badge ${sCls}">${sLbl}</span>
-                    <span class="conn-badge ${connCls}">${connLbl}</span>
+                    <span class="conn-badge checking" id="${bid}">···</span>
                   </div>
                   <button class="btn-gear" onclick="openInstanceSettings('${safeN}')"
                     title="Configurações da instância" aria-label="Configurações">⚙</button>
@@ -3022,8 +3009,48 @@
               </div>
             </div>`;
         }).join('');
+
+        /* Buscar status real via API para cada instância (sem cache, sem fallback) */
+        json.data.forEach(inst => _fetchLiveStatus(inst.instance_name));
+
       } catch {
         el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>Erro ao carregar.</div>`;
+      }
+    }
+
+    /* Busca o status real da instância na API e atualiza todos os badges da tela */
+    async function _fetchLiveStatus(name) {
+      try {
+        const r = await fetch(`/api/instances/${encodeURIComponent(name)}/status`);
+        const j = await r.json();
+        _applyStatusBadge(name, j.connected === true);
+      } catch {
+        _applyStatusBadge(name, false);
+      }
+    }
+
+    /* Atualiza badge na lista e, se o painel de configurações estiver aberto para este nome, também lá */
+    function _applyStatusBadge(name, connected) {
+      /* Badge na lista */
+      const listBadge = document.getElementById(`connbadge-${name}`);
+      if (listBadge) {
+        listBadge.className = `conn-badge ${connected ? 'connected' : 'disconnected'}`;
+        listBadge.textContent = connected ? '● Conectado' : '○ Desconectado';
+      }
+      /* Badge no painel de configurações (se estiver aberto para esta instância) */
+      const topbar = document.getElementById('is-topbar-name');
+      if (topbar && topbar.textContent === name) {
+        const connEl = document.getElementById('is-connection');
+        if (connEl) {
+          connEl.innerHTML = connected
+            ? '<span class="conn-badge connected">● Conectado</span>'
+            : '<span class="conn-badge disconnected">○ Desconectado</span>';
+        }
+        const disconnBtn = document.getElementById('is-btn-disconnect');
+        if (disconnBtn) {
+          disconnBtn.disabled = !connected;
+          disconnBtn.title    = connected ? '' : 'Instância não conectada';
+        }
       }
     }
 
@@ -3037,18 +3064,8 @@
       document.getElementById('is-topbar-name').textContent = name;
       document.getElementById('is-name').textContent        = name;
 
-      /* Status badge */
-      const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo', connected:'Conectado' };
-      const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive', connected:'badge-active' };
-      const sCls = badgeClass[inst.status] || 'badge-inactive';
-      const sLbl = statusLabel[inst.status] || inst.status;
-      document.getElementById('is-status').innerHTML = `<span class="badge ${sCls}">${sLbl}</span>`;
-
-      /* Connection badge — baseado exclusivamente em inst.status === 'connected' */
-      const connected = inst.status === 'connected';
-      document.getElementById('is-connection').innerHTML = connected
-        ? '<span class="conn-badge connected">● Conectada</span>'
-        : '<span class="conn-badge disconnected">○ Desconectada</span>';
+      /* Status — mostra "verificando" e busca via API */
+      document.getElementById('is-connection').innerHTML = '<span class="conn-badge checking">···</span>';
 
       /* Created date */
       const date = inst.created_at
@@ -3056,13 +3073,16 @@
         : '—';
       document.getElementById('is-created').textContent = date;
 
-      /* Wire buttons */
+      /* Wire buttons — disconnect começa desabilitado até a API responder */
       document.getElementById('is-btn-qr').onclick        = () => openQrModal(name);
       document.getElementById('is-btn-delete').onclick    = () => confirmDelete(name);
       const disconnBtn = document.getElementById('is-btn-disconnect');
-      disconnBtn.disabled = !connected;
-      disconnBtn.title    = connected ? '' : 'Já desconectada';
+      disconnBtn.disabled = true;
+      disconnBtn.title    = 'Verificando conexão…';
       disconnBtn.onclick  = () => confirmDisconnect(name);
+
+      /* Buscar status real via API (sem cache) */
+      _fetchLiveStatus(name);
 
       /* Navigate */
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -3152,10 +3172,11 @@
         const r = await fetch(`/api/instances/${encodeURIComponent(name)}/status`);
         const j = await r.json();
         if (j.connected === true) {
-          /* WhatsApp conectou! */
+          /* WhatsApp conectou! — atualizar badge imediatamente */
           clearInterval(_qrTimer);
           clearTimeout(_qrPollingTimer);
           clearTimeout(_connPollTimer);
+          _applyStatusBadge(name, true);
           _setQrStatus('✅ WhatsApp conectado com sucesso!', '#4ade80');
           _setQrImg(`<div style="width:100%;height:100%;display:flex;flex-direction:column;
             align-items:center;justify-content:center;background:#0f172a;border-radius:10px;gap:0.75rem">
