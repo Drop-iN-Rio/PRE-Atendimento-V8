@@ -99,10 +99,11 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/instances', async (req, res) => {
-  const { instanceName, evolutionUrl, apiKey } = req.body as {
+  const { instanceName, evolutionUrl, apiKey, token } = req.body as {
     instanceName?: string;
     evolutionUrl?: string;
     apiKey?: string;
+    token?: string;
   };
 
   if (!instanceName || typeof instanceName !== 'string' || instanceName.trim() === '') {
@@ -123,6 +124,7 @@ app.post('/api/instances', async (req, res) => {
       instanceName.trim(),
       evolutionUrl.trim(),
       apiKey.trim(),
+      token?.trim(),
     );
     if (result.success) {
       res.status(201).json(result);

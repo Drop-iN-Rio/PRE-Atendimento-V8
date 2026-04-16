@@ -1,5 +1,6 @@
 interface CreateInstancePayload {
   instanceName: string;
+  token?: string;
 }
 
 interface EvolutionResponse {
@@ -12,8 +13,10 @@ export async function createInstance(
   instanceName: string,
   evolutionUrl: string,
   apiKey: string,
+  token?: string,
 ): Promise<EvolutionResponse> {
   const payload: CreateInstancePayload = { instanceName };
+  if (token) payload.token = token;
 
   const baseUrl = evolutionUrl.replace(/\/$/, '');
 

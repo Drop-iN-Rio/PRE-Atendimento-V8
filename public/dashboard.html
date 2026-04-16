@@ -571,6 +571,17 @@
 
     .field-wrap input { padding-right: 2.2rem; }
 
+    /* ─── DOIS CAMPOS LADO A LADO ─── */
+    .fields-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    @media (max-width: 420px) {
+      .fields-row { grid-template-columns: 1fr; }
+    }
+
     /* ─── TOKEN RESULT BLOCK ─── */
     .token-block {
       display: none;
@@ -895,13 +906,26 @@
               <div class="form-section-line"></div>
             </div>
 
-            <label for="instanceName">Nome da Instância <span style="color:#ef4444">*</span></label>
-            <div class="field-wrap">
-              <input type="text" id="instanceName"
-                placeholder="ex: minha-loja-01"
-                autocomplete="off" autocorrect="off"
-                autocapitalize="none" spellcheck="false" required />
-              <span class="field-dot" id="dot-name"></span>
+            <div class="fields-row">
+              <div>
+                <label for="instanceName">Nome da Instância <span style="color:#ef4444">*</span></label>
+                <div class="field-wrap">
+                  <input type="text" id="instanceName"
+                    placeholder="ex: minha-loja-01"
+                    autocomplete="off" autocorrect="off"
+                    autocapitalize="none" spellcheck="false" required />
+                  <span class="field-dot" id="dot-name"></span>
+                </div>
+              </div>
+              <div>
+                <label for="inst-token">Token <span style="color:#64748b;font-weight:400;text-transform:none;letter-spacing:0">(opcional)</span></label>
+                <div class="field-wrap">
+                  <input type="text" id="inst-token"
+                    placeholder="token personalizado"
+                    autocomplete="off" autocorrect="off"
+                    autocapitalize="none" spellcheck="false" />
+                </div>
+              </div>
             </div>
 
             <button type="submit" class="btn" id="btn-instance" disabled>
@@ -1195,6 +1219,7 @@
       const evolutionUrl = document.getElementById('inst-url').value.trim();
       const apiKey       = document.getElementById('inst-key').value.trim();
       const instanceName = document.getElementById('instanceName').value.trim();
+      const token        = document.getElementById('inst-token').value.trim();
       const btn          = document.getElementById('btn-instance');
       const alertEl      = document.getElementById('result-instance');
 
@@ -1219,7 +1244,7 @@
         const res  = await fetch('/api/instances', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instanceName, evolutionUrl: cleanUrl, apiKey }),
+          body: JSON.stringify({ instanceName, evolutionUrl: cleanUrl, apiKey, token: token || undefined }),
         });
         const json = await res.json();
 

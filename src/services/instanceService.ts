@@ -5,6 +5,7 @@ export async function createInstanceAndPersist(
   instanceName: string,
   evolutionUrl: string,
   apiKey: string,
+  token?: string,
 ) {
   const { data: existing } = await supabaseAdmin
     .from('instances')
@@ -29,7 +30,7 @@ export async function createInstanceAndPersist(
     return { success: false, error: insertError?.message || 'Erro ao salvar instância.' };
   }
 
-  const apiResult = await callEvolutionApi(instanceName, evolutionUrl, apiKey);
+  const apiResult = await callEvolutionApi(instanceName, evolutionUrl, apiKey, token);
 
   const newStatus = apiResult.success ? 'active' : 'error';
 
