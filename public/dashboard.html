@@ -785,6 +785,74 @@
 
     .token-block.warn .token-block-title { color: #fbbf24; }
 
+    /* ── Resposta bruta da API ── */
+    .raw-resp-details {
+      background: #020b14;
+      border: 1px solid #1e3a5f;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .raw-resp-details summary {
+      padding: 0.55rem 0.8rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      user-select: none;
+      letter-spacing: 0.04em;
+    }
+
+    .raw-resp-details summary:hover { color: #94a3b8; }
+
+    .raw-resp-pre {
+      margin: 0;
+      padding: 0.7rem 0.8rem;
+      font-size: 0.68rem;
+      line-height: 1.55;
+      color: #7dd3fc;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border-top: 1px solid #1e293b;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    /* ── Resposta bruta no modal QR ── */
+    .qr-raw-details {
+      margin-top: 0.5rem;
+      background: #020b14;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .qr-raw-details summary {
+      padding: 0.4rem 0.7rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .qr-raw-details summary:hover { color: #64748b; }
+
+    .qr-raw-pre {
+      margin: 0;
+      padding: 0.5rem 0.7rem;
+      font-size: 0.67rem;
+      line-height: 1.5;
+      color: #7dd3fc;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border-top: 1px solid #1e293b;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
     .token-block-title {
       font-size: 0.72rem;
       font-weight: 700;
@@ -1614,6 +1682,12 @@
                 📷 Pegar QRCode
               </button>
             </div>
+
+            <!-- Resposta completa da API -->
+            <details class="raw-resp-details" id="tk-raw-details" style="display:none;margin-top:0.9rem">
+              <summary>🔍 Resposta completa da API</summary>
+              <pre class="raw-resp-pre" id="tk-raw-pre"></pre>
+            </details>
           </div>
 
           <div class="alert" id="result-instance"></div>
@@ -1804,6 +1878,12 @@
 
       <div class="qr-status" id="qr-status">Carregando…</div>
       <div class="qr-timer"  id="qr-timer"></div>
+
+      <!-- Resposta bruta da API -->
+      <details class="qr-raw-details" id="qr-raw-details" style="display:none">
+        <summary>🔍 Resposta completa da API</summary>
+        <pre class="qr-raw-pre" id="qr-raw-pre"></pre>
+      </details>
 
       <div class="qr-actions">
         <button class="qr-btn-refresh" id="qr-btn-refresh" onclick="fetchQr(_qrCurrentName)">↻ Atualizar</button>
@@ -2080,89 +2160,95 @@
         console.groupEnd();
 
         if (json.success) {
-          /* ── SUCESSO ── */
-          const data    = json.data || {};
-          const apiResp = data.api_response || {};
+          /* ── SUCESSO ──
+             O backend retorna:
+             { success, data: { instance_name, instance_token,
+               create_response, connect_response } }
+          */
+          const data            = json.data || {};
+          const createResp      = data.create_response || {};
+          const connectResp     = data.connect_response || null;
 
-          /* Formato confirmado: { message:"success", data:{ name, token, connected, createdAt, ... } } */
-          const apiData = apiResp.data || {};
+          /* Extrair campos do create_response:
+             Evolution GO pode retornar { data: { name, token, connected, createdAt } }
+             ou { instance: { instanceName } } + { qrcode: { base64 } }
+          */
+          const inner = createResp.data || createResp.instance || createResp || {};
 
           document.getElementById('tk-name').textContent =
-            apiData.name || data.instance_name || instanceName;
+            inner.name || inner.instanceName || data.instance_name || instanceName;
 
           document.getElementById('tk-token').textContent =
-            apiData.token || '(não retornado pela API)';
+            data.instance_token ||
+            inner.token || inner.apikey ||
+            (createResp.hash?.token) || (createResp.hash?.apikey) ||
+            '(não retornado pela API)';
 
-          const connEl = document.getElementById('tk-connected');
-          const isConnected = apiData.connected === true;
+          const connEl      = document.getElementById('tk-connected');
+          const isConnected = inner.connected === true || connectResp !== null;
           connEl.textContent = isConnected ? 'Conectado' : 'Desconectado';
-          connEl.className = 'token-value tk-conn-' + (isConnected ? 'yes' : 'no');
+          connEl.className   = 'token-value tk-conn-' + (isConnected ? 'yes' : 'no');
 
           const createdEl = document.getElementById('tk-created');
-          if (apiData.createdAt) {
+          const createdAt = inner.createdAt || inner.created_at || null;
+          if (createdAt) {
             try {
-              createdEl.textContent = new Date(apiData.createdAt).toLocaleString('pt-BR', {
+              createdEl.textContent = new Date(createdAt).toLocaleString('pt-BR', {
                 day:'2-digit', month:'2-digit', year:'2-digit',
                 hour:'2-digit', minute:'2-digit', second:'2-digit',
               });
-            } catch { createdEl.textContent = apiData.createdAt; }
+            } catch { createdEl.textContent = createdAt; }
           } else {
             createdEl.textContent = '—';
           }
 
           /* Guardar nome para o botão "Pegar QRCode" */
-          _lastCreatedName = apiData.name || data.instance_name || instanceName;
+          _lastCreatedName = inner.name || inner.instanceName || data.instance_name || instanceName;
+
+          /* Mostrar resposta completa da API */
+          const rawEl = document.getElementById('tk-raw-details');
+          const rawPre = document.getElementById('tk-raw-pre');
+          if (rawEl && rawPre) {
+            rawEl.style.display = '';
+            rawPre.textContent = JSON.stringify(
+              { create: createResp, connect: connectResp }, null, 2
+            );
+          }
 
           const tb = document.getElementById('token-block');
           tb.classList.remove('warn');
           tb.classList.add('visible');
-          tb.querySelector('.token-block-title').textContent = '✅ Instância criada com sucesso';
+          tb.querySelector('.token-block-title').textContent = '✅ Instância criada e conectada';
           document.getElementById('instanceName').value = '';
           onInstFieldInput();
-          document.getElementById('token-block').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          tb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
           /* Abrir QR Code automaticamente após o scroll */
           setTimeout(() => openQrModal(_lastCreatedName), 700);
 
         } else {
-          /* ── ERRO ── verificar se a API retornou dados da instância mesmo assim */
-          const data    = json.data   || {};
-          const apiResp = data.api_response || data || {};
+          /* ── ERRO ── mostrar resposta completa da API */
+          const data = json.data || {};
 
-          /* Campos retornados pela Evolution GO em caso de 400 com instância registrada */
-          const apiId     = apiResp.id   || data.id   || null;
-          const apiName   = apiResp.instance_name || apiResp.instanceName || data.instance_name || null;
-          const apiStatus = apiResp.status || data.status || null;
+          alertEl.className = 'alert error';
+          alertEl.innerHTML =
+            `❌ <strong>${json.error || 'Erro desconhecido'}</strong>` +
+            `<pre>${JSON.stringify(json, null, 2)}</pre>`;
 
-          if (apiId || apiName) {
-            /* Há dados de instância — exibir bloco em modo aviso */
-            document.getElementById('tk-name').textContent  = apiName  || instanceName;
-            document.getElementById('tk-token').textContent =
-              apiResp.hash?.apikey || apiResp.token || apiResp.apikey || '(não retornado)';
-            const connElW = document.getElementById('tk-connected');
-            connElW.textContent = apiStatus || 'error';
-            connElW.className   = 'token-value tk-conn-no';
-            document.getElementById('tk-created').textContent = '—';
-
+          /* Mostrar raw também no token-block se houver dados */
+          const createResp = data.create_response || data;
+          if (createResp && Object.keys(createResp).length) {
+            const rawEl  = document.getElementById('tk-raw-details');
+            const rawPre = document.getElementById('tk-raw-pre');
+            if (rawEl && rawPre) {
+              rawEl.style.display = '';
+              rawPre.textContent  = JSON.stringify(data, null, 2);
+            }
             const tb = document.getElementById('token-block');
             tb.classList.add('visible', 'warn');
-            tb.querySelector('.token-block-title').textContent = '⚠️ Registrada com erro na API';
-
-            alertEl.className = 'alert error';
-            alertEl.innerHTML =
-              `⚠️ <strong>Instância registrada com erro na API.</strong><br>` +
-              `<pre>` +
-              (apiId     ? `ID      : ${apiId}\n`     : '') +
-              (apiName   ? `Nome    : ${apiName}\n`   : '') +
-              (apiStatus ? `Status  : ${apiStatus}\n` : '') +
-              `Erro    : ${json.error || 'desconhecido'}` +
-              `</pre>`;
-          } else {
-            alertEl.className = 'alert error';
-            alertEl.innerHTML =
-              `❌ <strong>${json.error || 'Erro desconhecido'}</strong>` +
-              `<pre>${JSON.stringify(json, null, 2)}</pre>`;
+            tb.querySelector('.token-block-title').textContent = '⚠️ Erro na API';
           }
+
           alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       } catch (err) {
@@ -2436,13 +2522,6 @@
     let _qrCurrentName = null;
     let _qrCountdown   = 20;
 
-    function getApiOverrides() {
-      try {
-        const cfg = JSON.parse(localStorage.getItem('pa_admin_config') || '{}');
-        return { evolutionUrl: cfg.url || '', apiKey: cfg.apiKey || '' };
-      } catch { return {}; }
-    }
-
     function openQrModal(name) {
       _qrCurrentName = name;
       document.getElementById('qr-box-name').textContent = name;
@@ -2500,6 +2579,7 @@
       _qrTimer = null;
       document.getElementById('qr-timer').textContent = '';
       document.getElementById('qr-btn-refresh').disabled = true;
+      document.getElementById('qr-raw-details').style.display = 'none';
       _setQrStatus('⏳ Buscando QR Code…');
       _setQrImg(_qrPlaceholder('⏳', '#475569'));
 
@@ -2509,48 +2589,64 @@
         if (overrides.evolutionUrl) params.set('evolutionUrl', overrides.evolutionUrl);
         if (overrides.apiKey)       params.set('apiKey', overrides.apiKey);
 
+        /* GET /instance/get-qr-code?instanceName={name} — endpoint único oficial */
         const url = `/api/instances/${encodeURIComponent(name)}/qrcode${params.size ? '?' + params.toString() : ''}`;
         const res  = await fetch(url);
         const json = await res.json();
 
         /* Log completo no console para diagnóstico */
         console.group('[QRCode] Resposta do servidor');
-        console.log('Instância    :', name);
-        console.log('URL chamada  :', json.urlCalled || url);
-        console.log('Tentativas   :', json.attemptLog || []);
-        console.log('HTTP status  :', res.status);
-        console.log('json.success :', json.success);
-        console.log('json.error   :', json.error);
-        console.log('json.data    :', json.data);
+        console.log('Instância   :', name);
+        console.log('URL chamada :', json.urlCalled || url);
+        console.log('HTTP status :', res.status);
+        console.log('success     :', json.success);
+        console.log('error       :', json.error);
+        console.log('data        :', json.data);
         console.groupEnd();
 
+        /* Exibir resposta completa da API sempre */
+        const rawDetails = document.getElementById('qr-raw-details');
+        const rawPre     = document.getElementById('qr-raw-pre');
+        if (rawDetails && rawPre) {
+          rawDetails.style.display = '';
+          rawPre.textContent = JSON.stringify(json, null, 2);
+        }
+
         if (!res.ok || !json.success) {
-          const errMsg   = json.error || `Erro HTTP ${res.status}`;
-          const urlUsed  = json.urlCalled  ? `<div style="font-size:0.65rem;color:#64748b;margin-top:0.3rem;word-break:break-all">URL: ${json.urlCalled}</div>` : '';
-          const attempts = json.attemptLog?.length > 1
-            ? `<div style="font-size:0.65rem;color:#475569;margin-top:0.2rem">Tentados: ${json.attemptLog.length} endpoints</div>` : '';
+          const errMsg = json.error || `Erro HTTP ${res.status}`;
+          const urlInfo = json.urlCalled
+            ? `\nURL: ${json.urlCalled}` : '';
           _setQrStatus(`❌ ${errMsg}`, '#f87171');
           _setQrImg(`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;
-            justify-content:center;background:#0f172a;border-radius:10px;gap:0.3rem;padding:0.75rem">
+            justify-content:center;background:#0f172a;border-radius:10px;gap:0.4rem;padding:0.75rem">
             <span style="font-size:2rem">❌</span>
-            <span style="font-size:0.72rem;color:#f87171;text-align:center">${errMsg}</span>
-            ${urlUsed}${attempts}
+            <span style="font-size:0.72rem;color:#f87171;text-align:center;word-break:break-all">${errMsg}</span>
+            <span style="font-size:0.65rem;color:#475569;word-break:break-all">${urlInfo}</span>
           </div>`);
           return;
         }
 
-        /* Normalizar resposta: diferentes shapes da Evolution API v2 */
+        /* Normalizar resposta Evolution GO:
+           Formatos possíveis:
+           { base64, code }                    — direto
+           { qrcode: { base64, code } }        — encapsulado
+           { data: { base64, code } }          — em data
+           { instance: {...}, qrcode: {...} }  — resposta do /create
+        */
         const d      = json.data || {};
-        /* v2.0: { base64, code, count }  /  wrapped: { qrcode: { base64, code } }  / nested data */
-        const base64 = d?.base64 || d?.qrcode?.base64 || d?.data?.base64 || null;
-        const code   = d?.code   || d?.qrcode?.code   || d?.data?.code   || null;
+        const base64 =
+          d?.base64 || d?.qrcode?.base64 || d?.data?.base64 || null;
+        const code =
+          d?.code   || d?.qrcode?.code   || d?.data?.code   || null;
 
         if (base64) {
-          _setQrImg(`<img src="${base64}" alt="QR Code" />`);
+          /* Garante que a string é uma data URL válida */
+          const src = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+          _setQrImg(`<img src="${src}" alt="QR Code" style="width:100%;height:100%;object-fit:contain;border-radius:8px" />`);
           _setQrStatus('📱 Escaneie com o WhatsApp', '#4ade80');
           _startAutoRefresh(name);
         } else if (code) {
-          /* Pairing code em texto */
+          /* Código de pareamento em texto */
           _setQrImg(`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
             background:#0f172a;border-radius:10px;">
             <div style="font-family:'Courier New',monospace;font-size:1.5rem;color:#818cf8;
@@ -2559,7 +2655,7 @@
           _setQrStatus('📱 Digite o código no WhatsApp', '#4ade80');
           _startAutoRefresh(name);
         } else {
-          _setQrStatus('⚠️ QR Code indisponível. Tente atualizar.', '#fbbf24');
+          _setQrStatus('⚠️ QR Code não disponível na resposta. Tente atualizar.', '#fbbf24');
           _setQrImg(_qrPlaceholder('❓', '#fbbf24'));
         }
       } catch (err) {

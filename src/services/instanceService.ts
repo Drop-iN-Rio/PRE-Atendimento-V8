@@ -1,16 +1,46 @@
 import { supabaseAdmin } from './supabase.js';
 import {
-  createInstance as callEvolutionApi,
+  createInstance  as callCreate,
+  connectInstance as callConnect,
   disconnectInstance as callDisconnect,
-  deleteInstance    as callDelete,
+  deleteInstance  as callDelete,
 } from './evolutionGo.js';
 
+/* Extrai o token da instância da resposta do /instance/create.
+   A Evolution GO pode retornar em diferentes formas:
+   { data: { token } } | { hash: { apikey } } | { token } | { apikey }
+*/
+function extractInstanceToken(data: unknown): string {
+  if (!data || typeof data !== 'object') return '';
+  const d = data as Record<string, unknown>;
+
+  /* Formato: { data: { token, name, ... } } */
+  const inner = d.data as Record<string, unknown> | undefined;
+  if (inner?.token)  return String(inner.token);
+  if (inner?.apikey) return String(inner.apikey);
+
+  /* Formato: { hash: { token, apikey } } */
+  const hash = d.hash as Record<string, unknown> | undefined;
+  if (hash?.token)  return String(hash.token);
+  if (hash?.apikey) return String(hash.apikey);
+
+  /* Formato direto */
+  if (d.token)  return String(d.token);
+  if (d.apikey) return String(d.apikey);
+
+  return '';
+}
+
+/* ── Criar e persistir instância ──
+   Fluxo: criar → conectar → salvar no banco → retornar
+*/
 export async function createInstanceAndPersist(
   instanceName: string,
-  token?: string,
+  token?:       string,
   overrideUrl?: string,
   overrideKey?: string,
 ) {
+  /* 1. Verificar duplicata */
   const { data: existing } = await supabaseAdmin
     .from('instances')
     .select('id, instance_name, status')
@@ -24,6 +54,7 @@ export async function createInstanceAndPersist(
     };
   }
 
+  /* 2. Inserir no banco com status "creating" */
   const { data: record, error: insertError } = await supabaseAdmin
     .from('instances')
     .insert({ instance_name: instanceName, status: 'creating' })
@@ -34,35 +65,60 @@ export async function createInstanceAndPersist(
     return { success: false, error: insertError?.message || 'Erro ao salvar instância.' };
   }
 
-  const apiResult = await callEvolutionApi(instanceName, token, overrideUrl, overrideKey);
+  /* 3. POST /instance/create — com instanceName e qrcode:true */
+  console.log('[instanceService] ▶ Passo 1/2: criar instância na API');
+  const createResult = await callCreate(instanceName, token, overrideUrl, overrideKey);
 
-  const newStatus = apiResult.success ? 'active' : 'error';
+  /* 4. POST /instance/connect — com token da própria instância */
+  let connectResult = null;
+  const instanceToken = extractInstanceToken(createResult.data);
+
+  if (createResult.success && instanceToken) {
+    console.log('[instanceService] ▶ Passo 2/2: conectar instância (token da instância)');
+    connectResult = await callConnect(instanceName, instanceToken, overrideUrl);
+  } else if (createResult.success && !instanceToken) {
+    console.warn('[instanceService] ⚠️  Token da instância não encontrado na resposta do /create — pulando connect');
+  }
+
+  /* 5. Atualizar status no banco */
+  const newStatus = createResult.success ? 'active' : 'error';
 
   await supabaseAdmin
     .from('instances')
-    .update({ status: newStatus, metadata: apiResult.data as object ?? null })
+    .update({
+      status:   newStatus,
+      metadata: {
+        create:  createResult.data  ?? null,
+        connect: connectResult?.data ?? null,
+      } as object,
+    })
     .eq('id', record.id);
 
+  /* 6. Log de evento */
   await supabaseAdmin.from('instance_logs').insert({
     instance_id: record.id,
-    event: apiResult.success ? 'created' : 'creation_failed',
-    payload: apiResult.success
-      ? (apiResult.data as object)
-      : { error: apiResult.error, apiData: apiResult.data },
+    event:   createResult.success ? 'created' : 'creation_failed',
+    payload: {
+      create:  createResult.success  ? createResult.data  : { error: createResult.error,  data: createResult.data },
+      connect: connectResult         ? { success: connectResult.success, data: connectResult.data, error: connectResult.error } : null,
+    },
   });
 
   return {
-    success: apiResult.success,
+    success:     createResult.success,
     data: {
       ...record,
-      status: newStatus,
-      api_response: apiResult.data,
+      status:         newStatus,
+      instance_token: instanceToken || null,
+      create_response:  createResult.data,
+      connect_response: connectResult?.data ?? null,
     },
-    error: apiResult.error,
-    httpStatus: apiResult.httpStatus,
+    error:      createResult.error,
+    httpStatus: createResult.httpStatus,
   };
 }
 
+/* ── Listar instâncias ── */
 export async function listInstances() {
   const { data, error } = await supabaseAdmin
     .from('instances')
@@ -73,6 +129,7 @@ export async function listInstances() {
   return { success: true, data };
 }
 
+/* ── Desconectar (POST /instance/disconnect) ── */
 export async function disconnectInstanceService(
   instanceName: string,
   overrideUrl?: string,
@@ -86,18 +143,22 @@ export async function disconnectInstanceService(
       .update({ status: 'inactive' })
       .eq('instance_name', instanceName);
 
-    await supabaseAdmin.from('instance_logs').insert({
-      instance_id: (await supabaseAdmin
-        .from('instances').select('id').eq('instance_name', instanceName).maybeSingle()
-      ).data?.id,
-      event: 'disconnected',
-      payload: result.data as object ?? {},
-    });
+    const { data: inst } = await supabaseAdmin
+      .from('instances').select('id').eq('instance_name', instanceName).maybeSingle();
+
+    if (inst?.id) {
+      await supabaseAdmin.from('instance_logs').insert({
+        instance_id: inst.id,
+        event:   'disconnected',
+        payload: result.data as object ?? {},
+      });
+    }
   }
 
-  return { success: result.success, error: result.error };
+  return { success: result.success, data: result.data, error: result.error };
 }
 
+/* ── Deletar (DELETE /instance/delete) ── */
 export async function deleteInstanceService(
   instanceName: string,
   overrideUrl?: string,
@@ -106,18 +167,15 @@ export async function deleteInstanceService(
   const result = await callDelete(instanceName, overrideUrl, overrideKey);
 
   if (result.success) {
-    await supabaseAdmin
-      .from('instance_logs')
-      .delete()
-      .eq('instance_id', (await supabaseAdmin
-        .from('instances').select('id').eq('instance_name', instanceName).maybeSingle()
-      ).data?.id);
+    const { data: inst } = await supabaseAdmin
+      .from('instances').select('id').eq('instance_name', instanceName).maybeSingle();
 
-    await supabaseAdmin
-      .from('instances')
-      .delete()
-      .eq('instance_name', instanceName);
+    if (inst?.id) {
+      await supabaseAdmin.from('instance_logs').delete().eq('instance_id', inst.id);
+    }
+
+    await supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
   }
 
-  return { success: result.success, error: result.error };
+  return { success: result.success, data: result.data, error: result.error };
 }
