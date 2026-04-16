@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#050714" />
   <title>PRE-Atendimento — Entrar</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -456,19 +454,15 @@
   </div>
 
   <script>
-    let supabase = null;
-    let configReady = false;
+    let serverReady = false;
 
     function showConfigWarning(missing) {
       const box  = document.getElementById('config-warning');
       const list = document.getElementById('config-warning-vars');
-
       list.innerHTML = missing
         .map(v => `<span class="config-var-tag">✗ ${v}</span>`)
         .join('');
-
       box.classList.add('visible');
-
       document.getElementById('btn-login').disabled    = true;
       document.getElementById('btn-register').disabled = true;
     }
@@ -480,14 +474,11 @@
       }
       try {
         const cfg = await fetch('/api/config').then(r => r.json());
-
         if (!cfg.ready) {
           showConfigWarning(cfg.missing || ['Configuração desconhecida']);
           return;
         }
-
-        configReady = true;
-        supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+        serverReady = true;
       } catch (err) {
         showAlert('error', 'Erro ao conectar com o servidor. Tente novamente.');
       }
@@ -537,11 +528,6 @@
       e.preventDefault();
       hideAlert();
 
-      if (!configReady || !supabase) {
-        showAlert('error', 'Configuração do Supabase incompleta. Login indisponível.');
-        return;
-      }
-
       const email    = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
 
@@ -552,38 +538,23 @@
 
       setLoading('btn-login', true, 'Entrando...');
       try {
-        const { data: users, error } = await supabase
-          .from('users')
-          .select('id, name, email, password_hash, role, active')
-          .eq('email', email)
-          .limit(1);
+        const res  = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
 
-        if (error) throw new Error(error.message);
-        if (!users?.length) {
-          showAlert('error', 'E-mail ou senha incorretos.');
+        if (!data.success) {
+          showAlert('error', data.error || 'Erro ao fazer login.');
           return;
         }
 
-        const user = users[0];
-        if (!user.active) {
-          showAlert('error', 'Conta desativada. Fale com o administrador.');
-          return;
-        }
-
-        const match = await bcrypt.compare(password, user.password_hash);
-        if (!match) {
-          showAlert('error', 'E-mail ou senha incorretos.');
-          return;
-        }
-
-        localStorage.setItem('pa_session', JSON.stringify({
-          id: user.id, name: user.name, email: user.email, role: user.role,
-        }));
-
-        showAlert('success', `Bem-vindo, ${user.name}! Redirecionando...`);
+        localStorage.setItem('pa_session', JSON.stringify(data.user));
+        showAlert('success', `Bem-vindo, ${data.user.name}! Redirecionando...`);
         setTimeout(() => { window.location.href = '/dashboard.html'; }, 900);
       } catch (err) {
-        showAlert('error', err.message || 'Erro ao fazer login.');
+        showAlert('error', 'Erro de conexão. Tente novamente.');
       } finally {
         setLoading('btn-login', false, 'Entrar');
       }
@@ -593,11 +564,6 @@
     document.getElementById('form-register').addEventListener('submit', async (e) => {
       e.preventDefault();
       hideAlert();
-
-      if (!configReady || !supabase) {
-        showAlert('error', 'Configuração do Supabase incompleta. Cadastro indisponível.');
-        return;
-      }
 
       const name     = document.getElementById('reg-name').value.trim();
       const email    = document.getElementById('reg-email').value.trim();
@@ -620,29 +586,23 @@
 
       setLoading('btn-register', true, 'Criando conta...');
       try {
-        const { data: existing } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', email)
-          .limit(1);
+        const res  = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, role }),
+        });
+        const data = await res.json();
 
-        if (existing?.length) {
-          showAlert('error', 'Já existe uma conta com este e-mail.');
+        if (!data.success) {
+          showAlert('error', data.error || 'Erro ao criar conta.');
           return;
         }
-
-        const password_hash = await bcrypt.hash(password, 10);
-        const { error } = await supabase
-          .from('users')
-          .insert({ name, email, password_hash, role, active: true });
-
-        if (error) throw new Error(error.message);
 
         showAlert('success', 'Conta criada com sucesso! Faça login para continuar.');
         document.getElementById('form-register').reset();
         setTimeout(() => switchTab('login'), 2000);
       } catch (err) {
-        showAlert('error', err.message || 'Erro ao criar conta.');
+        showAlert('error', 'Erro de conexão. Tente novamente.');
       } finally {
         setLoading('btn-register', false, 'Criar conta');
       }

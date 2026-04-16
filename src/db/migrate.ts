@@ -61,6 +61,22 @@ const SQL_MIGRATIONS: { name: string; sql: string }[] = [
     `,
   },
   {
+    name: '005b_create_users_table',
+    sql: `
+      CREATE TABLE IF NOT EXISTS public.users (
+        id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name          TEXT NOT NULL,
+        email         TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        role          TEXT NOT NULL DEFAULT 'user',
+        active        BOOLEAN NOT NULL DEFAULT true,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_users_email ON public.users (email);
+    `,
+  },
+  {
     name: '005_enable_rls',
     sql: `
       ALTER TABLE public.instances ENABLE ROW LEVEL SECURITY;

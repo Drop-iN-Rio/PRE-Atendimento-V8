@@ -61,3 +61,4 @@ VITE_API_URL = "/api"
 
 [nix]
 packages = ["nedit"]
+channel = "stable-25_05"

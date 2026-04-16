@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { runMigrations } from './db/migrate.js';
 import { createInstanceAndPersist, listInstances } from './services/instanceService.js';
+import { loginUser, registerUser } from './services/authService.js';
 
 dotenv.config();
 
@@ -46,6 +47,42 @@ app.get('/health', (_req, res) => {
     version: '1.0.0',
     status: 'running',
   });
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body as { email?: string; password?: string };
+  if (!email || !password) {
+    res.status(400).json({ success: false, error: 'E-mail e senha são obrigatórios.' });
+    return;
+  }
+  try {
+    const result = await loginUser(email, password);
+    res.status(result.success ? 200 : 401).json(result);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro interno';
+    res.status(500).json({ success: false, error: message });
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  const { name, email, password, role } = req.body as {
+    name?: string; email?: string; password?: string; role?: string;
+  };
+  if (!name || !email || !password) {
+    res.status(400).json({ success: false, error: 'Nome, e-mail e senha são obrigatórios.' });
+    return;
+  }
+  if (password.length < 6) {
+    res.status(400).json({ success: false, error: 'A senha deve ter pelo menos 6 caracteres.' });
+    return;
+  }
+  try {
+    const result = await registerUser(name, email, password, role || 'user');
+    res.status(result.success ? 201 : 409).json(result);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro interno';
+    res.status(500).json({ success: false, error: message });
+  }
 });
 
 app.post('/api/instances', async (req, res) => {
