@@ -28,7 +28,11 @@ function extractInstanceToken(data: unknown): string {
   return '';
 }
 
-/* ── Buscar UUID e token da instância no banco ── */
+/* ── Buscar UUID e token da instância no banco ──
+   Suporta dois formatos de metadata:
+     Novo:   metadata.create.data.{ id, token }
+     Antigo: metadata.data.{ id, token }
+*/
 async function getInstanceMeta(instanceName: string): Promise<{ uuid: string; token: string }> {
   const { data: inst } = await supabaseAdmin
     .from('instances')
@@ -37,12 +41,22 @@ async function getInstanceMeta(instanceName: string): Promise<{ uuid: string; to
     .maybeSingle();
 
   if (!inst?.metadata) return { uuid: '', token: '' };
-  const meta       = inst.metadata as Record<string, unknown>;
-  const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
-  return {
-    uuid:  String(createData?.id    || ''),
-    token: String(createData?.token || ''),
-  };
+  const meta = inst.metadata as Record<string, unknown>;
+
+  /* Formato novo: metadata.create.data */
+  const newData = (meta.create as Record<string, unknown> | undefined)
+    ?.data as Record<string, unknown> | undefined;
+  if (newData?.id) {
+    return { uuid: String(newData.id), token: String(newData.token || '') };
+  }
+
+  /* Formato antigo: metadata.data */
+  const oldData = meta.data as Record<string, unknown> | undefined;
+  if (oldData?.id) {
+    return { uuid: String(oldData.id), token: String(oldData.token || '') };
+  }
+
+  return { uuid: '', token: '' };
 }
 
 /* ── Criar e persistir instância ──────────────────────────────────────
@@ -221,9 +235,12 @@ export async function logoutInstanceService(
 }
 
 /* ── Deletar (DELETE /instance/delete/{instanceId}) ─────────────────
-   Swagger: path param instanceId = UUID.
-   UUID vem de metadata.create.data.id no banco.
-   HTTP 404 da API → tratado como sucesso (já deletado).
+   Swagger: path param instanceId = UUID da instância.
+   UUID vem de metadata (formato novo ou antigo).
+   Regras:
+     - HTTP 404 da API → instância já foi deletada; tratar como sucesso.
+     - Qualquer outro erro da API → retornar falha SEM tocar no banco.
+     - DB só é limpo DEPOIS de confirmação de sucesso da API.
 */
 export async function deleteInstanceService(
   instanceName: string,
@@ -233,19 +250,32 @@ export async function deleteInstanceService(
   const meta = await getInstanceMeta(instanceName);
   const uuid = meta.uuid;
 
-  let result;
-  if (uuid) {
-    result = await callDelete(uuid, overrideUrl, overrideKey);
-    if (!result.success && result.httpStatus === 404) {
-      console.warn(`[deleteInstanceService] Instância "${instanceName}" não encontrada na API (já deletada) — removendo do DB.`);
-      result = { success: true, data: result.data, error: undefined, httpStatus: 404 };
-    }
-  } else {
-    console.warn(`[deleteInstanceService] UUID não encontrado para "${instanceName}" — removendo apenas do DB.`);
-    result = { success: true, data: null, error: undefined };
+  /* Se não há UUID, não podemos chamar a API com segurança — abortar */
+  if (!uuid) {
+    console.error(`[deleteInstanceService] UUID não encontrado para "${instanceName}" — deleção bloqueada.`);
+    return {
+      success: false,
+      error:   `Não foi possível localizar o identificador único (UUID) da instância "${instanceName}" no banco de dados. Deleção cancelada para evitar inconsistência.`,
+    };
   }
 
-  /* Limpar banco local independente do resultado da API */
+  /* Chamar API do Evolution GO */
+  const result = await callDelete(uuid, overrideUrl, overrideKey);
+
+  /* HTTP 404 = instância já não existe na API → tratar como sucesso */
+  const apiOk = result.success || result.httpStatus === 404;
+
+  if (!apiOk) {
+    /* API retornou erro real — não remover do banco */
+    console.error(`[deleteInstanceService] API recusou deleção de "${instanceName}": HTTP ${result.httpStatus} — ${result.error}`);
+    return {
+      success:    false,
+      error:      result.error || `A API retornou HTTP ${result.httpStatus} ao tentar deletar a instância.`,
+      httpStatus: result.httpStatus,
+    };
+  }
+
+  /* Sucesso confirmado — limpar banco local */
   const { data: inst } = await supabaseAdmin
     .from('instances').select('id').eq('instance_name', instanceName).maybeSingle();
 
@@ -255,5 +285,5 @@ export async function deleteInstanceService(
 
   await supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
 
-  return { success: result.success, data: result.data, error: result.error };
+  return { success: true, data: result.data };
 }
