@@ -1,0 +1,176 @@
+```text
+TAREFA: REFATORAR A TELA DE LOGIN PARA TEMA CLARO, SEM ALTERAR A LÓGICA
+
+Objetivo:
+Atualizar exclusivamente o visual da tela de login para um layout clean, moderno e profissional com fundo branco neutro, mantendo total compatibilidade com a estrutura atual da aplicação e sem alterar qualquer lógica de autenticação, navegação ou funcionamento do formulário.
+
+ESCOPO
+- Alterar somente o frontend visual da tela de login.
+- Não alterar backend.
+- Não alterar rotas.
+- Não alterar autenticação.
+- Não alterar validações.
+- Não alterar handlers.
+- Não alterar nomes de campos.
+- Não alterar integrações.
+- Não alterar comportamento dos botões.
+- Não alterar fluxo de login ou cadastro.
+- Não alterar textos funcionais sem necessidade.
+- Não quebrar responsividade atual.
+
+OBJETIVO VISUAL
+Transformar a tela atual, que hoje usa fundo escuro, em uma interface de tema claro com:
+- fundo branco ou branco levemente acinzentado
+- card centralizado
+- aparência premium
+- contraste forte e legível
+- estilo limpo e moderno
+- foco em mobile-first
+
+DIRETRIZES DE LAYOUT
+1. Substituir completamente o fundo escuro da página por um fundo claro:
+   - usar #FFFFFF como padrão
+   - opcionalmente usar #F8FAFC se ficar visualmente mais equilibrado
+   - remover gradientes escuros, brilhos neon, manchas roxas/escuras e efeitos de glow exagerados
+
+2. Manter o container/card de login centralizado:
+   - alinhamento horizontal central
+   - alinhamento vertical central
+   - considerar altura total da viewport
+   - manter boa respiração visual ao redor do card
+
+3. Ajustar o card principal:
+   - fundo branco
+   - border-radius entre 18px e 24px
+   - borda sutil: 1px solid #E5E7EB
+   - sombra leve e elegante, sem exagero
+   - largura fluida no mobile
+   - max-width aproximado entre 420px e 480px
+   - padding interno confortável para leitura e toque
+
+4. Manter o logo no topo do card:
+   - centralizado
+   - com bom espaçamento acima e abaixo
+   - sem distorção
+   - respeitar proporção da imagem
+   - garantir boa visibilidade sobre fundo claro
+
+TIPOGRAFIA E HIERARQUIA
+5. Ajustar títulos e textos para tema claro:
+   - título principal em cor escura: #111827
+   - subtítulo em tom secundário: #6B7280
+   - labels em #374151
+   - textos auxiliares com contraste suficiente
+   - evitar qualquer texto claro/cinza fraco que fique apagado no fundo branco
+
+6. Melhorar hierarquia visual:
+   - título principal bem destacado
+   - subtítulo legível porém discreto
+   - labels menores, limpas e consistentes
+   - espaçamentos verticais equilibrados entre logo, título, subtítulo, tabs, inputs e botões
+
+INPUTS E FORMULÁRIOS
+7. Refatorar inputs para tema claro:
+   - fundo do input: #FFFFFF
+   - texto: #111827
+   - placeholder: #9CA3AF
+   - borda padrão: #D1D5DB
+   - borda/foco: usar cor alinhada à identidade visual da marca
+   - remover visual escuro interno
+   - manter cantos arredondados
+   - manter boa altura para toque em mobile
+   - garantir contraste legível para e-mail e senha
+
+8. Estados dos inputs:
+   - normal: limpo e neutro
+   - hover: leve destaque
+   - focus: borda mais evidente e acessível
+   - disabled, se existir: manter legibilidade sem parecer quebrado
+   - erro, se existir: manter padrão visual consistente e visível
+
+BOTÕES E AÇÕES
+9. Botão primário “Entrar”:
+   - manter destaque principal
+   - usar cor sólida ou gradiente alinhado à identidade visual
+   - texto sempre com contraste forte
+   - aparência moderna e premium
+   - remover brilho excessivo de estilo neon
+   - hover e active suaves e profissionais
+   - manter largura confortável em mobile
+
+10. Botão secundário “Criar conta”:
+   - estilo secundário claro
+   - visual neutro e elegante
+   - contraste suficiente
+   - diferenciar claramente do botão principal sem competir com ele
+
+11. Alternância entre “Entrar” e “Criar conta”:
+   - manter funcionamento atual
+   - apenas melhorar a estética visual para o tema claro
+   - aba ativa com destaque claro e consistente
+   - aba inativa com estilo discreto mas legível
+
+RODAPÉ E DETALHES
+12. Ajustar textos menores como “Conexão segura e criptografada”:
+   - manter visível
+   - cor neutra e discreta
+   - contraste suficiente no fundo branco
+   - ícones, se existirem, devem acompanhar o novo tema claro
+
+RESPONSIVIDADE
+13. Implementar ou preservar abordagem mobile-first:
+   - card adaptável em telas pequenas
+   - padding lateral no mobile para não colar nas bordas
+   - logo proporcional
+   - inputs e botões confortáveis para toque
+   - sem overflow horizontal
+   - sem elementos apertados ou desalinhados
+
+14. Em desktop:
+   - manter centralização elegante
+   - não deixar o card pequeno demais
+   - não exagerar em sombras ou dimensões
+   - priorizar visual limpo e profissional
+
+ACESSIBILIDADE E QUALIDADE
+15. Validar contraste:
+   - nenhum texto pode ficar apagado
+   - nenhum placeholder pode sumir visualmente
+   - botão principal deve ter leitura fácil
+   - labels e campos devem ser claramente identificáveis
+
+16. Preservar usabilidade:
+   - foco visível por teclado
+   - navegação intacta
+   - estados interativos claros
+   - sem regressões visuais
+
+RESTRIÇÕES IMPORTANTES
+17. Não fazer nenhuma alteração estrutural ou funcional fora do visual.
+18. Não recriar a lógica do componente se não for necessário.
+19. Não trocar bibliotecas sem necessidade.
+20. Não remover funcionalidades existentes.
+21. Não alterar integração com autenticação.
+22. Não modificar fluxo de login/cadastro.
+23. Não alterar API calls.
+24. Não alterar schema de formulário.
+25. Não alterar nomes de classes ou componentes se isso impactar outras partes do sistema, exceto quando necessário para aplicar o novo estilo com segurança.
+
+ENTREGA ESPERADA
+- Tela de login em tema claro
+- Fundo branco neutro
+- Card branco centralizado com sombra leve
+- Inputs claros e legíveis
+- Botão principal destacado
+- Visual moderno e premium
+- Layout responsivo
+- Mesma funcionalidade atual
+- Nenhuma quebra de lógica
+
+AO FINAL DA IMPLEMENTAÇÃO
+- Revisar a tela em mobile e desktop
+- Confirmar que nenhum texto ficou com contraste ruim
+- Confirmar que nenhum elemento escuro antigo permaneceu no fundo
+- Confirmar que a experiência visual ficou coerente com marca e profissional
+- Entregar código limpo, sem alterar comportamento funcional
+```

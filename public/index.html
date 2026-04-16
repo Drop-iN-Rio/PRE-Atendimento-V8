@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#050714" />
+  <meta name="theme-color" content="#F8FAFC" />
   <title>PRE-Atendimento — Entrar</title>
   <style>
     *, *::before, *::after {
@@ -15,7 +15,6 @@
 
     html {
       height: 100%;
-      /* permite scroll quando o formulário de cadastro é maior que a tela */
       overflow-y: auto;
     }
 
@@ -23,68 +22,33 @@
       min-height: 100%;
       min-height: 100dvh;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #050714;
-      color: #e2e8f0;
+      background: #F8FAFC;
+      color: #111827;
       display: flex;
       align-items: flex-start;
       justify-content: center;
       position: relative;
-      /* safe areas no iOS */
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* ── ORBES DE FUNDO ── */
-    .bg-orb {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(70px);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .orb-1 {
-      width: 420px; height: 420px;
-      background: radial-gradient(circle, rgba(99,102,241,0.38) 0%, transparent 70%);
-      top: -120px; left: -120px;
-      animation: drift1 8s ease-in-out infinite alternate;
-    }
-
-    .orb-2 {
-      width: 360px; height: 360px;
-      background: radial-gradient(circle, rgba(139,92,246,0.32) 0%, transparent 70%);
-      bottom: -80px; right: -80px;
-      animation: drift2 10s ease-in-out infinite alternate;
-    }
-
-    .orb-3 {
-      width: 260px; height: 260px;
-      background: radial-gradient(circle, rgba(236,72,153,0.14) 0%, transparent 70%);
-      top: 55%; left: 65%;
-      animation: drift3 13s ease-in-out infinite alternate;
-    }
-
-    @keyframes drift1 { to { transform: translate(50px, 35px); } }
-    @keyframes drift2 { to { transform: translate(-40px, -25px); } }
-    @keyframes drift3 { to { transform: translate(-35px, 55px); } }
+    /* ── ORBES DE FUNDO (ocultos no tema claro) ── */
+    .bg-orb { display: none; }
 
     /* ── CARD ── */
     .card {
       position: relative;
       z-index: 10;
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       margin: 1.5rem 1rem;
       padding: 2rem 1.5rem 1.75rem;
-      background: rgba(255, 255, 255, 0.04);
-      backdrop-filter: blur(28px);
-      -webkit-backdrop-filter: blur(28px);
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: 28px;
+      background: #ffffff;
+      border: 1px solid #E5E7EB;
+      border-radius: 22px;
       box-shadow:
-        0 0 0 1px rgba(99, 102, 241, 0.1),
-        0 40px 80px rgba(0, 0, 0, 0.65),
-        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+        0 1px 3px rgba(0, 0, 0, 0.06),
+        0 8px 32px rgba(0, 0, 0, 0.08);
     }
 
     /* ── LOGO ── */
@@ -101,42 +65,45 @@
       width: 100%;
       display: flex;
       justify-content: center;
-      margin-bottom: 0.6rem;
+      margin-bottom: 0.5rem;
     }
 
     .logo-img {
-      max-width: 210px;
+      max-width: 200px;
       width: 100%;
       height: auto;
       display: block;
-      filter: drop-shadow(0 2px 12px rgba(0,0,0,0.35));
     }
 
     @media (min-width: 420px) {
-      .logo-img { max-width: 240px; }
+      .logo-img { max-width: 220px; }
     }
 
     .logo-name {
       font-size: 0.85rem;
       font-weight: 800;
-      color: rgba(255, 255, 255, 0.85);
+      color: #374151;
       letter-spacing: 0.01em;
     }
 
-    .logo-version { font-size: 0.65rem; color: rgba(255, 255, 255, 0.35); margin-top: 2px; }
+    .logo-version {
+      font-size: 0.65rem;
+      color: #9CA3AF;
+      margin-top: 2px;
+    }
 
     /* ── TÍTULO ── */
     .page-title {
-      font-size: 1.75rem;
+      font-size: 1.65rem;
       font-weight: 800;
-      color: #fff;
+      color: #111827;
       letter-spacing: -0.03em;
       line-height: 1.2;
     }
 
     .page-sub {
-      font-size: 0.82rem;
-      color: rgba(255, 255, 255, 0.38);
+      font-size: 0.83rem;
+      color: #6B7280;
       margin-top: 5px;
       margin-bottom: 1.5rem;
     }
@@ -144,7 +111,7 @@
     /* ── TABS ── */
     .tabs {
       display: flex;
-      background: rgba(255, 255, 255, 0.05);
+      background: #F3F4F6;
       border-radius: 11px;
       padding: 3px;
       gap: 3px;
@@ -158,7 +125,7 @@
       border-radius: 8px;
       font-size: 0.88rem;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.35);
+      color: #6B7280;
       cursor: pointer;
       user-select: none;
       touch-action: manipulation;
@@ -170,9 +137,10 @@
     }
 
     .tab.active {
-      background: rgba(99, 102, 241, 0.22);
-      color: #a5b4fc;
-      border: 1px solid rgba(99, 102, 241, 0.3);
+      background: #ffffff;
+      color: #4F46E5;
+      border: 1px solid #E0E7FF;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     }
 
     /* ── FORM ── */
@@ -180,10 +148,10 @@
 
     label {
       display: block;
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      color: rgba(255, 255, 255, 0.35);
-      letter-spacing: 0.08em;
+      color: #374151;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       margin-bottom: 0.45rem;
     }
@@ -193,36 +161,41 @@
       width: 100%;
       font-size: 16px;
       padding: 0.82rem 1rem;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1.5px solid rgba(255, 255, 255, 0.08);
-      border-radius: 13px;
-      color: rgba(255, 255, 255, 0.92);
+      background: #ffffff;
+      border: 1.5px solid #D1D5DB;
+      border-radius: 12px;
+      color: #111827;
       outline: none;
       min-height: 52px;
-      transition: border-color 0.18s, background 0.18s;
+      transition: border-color 0.18s, box-shadow 0.18s;
       -webkit-appearance: none;
       appearance: none;
       font-family: inherit;
     }
 
-    input::placeholder { color: rgba(255, 255, 255, 0.18); }
+    input::placeholder { color: #9CA3AF; }
+
+    input:hover, select:hover {
+      border-color: #A5B4FC;
+    }
+
     input:focus, select:focus {
-      border-color: rgba(99, 102, 241, 0.6);
-      background: rgba(99, 102, 241, 0.07);
+      border-color: #6366F1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
     }
 
     select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.35)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 1rem center;
       padding-right: 2.5rem;
       cursor: pointer;
-      color: rgba(255,255,255,0.7);
+      color: #374151;
     }
 
     select option {
-      background: #0f172a;
-      color: #f1f5f9;
+      background: #ffffff;
+      color: #111827;
     }
 
     /* ── BOTÃO PRINCIPAL ── */
@@ -230,23 +203,28 @@
       width: 100%;
       min-height: 54px;
       padding: 0 1.25rem;
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      background: linear-gradient(135deg, #6366f1 0%, #7C3AED 100%);
       border: none;
-      border-radius: 14px;
+      border-radius: 13px;
       color: #fff;
       font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
       margin-top: 0.5rem;
-      transition: opacity 0.18s, transform 0.1s;
+      transition: opacity 0.18s, transform 0.1s, box-shadow 0.18s;
       touch-action: manipulation;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      box-shadow: 0 4px 24px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.30);
       font-family: inherit;
       letter-spacing: -0.01em;
+    }
+
+    .btn:hover:not(:disabled) {
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.40);
+      opacity: 0.95;
     }
 
     .btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.88; }
@@ -263,23 +241,23 @@
     }
 
     .alert.success {
-      background: rgba(5, 46, 22, 0.8);
-      border: 1.5px solid rgba(22, 163, 74, 0.6);
-      color: #86efac;
+      background: #F0FDF4;
+      border: 1.5px solid #BBF7D0;
+      color: #166534;
       display: block;
     }
 
     .alert.error {
-      background: rgba(45, 10, 10, 0.8);
-      border: 1.5px solid rgba(220, 38, 38, 0.6);
-      color: #fca5a5;
+      background: #FEF2F2;
+      border: 1.5px solid #FECACA;
+      color: #991B1B;
       display: block;
     }
 
     /* ── SPINNER ── */
     .spinner {
       width: 18px; height: 18px;
-      border: 2.5px solid rgba(255, 255, 255, 0.3);
+      border: 2.5px solid rgba(255, 255, 255, 0.4);
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.65s linear infinite;
@@ -291,8 +269,8 @@
     /* ── AVISO DE CONFIGURAÇÃO ── */
     .config-warning {
       display: none;
-      background: rgba(78, 42, 0, 0.85);
-      border: 1.5px solid rgba(234, 179, 8, 0.55);
+      background: #FFFBEB;
+      border: 1.5px solid #FDE68A;
       border-radius: 14px;
       padding: 1rem 1.1rem;
       margin-bottom: 1.25rem;
@@ -306,7 +284,7 @@
       gap: 0.45rem;
       font-size: 0.88rem;
       font-weight: 700;
-      color: #fde68a;
+      color: #92400E;
       margin-bottom: 0.45rem;
     }
 
@@ -317,7 +295,7 @@
 
     .config-warning-body {
       font-size: 0.78rem;
-      color: rgba(253, 230, 138, 0.75);
+      color: #78350F;
       line-height: 1.55;
     }
 
@@ -332,13 +310,13 @@
       display: inline-flex;
       align-items: center;
       gap: 0.3rem;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(234, 179, 8, 0.3);
+      background: #FEF3C7;
+      border: 1px solid #F59E0B;
       border-radius: 6px;
       padding: 0.15rem 0.5rem;
       font-size: 0.72rem;
       font-family: 'Menlo', 'Consolas', monospace;
-      color: #fcd34d;
+      color: #92400E;
       width: fit-content;
     }
 
@@ -347,7 +325,7 @@
       margin-top: 1.25rem;
       text-align: center;
       font-size: 0.72rem;
-      color: rgba(255, 255, 255, 0.18);
+      color: #9CA3AF;
       display: flex;
       align-items: center;
       justify-content: center;
