@@ -638,6 +638,70 @@
 
       .panel { display: none; }
       .panel.active { display: block; }
+
+      /* ── INSTANCE SETTINGS — desktop override ── */
+      #panel-instance {
+        display: none;
+      }
+      #panel-instance.active {
+        display: flex !important;
+        flex-direction: column;
+        position: relative !important;
+        inset: unset !important;
+        z-index: auto !important;
+        background: transparent !important;
+        animation: none !important;
+        overflow-y: visible;
+        padding-bottom: 2rem;
+        min-height: 100%;
+      }
+      #panel-instance.sliding-out {
+        display: none !important;
+      }
+
+      /* Hide mobile topbar; show desktop header */
+      #panel-instance .is-topbar   { display: none !important; }
+      .is-desktop-header           { display: flex !important; max-width: 740px; width: 100%; align-self: center; }
+
+      /* Body: centered column — .main already has 1.5rem padding */
+      #panel-instance .is-body {
+        padding: 0.5rem 0 0;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      /* Info section: 2-col grid, max-width centered */
+      .is-section-info {
+        max-width: 740px;
+        width: 100%;
+      }
+      .is-info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+      }
+      .is-info-col {
+        display: block;
+      }
+      .is-info-col:first-child {
+        border-right: 1px solid var(--border2);
+      }
+      .is-info-col:first-child .is-row:last-child {
+        border-bottom: none;
+      }
+      .is-info-col:last-child .is-row:last-child {
+        border-bottom: none;
+      }
+
+      /* QR + Danger sections also max-width */
+      .is-section-qr,
+      .is-section-danger {
+        max-width: 740px;
+        width: 100%;
+      }
+
+      /* QR button width natural on desktop */
+      #is-btn-qr { width: auto !important; }
     }
 
     /* ════════════════════════════════
@@ -1256,6 +1320,44 @@
     }
     .is-danger-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
+    /* ─── DESKTOP INSTANCE HEADER ─── */
+    .is-desktop-header {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0 1rem 0;
+      gap: 1rem;
+      flex-shrink: 0;
+    }
+    .is-desktop-header-left { min-width: 0; }
+    .is-page-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--tx1);
+      margin: 0 0 0.2rem;
+      letter-spacing: -0.02em;
+    }
+    .is-page-sub {
+      font-size: 0.82rem;
+      color: var(--tx4);
+      font-family: 'Courier New', monospace;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ─── INFO GRID (mobile: stacked, desktop: 2-col) ─── */
+    .is-info-grid {
+      display: block;
+    }
+    .is-info-col {
+      display: block;
+    }
+    .is-info-col:first-child .is-row:last-child {
+      border-bottom: 1px solid var(--border2);
+    }
+
     /* ─── INST ACTIONS (QR code button) ─── */
     .inst-actions { padding: 0 1rem 0.6rem; }
 
@@ -1808,6 +1910,9 @@
     [data-theme="light"] .is-row-label { color: #94a3b8; }
     [data-theme="light"] .is-row-value { color: #0f172a; }
     [data-theme="light"] .is-desc      { color: #64748b; }
+    [data-theme="light"] .is-page-title { color: #0f172a; }
+    [data-theme="light"] .is-page-sub   { color: #64748b; }
+    [data-theme="light"] .is-info-col:first-child { border-right-color: #e2e8f0; }
 
     /* Modal QR Code */
     [data-theme="light"] .qr-modal    { background: rgba(0,0,0,0.4); }
@@ -2431,34 +2536,63 @@
       <!-- ── CONFIGURAÇÕES DA INSTÂNCIA (SPA sub-view) ── -->
       <div class="panel" id="panel-instance">
 
-        <!-- Topbar com botão voltar -->
+        <!-- Mobile: topbar com botão voltar -->
         <div class="is-topbar">
           <button class="btn-back" onclick="backToList()">← Voltar</button>
           <div class="is-topbar-name" id="is-topbar-name">Configurações</div>
           <div style="width:72px"></div>
         </div>
 
+        <!-- Desktop: cabeçalho da página -->
+        <div class="is-desktop-header">
+          <div class="is-desktop-header-left">
+            <h1 class="is-page-title">Configurações</h1>
+            <p class="is-page-sub" id="is-page-sub">—</p>
+          </div>
+          <button class="btn-back" onclick="backToList()">← Voltar</button>
+        </div>
+
         <div class="is-body">
 
           <!-- Informações gerais -->
-          <div class="is-section">
+          <div class="is-section is-section-info">
             <div class="is-section-title">Informações</div>
-            <div class="is-row">
-              <span class="is-row-label">Nome</span>
-              <span class="is-row-value" id="is-name" style="font-family:'Courier New',monospace;font-size:0.8rem">—</span>
-            </div>
-            <div class="is-row">
-              <span class="is-row-label">Status</span>
-              <span id="is-connection"><span class="conn-badge checking">···</span></span>
-            </div>
-            <div class="is-row">
-              <span class="is-row-label">Criada em</span>
-              <span class="is-row-value" id="is-created">—</span>
+            <div class="is-info-grid">
+              <!-- Coluna esquerda -->
+              <div class="is-info-col">
+                <div class="is-row">
+                  <span class="is-row-label">Nome da Instância</span>
+                  <span class="is-row-value" id="is-name" style="font-family:'Courier New',monospace;font-size:0.8rem">—</span>
+                </div>
+                <div class="is-row">
+                  <span class="is-row-label">Status</span>
+                  <span id="is-connection"><span class="conn-badge checking">···</span></span>
+                </div>
+                <div class="is-row">
+                  <span class="is-row-label">Nome do Perfil</span>
+                  <span class="is-row-value" id="is-profile-name">—</span>
+                </div>
+              </div>
+              <!-- Coluna direita -->
+              <div class="is-info-col">
+                <div class="is-row">
+                  <span class="is-row-label">Token da Instância</span>
+                  <span class="is-row-value" id="is-token" style="font-family:'Courier New',monospace;font-size:0.78rem;word-break:break-all;max-width:180px;display:inline-block">—</span>
+                </div>
+                <div class="is-row">
+                  <span class="is-row-label">Número</span>
+                  <span class="is-row-value" id="is-phone">—</span>
+                </div>
+                <div class="is-row">
+                  <span class="is-row-label">Criada em</span>
+                  <span class="is-row-value" id="is-created">—</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- QR Code -->
-          <div class="is-section">
+          <!-- QR Code / Conexão -->
+          <div class="is-section is-section-qr">
             <div class="is-section-title">Conexão WhatsApp</div>
             <div class="is-section-body">
               <p class="is-desc">Escaneie o QR Code com o WhatsApp para conectar esta instância ao servidor.</p>
@@ -2469,7 +2603,7 @@
           </div>
 
           <!-- Zona de Perigo -->
-          <div class="is-section" style="border-color:rgba(127,29,29,0.3)">
+          <div class="is-section is-section-danger" style="border-color:rgba(127,29,29,0.3)">
             <div class="is-section-title" style="color:#f87171;border-color:rgba(127,29,29,0.25)">⚠ Zona de Perigo</div>
             <div class="is-section-body">
               <p class="is-desc">Estas ações afetam diretamente a instância. Prossiga com cautela.</p>
@@ -3328,12 +3462,25 @@
       const inst = _instances.find(i => i.instance_name === name);
       if (!inst) { showToast('Instância não encontrada. Recarregue a lista.', false); return; }
 
-      /* Topbar name */
+      /* Topbar name (mobile) + desktop subtitle */
       document.getElementById('is-topbar-name').textContent = name;
+      document.getElementById('is-page-sub').textContent    = name;
       document.getElementById('is-name').textContent        = name;
 
       /* Status — mostra "verificando" e busca via API */
       document.getElementById('is-connection').innerHTML = '<span class="conn-badge checking">···</span>';
+
+      /* Token da instância */
+      const meta       = inst.metadata || {};
+      const createData = meta.create?.data || meta.data || {};
+      const token      = createData.token || createData.apikey || '—';
+      document.getElementById('is-token').textContent = token;
+
+      /* Número e nome do perfil (se disponíveis nos metadados) */
+      const profileName = createData.profileName || createData.name || '—';
+      const phone       = createData.number || createData.phone || createData.ownerJid?.replace('@s.whatsapp.net','') || '—';
+      document.getElementById('is-profile-name').textContent = profileName;
+      document.getElementById('is-phone').textContent        = phone;
 
       /* Created date */
       const date = inst.created_at
