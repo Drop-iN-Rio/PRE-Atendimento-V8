@@ -891,6 +891,140 @@
     .conn-badge.connected    { background: #052e16; color: #4ade80; border: 1px solid #16a34a33; }
     .conn-badge.disconnected { background: #1e0a0a; color: #f87171; border: 1px solid #dc262633; }
 
+    /* ─── INST ACTIONS (QR code button) ─── */
+    .inst-actions { padding: 0 1rem 0.6rem; }
+
+    .btn-qr {
+      width: 100%;
+      padding: 0.55rem;
+      border-radius: 9px;
+      border: 1.5px solid rgba(14,116,144,0.35);
+      background: rgba(6,182,212,0.07);
+      color: #22d3ee;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .btn-qr:hover { background: rgba(6,182,212,0.15); border-color: #0e7490; }
+
+    /* ─── QR CODE MODAL ─── */
+    .qr-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 310;
+      background: rgba(0,0,0,0.8);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .qr-modal.open { display: flex; }
+
+    .qr-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 340px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.7);
+      animation: modalIn 0.2s ease;
+    }
+
+    .qr-box-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1.1rem;
+    }
+    .qr-box-title { font-size: 1rem; font-weight: 800; color: #f1f5f9; }
+    .qr-box-name  { font-size: 0.72rem; color: #64748b; font-family: 'Courier New',monospace; margin-top: 2px; }
+    .btn-qr-close {
+      width: 30px; height: 30px;
+      background: transparent;
+      border: 1.5px solid #334155;
+      border-radius: 8px;
+      color: #64748b;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .btn-qr-close:active { border-color: #ef4444; color: #ef4444; }
+
+    .qr-img-area {
+      width: 224px;
+      height: 224px;
+      margin: 0 auto 1rem;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .qr-img-area img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .qr-status {
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 0.4rem;
+      min-height: 1.2em;
+    }
+
+    .qr-timer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: #475569;
+      margin-bottom: 1rem;
+      min-height: 1em;
+    }
+
+    .qr-actions { display: flex; gap: 0.5rem; }
+    .qr-btn-refresh {
+      flex: 1;
+      padding: 0.7rem;
+      border-radius: 11px;
+      border: 1.5px solid #334155;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s;
+    }
+    .qr-btn-refresh:hover:not(:disabled) { border-color: #22d3ee; color: #22d3ee; }
+    .qr-btn-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+    .qr-btn-close-bottom {
+      flex: 1;
+      padding: 0.7rem;
+      border-radius: 11px;
+      border: none;
+      background: #334155;
+      color: #e2e8f0;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s;
+    }
+    .qr-btn-close-bottom:hover { background: #475569; }
+
     /* ─── DANGER ZONE ─── */
     .danger-zone {
       border-top: 1px dashed #292524;
@@ -1416,6 +1550,33 @@
     </nav>
 
   </div><!-- /.content-area -->
+
+  <!-- ══════════════════════════
+       MODAL QR CODE
+       ══════════════════════════ -->
+  <div class="qr-modal" id="qr-modal">
+    <div class="qr-box">
+      <div class="qr-box-header">
+        <div>
+          <div class="qr-box-title">📷 QR Code</div>
+          <div class="qr-box-name" id="qr-box-name">—</div>
+        </div>
+        <button class="btn-qr-close" onclick="closeQrModal()" aria-label="Fechar">✕</button>
+      </div>
+
+      <div class="qr-img-area" id="qr-img-area">
+        <div style="color:#475569;font-size:2rem">⏳</div>
+      </div>
+
+      <div class="qr-status" id="qr-status">Carregando…</div>
+      <div class="qr-timer"  id="qr-timer"></div>
+
+      <div class="qr-actions">
+        <button class="qr-btn-refresh" id="qr-btn-refresh" onclick="fetchQr(_qrCurrentName)">↻ Atualizar</button>
+        <button class="qr-btn-close-bottom" onclick="closeQrModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ══════════════════════════
        MODAL DE CONFIRMAÇÃO
@@ -1945,6 +2106,11 @@
                   <span class="conn-badge ${connCls}">${connLbl}</span>
                 </div>
               </div>
+              <div class="inst-actions">
+                <button class="btn-qr" onclick="openQrModal('${safeN}')">
+                  📷 Ver QR Code
+                </button>
+              </div>
               <div class="danger-zone">
                 <div class="danger-zone-label">⚠ Zona de Perigo</div>
                 <div class="danger-actions">
@@ -1963,6 +2129,129 @@
         }).join('');
       } catch {
         el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>Erro ao carregar.</div>`;
+      }
+    }
+
+    /* ─── QR CODE ─── */
+    let _qrTimer       = null;
+    let _qrCurrentName = null;
+    let _qrCountdown   = 20;
+
+    function getApiOverrides() {
+      try {
+        const cfg = JSON.parse(localStorage.getItem('pa_admin_config') || '{}');
+        return { evolutionUrl: cfg.url || '', apiKey: cfg.apiKey || '' };
+      } catch { return {}; }
+    }
+
+    function openQrModal(name) {
+      _qrCurrentName = name;
+      document.getElementById('qr-box-name').textContent = name;
+      document.getElementById('qr-modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+      fetchQr(name);
+    }
+
+    function closeQrModal() {
+      document.getElementById('qr-modal').classList.remove('open');
+      document.body.style.overflow = '';
+      clearInterval(_qrTimer);
+      _qrTimer = null;
+      _qrCurrentName = null;
+      document.getElementById('qr-timer').textContent = '';
+    }
+
+    function _setQrStatus(msg, color) {
+      const el = document.getElementById('qr-status');
+      el.textContent = msg;
+      el.style.color = color || '#94a3b8';
+    }
+
+    function _setQrImg(html) {
+      document.getElementById('qr-img-area').innerHTML = html;
+    }
+
+    function _qrPlaceholder(icon, color) {
+      return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+              background:#0f172a;border-radius:10px;color:${color};font-size:2.5rem">${icon}</div>`;
+    }
+
+    function _startAutoRefresh(name) {
+      clearInterval(_qrTimer);
+      _qrCountdown = 20;
+      const timerEl = document.getElementById('qr-timer');
+      timerEl.textContent = `Atualizando em ${_qrCountdown}s…`;
+
+      _qrTimer = setInterval(() => {
+        if (_qrCurrentName !== name) { clearInterval(_qrTimer); return; }
+        _qrCountdown--;
+        if (_qrCountdown > 0) {
+          timerEl.textContent = `Atualizando em ${_qrCountdown}s…`;
+        } else {
+          timerEl.textContent = 'Atualizando…';
+          clearInterval(_qrTimer);
+          fetchQr(name);
+        }
+      }, 1000);
+    }
+
+    async function fetchQr(name) {
+      if (!name) return;
+      clearInterval(_qrTimer);
+      _qrTimer = null;
+      document.getElementById('qr-timer').textContent = '';
+      document.getElementById('qr-btn-refresh').disabled = true;
+      _setQrStatus('⏳ Buscando QR Code…');
+      _setQrImg(_qrPlaceholder('⏳', '#475569'));
+
+      try {
+        const overrides = getApiOverrides();
+        const params    = new URLSearchParams();
+        if (overrides.evolutionUrl) params.set('evolutionUrl', overrides.evolutionUrl);
+        if (overrides.apiKey)       params.set('apiKey', overrides.apiKey);
+
+        const url = `/api/instances/${encodeURIComponent(name)}/qrcode${params.size ? '?' + params.toString() : ''}`;
+        const res  = await fetch(url);
+        const json = await res.json();
+
+        if (!res.ok || !json.success) {
+          const errMsg = json.error || `Erro HTTP ${res.status}`;
+          _setQrStatus(`❌ ${errMsg}`, '#f87171');
+          _setQrImg(`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;
+            justify-content:center;background:#0f172a;border-radius:10px;gap:0.4rem">
+            <span style="font-size:2rem">❌</span>
+            <span style="font-size:0.72rem;color:#f87171;padding:0 0.75rem;text-align:center">${errMsg}</span>
+          </div>`);
+          return;
+        }
+
+        /* Normalizar resposta: diferentes shapes da Evolution API */
+        const d      = json.data || {};
+        const base64 = d?.qrcode?.base64 || d?.base64 || d?.data?.base64 || null;
+        const code   = d?.qrcode?.code   || d?.code   || d?.data?.code   || null;
+
+        if (base64) {
+          _setQrImg(`<img src="${base64}" alt="QR Code" />`);
+          _setQrStatus('📱 Escaneie com o WhatsApp', '#4ade80');
+          _startAutoRefresh(name);
+        } else if (code) {
+          /* Pairing code em texto */
+          _setQrImg(`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+            background:#0f172a;border-radius:10px;">
+            <div style="font-family:'Courier New',monospace;font-size:1.5rem;color:#818cf8;
+              word-break:break-all;text-align:center;padding:0.5rem;letter-spacing:0.15em">${code}</div>
+          </div>`);
+          _setQrStatus('📱 Digite o código no WhatsApp', '#4ade80');
+          _startAutoRefresh(name);
+        } else {
+          _setQrStatus('⚠️ QR Code indisponível. Tente atualizar.', '#fbbf24');
+          _setQrImg(_qrPlaceholder('❓', '#fbbf24'));
+        }
+      } catch (err) {
+        _setQrStatus(`❌ Erro de rede: ${err.message}`, '#f87171');
+        _setQrImg(_qrPlaceholder('⚠️', '#f87171'));
+      } finally {
+        document.getElementById('qr-btn-refresh').disabled = false;
       }
     }
 

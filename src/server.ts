@@ -10,6 +10,7 @@ import {
   disconnectInstanceService,
   deleteInstanceService,
 } from './services/instanceService.js';
+import { getQrCode } from './services/evolutionGo.js';
 import { loginUser, registerUser } from './services/authService.js';
 
 dotenv.config();
@@ -188,6 +189,19 @@ app.get('/api/instances', async (_req, res) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
     res.status(500).json({ success: false, error: message });
+  }
+});
+
+/* ── QR Code da instância ── */
+app.get('/api/instances/:name/qrcode', async (req, res) => {
+  const { name } = req.params;
+  const evolutionUrl = (req.query.evolutionUrl as string | undefined)?.trim() || undefined;
+  const apiKey       = (req.query.apiKey       as string | undefined)?.trim() || undefined;
+  try {
+    const result = await getQrCode(name, evolutionUrl, apiKey);
+    res.status(result.success ? 200 : (result.httpStatus || 502)).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
 

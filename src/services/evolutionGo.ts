@@ -49,6 +49,42 @@ async function callDelete(path: string, overrideUrl?: string, overrideKey?: stri
   }
 }
 
+export async function getQrCode(
+  instanceName: string,
+  overrideUrl?: string,
+  overrideKey?: string,
+): Promise<EvolutionResponse> {
+  const baseUrl = (overrideUrl || EVOLUTION_API_URL).replace(/\/$/, '');
+  const apiKey  = overrideKey  || GLOBAL_API_KEY;
+
+  if (!baseUrl) return { success: false, error: 'EVOLUTION_API_URL não configurada.' };
+  if (!apiKey)  return { success: false, error: 'GLOBAL_API_KEY não configurada.' };
+
+  const url = `${baseUrl}/instance/get-qr-code/${encodeURIComponent(instanceName)}`;
+  console.log('[QRCode] GET', url);
+
+  const controller = new AbortController();
+  const timeout    = setTimeout(() => controller.abort(), 15_000);
+
+  try {
+    const r = await fetch(url, {
+      method:  'GET',
+      headers: { 'Content-Type': 'application/json', apikey: apiKey },
+      signal:  controller.signal,
+    });
+    clearTimeout(timeout);
+    const rawBody = await r.text();
+    console.log(`[QRCode] HTTP ${r.status}`, rawBody.slice(0, 300));
+    let data: unknown;
+    try { data = JSON.parse(rawBody); } catch { data = rawBody; }
+    return { success: r.ok, data, httpStatus: r.status };
+  } catch (err: unknown) {
+    clearTimeout(timeout);
+    const msg = (err as Error).name === 'AbortError' ? 'Timeout: sem resposta em 15s' : (err as Error).message;
+    return { success: false, error: msg };
+  }
+}
+
 export async function disconnectInstance(
   instanceName: string,
   overrideUrl?: string,
