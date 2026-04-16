@@ -44,13 +44,18 @@ export async function createInstanceAndPersist(
     event: apiResult.success ? 'created' : 'creation_failed',
     payload: apiResult.success
       ? (apiResult.data as object)
-      : { error: apiResult.error },
+      : { error: apiResult.error, apiData: apiResult.data },
   });
 
   return {
     success: apiResult.success,
-    data: { ...record, status: newStatus, api_response: apiResult.data },
+    data: {
+      ...record,
+      status: newStatus,
+      api_response: apiResult.data,
+    },
     error: apiResult.error,
+    httpStatus: apiResult.httpStatus,
   };
 }
 

@@ -594,6 +594,13 @@
 
     .token-block.visible { display: block; }
 
+    .token-block.warn {
+      border-color: #b45309;
+      background: #0c0900;
+    }
+
+    .token-block.warn .token-block-title { color: #fbbf24; }
+
     .token-block-title {
       font-size: 0.72rem;
       font-weight: 700;
@@ -1248,19 +1255,70 @@
         });
         const json = await res.json();
 
-        if (res.ok && json.success) {
-          /* Exibe bloco de token */
-          const data = json.data || {};
-          document.getElementById('tk-name').textContent   = data.instance?.instanceName || instanceName;
-          document.getElementById('tk-token').textContent  = data.hash?.apikey || data.token || data.apikey || '(não retornado)';
-          document.getElementById('tk-status').textContent = data.instance?.status || data.status || 'created';
-          document.getElementById('token-block').classList.add('visible');
+        /* Log completo no console do browser */
+        console.group('[PRE-Atendimento] Resposta criação de instância');
+        console.log('HTTP status :', res.status);
+        console.log('json.success:', json.success);
+        console.log('json.error  :', json.error);
+        console.log('json.data   :', json.data);
+        console.groupEnd();
+
+        if (json.success) {
+          /* ── SUCESSO ── */
+          const data    = json.data || {};
+          const apiResp = data.api_response || {};
+
+          document.getElementById('tk-name').textContent  =
+            apiResp.instance?.instanceName || data.instance_name || instanceName;
+          document.getElementById('tk-token').textContent =
+            apiResp.hash?.apikey || apiResp.token || apiResp.apikey || '(não retornado pela API)';
+          document.getElementById('tk-status').textContent =
+            apiResp.instance?.status || apiResp.status || data.status || 'created';
+
+          const tb = document.getElementById('token-block');
+          tb.classList.remove('warn');
+          tb.classList.add('visible');
+          tb.querySelector('.token-block-title').textContent = '✅ Instância criada com sucesso';
           document.getElementById('instanceName').value = '';
           onInstFieldInput();
           document.getElementById('token-block').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
         } else {
-          alertEl.className = 'alert error';
-          alertEl.innerHTML = `❌ ${json.error || 'Erro desconhecido'}<pre>${JSON.stringify(json, null, 2)}</pre>`;
+          /* ── ERRO ── verificar se a API retornou dados da instância mesmo assim */
+          const data    = json.data   || {};
+          const apiResp = data.api_response || data || {};
+
+          /* Campos retornados pela Evolution GO em caso de 400 com instância registrada */
+          const apiId     = apiResp.id   || data.id   || null;
+          const apiName   = apiResp.instance_name || apiResp.instanceName || data.instance_name || null;
+          const apiStatus = apiResp.status || data.status || null;
+
+          if (apiId || apiName) {
+            /* Há dados de instância — exibir bloco em modo aviso */
+            document.getElementById('tk-name').textContent  = apiName  || instanceName;
+            document.getElementById('tk-token').textContent =
+              apiResp.hash?.apikey || apiResp.token || apiResp.apikey || '(não retornado)';
+            document.getElementById('tk-status').textContent = apiStatus || 'error';
+
+            const tb = document.getElementById('token-block');
+            tb.classList.add('visible', 'warn');
+            tb.querySelector('.token-block-title').textContent = '⚠️ Registrada com erro na API';
+
+            alertEl.className = 'alert error';
+            alertEl.innerHTML =
+              `⚠️ <strong>Instância registrada com erro na API.</strong><br>` +
+              `<pre>` +
+              (apiId     ? `ID      : ${apiId}\n`     : '') +
+              (apiName   ? `Nome    : ${apiName}\n`   : '') +
+              (apiStatus ? `Status  : ${apiStatus}\n` : '') +
+              `Erro    : ${json.error || 'desconhecido'}` +
+              `</pre>`;
+          } else {
+            alertEl.className = 'alert error';
+            alertEl.innerHTML =
+              `❌ <strong>${json.error || 'Erro desconhecido'}</strong>` +
+              `<pre>${JSON.stringify(json, null, 2)}</pre>`;
+          }
           alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
       } catch (err) {
