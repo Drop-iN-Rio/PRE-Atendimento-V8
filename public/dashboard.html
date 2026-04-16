@@ -1477,6 +1477,14 @@
     }
     .qr-btn-refresh:hover:not(:disabled) { border-color: #22d3ee; color: #22d3ee; }
     .qr-btn-refresh:disabled { opacity: 0.4; cursor: not-allowed; }
+    .qr-btn-reconnect {
+      flex: 1; padding: 0.55rem 1rem; border-radius: 8px;
+      border: 1.5px solid #a78bfa; background: transparent;
+      color: #a78bfa; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .qr-btn-reconnect:hover:not(:disabled) { border-color: #c4b5fd; color: #c4b5fd; background: rgba(167,139,250,0.08); }
+    .qr-btn-reconnect:disabled { opacity: 0.4; cursor: not-allowed; }
     .qr-btn-close-bottom {
       flex: 1;
       padding: 0.7rem;
@@ -2079,6 +2087,8 @@
 
     /* QR refresh btn hover light */
     [data-theme="light"] .qr-btn-refresh:hover:not(:disabled) { border-color: #0891b2; color: #0891b2; background: #ecfeff; }
+    [data-theme="light"] .qr-btn-reconnect { border-color: #7c3aed; color: #7c3aed; }
+    [data-theme="light"] .qr-btn-reconnect:hover:not(:disabled) { border-color: #6d28d9; color: #6d28d9; background: #ede9fe; }
 
     /* Btn refresh list hover light */
     [data-theme="light"] .btn-refresh:hover { border-color: #6366f1; color: #6366f1; }
@@ -2751,6 +2761,8 @@
 
       <div class="qr-actions">
         <button class="qr-btn-refresh" id="qr-btn-refresh" onclick="fetchQr(_qrCurrentName)">↻ Atualizar</button>
+        <button class="qr-btn-reconnect" id="qr-btn-reconnect" style="display:none"
+          onclick="reconnectAndPoll(_qrCurrentName)">🔄 Reconectar</button>
         <button class="qr-btn-close-bottom" onclick="closeQrModal()">Fechar</button>
       </div>
     </div>
@@ -3145,8 +3157,8 @@
           onInstFieldInput();
           tb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-          /* Abrir QR Code automaticamente após o scroll */
-          setTimeout(() => openQrModal(_lastCreatedName, _qrCurrentToken), 700);
+          /* Abrir QR Code automaticamente após o scroll (fromCreation=true para atraso inicial) */
+          setTimeout(() => openQrModal(_lastCreatedName, _qrCurrentToken, true), 700);
 
         } else {
           /* ── ERRO ── API rejeitou a criação; nenhum registro deve ter sido criado */
@@ -3655,7 +3667,7 @@
     let _qrCountdown      = 60;
     let _qrPollingTimer   = null;   /* polling quando QR ainda não está disponível */
     let _qrPollingCount   = 0;
-    const QR_POLL_MAX     = 25;     /* máx 25 tentativas × 3s = 75s de espera */
+    const QR_POLL_MAX     = 35;     /* máx 35 tentativas × 3s = 105s de espera */
     const QR_POLL_INTERVAL= 3000;
 
     /* ─── POLLING DE CONEXÃO (detectar scan do QR) ─── */
@@ -3676,14 +3688,23 @@
       return createData.token || '';
     }
 
-    function openQrModal(name, token) {
+    function openQrModal(name, token, fromCreation) {
       _qrCurrentName  = name;
       _qrCurrentToken = token || _getInstanceToken(name) || null;
       document.getElementById('qr-box-name').textContent = name;
       document.getElementById('qr-modal').classList.add('open');
+      document.getElementById('qr-btn-reconnect').style.display = 'none';
       document.body.style.overflow = 'hidden';
       _qrPollingCount = 0;
-      fetchQr(name);
+      if (fromCreation) {
+        _setQrStatus('⏳ Inicializando instância, aguarde…', '#94a3b8');
+        _setQrImg(_qrPlaceholder('⏳', '#475569'));
+        document.getElementById('qr-timer').textContent = 'Aguardando servidor…';
+        document.getElementById('qr-btn-refresh').disabled = true;
+        setTimeout(() => { if (_qrCurrentName === name) fetchQr(name); }, 4000);
+      } else {
+        fetchQr(name);
+      }
     }
 
     function closeQrModal() {
@@ -3699,6 +3720,38 @@
       _qrCurrentToken = null;
       _qrPollingCount = 0;
       document.getElementById('qr-timer').textContent = '';
+      document.getElementById('qr-btn-reconnect').style.display = 'none';
+    }
+
+    /* Reconectar instância e reiniciar o polling do QR */
+    async function reconnectAndPoll(name) {
+      if (!name) return;
+      const btn = document.getElementById('qr-btn-reconnect');
+      const ref = document.getElementById('qr-btn-refresh');
+      btn.disabled = true;
+      ref.disabled = true;
+      btn.style.display = '';
+      clearTimeout(_qrPollingTimer);
+      _qrPollingTimer = null;
+      _qrPollingCount = 0;
+      _setQrStatus('🔄 Reconectando instância…', '#a78bfa');
+      _setQrImg(_qrPlaceholder('🔄', '#a78bfa'));
+      document.getElementById('qr-timer').textContent = '';
+      try {
+        const token = _qrCurrentToken || _getInstanceToken(name);
+        const body  = {};
+        if (token) body.instanceToken = token;
+        await fetch(`/api/instances/${encodeURIComponent(name)}/connect`, {
+          method: 'POST',
+          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      } catch { /* ignora erros de rede — tenta o QR mesmo assim */ }
+      btn.disabled = false;
+      btn.style.display = 'none';
+      _setQrStatus('⏳ Aguardando QR Code…', '#94a3b8');
+      document.getElementById('qr-timer').textContent = 'Aguardando servidor…';
+      setTimeout(() => { if (_qrCurrentName === name) fetchQr(name); }, 3000);
     }
 
     /* Inicia polling de status para detectar quando WhatsApp conecta após scan do QR */
@@ -3785,9 +3838,10 @@
       const remaining = QR_POLL_MAX - _qrPollingCount;
 
       if (_qrPollingCount > QR_POLL_MAX) {
-        _setQrStatus('⏱️ Tempo esgotado. O QR Code não foi gerado. Tente atualizar manualmente.', '#fbbf24');
+        _setQrStatus('⏱️ Tempo esgotado. Use "Reconectar" para tentar novamente ou "Atualizar" para nova tentativa.', '#fbbf24');
         _setQrImg(_qrPlaceholder('⏱️', '#fbbf24'));
         document.getElementById('qr-btn-refresh').disabled = false;
+        document.getElementById('qr-btn-reconnect').style.display = '';
         document.getElementById('qr-timer').textContent = '';
         return;
       }
