@@ -17,6 +17,19 @@ const PORT = process.env.PORT;
 
 app.use(cors());
 app.use(express.json());
+
+/* ── Cabeçalhos globais: sem cache + iframe liberado ── */
+app.use((_req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  if (process.env.NODE_ENV !== 'production') {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/api/config', (_req, res) => {

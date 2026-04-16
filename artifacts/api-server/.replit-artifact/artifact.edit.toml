@@ -1,0 +1,12 @@
+[artifact]
+kind = "web"
+title = "PRE-Atendimento V8"
+previewPath = "/"
+
+[[artifact.services]]
+name = "web"
+port = 5000
+devCommand = "npm run dev"
+productionServe = "static"
+productionBuild = "npm run build"
+productionRun = ""
