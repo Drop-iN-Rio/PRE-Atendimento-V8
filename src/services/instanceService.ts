@@ -1,5 +1,9 @@
 import { supabaseAdmin } from './supabase.js';
-import { createInstance as callEvolutionApi } from './evolutionGo.js';
+import {
+  createInstance as callEvolutionApi,
+  disconnectInstance as callDisconnect,
+  deleteInstance    as callDelete,
+} from './evolutionGo.js';
 
 export async function createInstanceAndPersist(
   instanceName: string,
@@ -62,9 +66,58 @@ export async function createInstanceAndPersist(
 export async function listInstances() {
   const { data, error } = await supabaseAdmin
     .from('instances')
-    .select('id, instance_name, status, created_at, updated_at')
+    .select('id, instance_name, status, created_at, updated_at, metadata')
     .order('created_at', { ascending: false });
 
   if (error) return { success: false, error: error.message };
   return { success: true, data };
+}
+
+export async function disconnectInstanceService(
+  instanceName: string,
+  overrideUrl?: string,
+  overrideKey?: string,
+) {
+  const result = await callDisconnect(instanceName, overrideUrl, overrideKey);
+
+  if (result.success) {
+    await supabaseAdmin
+      .from('instances')
+      .update({ status: 'inactive' })
+      .eq('instance_name', instanceName);
+
+    await supabaseAdmin.from('instance_logs').insert({
+      instance_id: (await supabaseAdmin
+        .from('instances').select('id').eq('instance_name', instanceName).maybeSingle()
+      ).data?.id,
+      event: 'disconnected',
+      payload: result.data as object ?? {},
+    });
+  }
+
+  return { success: result.success, error: result.error };
+}
+
+export async function deleteInstanceService(
+  instanceName: string,
+  overrideUrl?: string,
+  overrideKey?: string,
+) {
+  const result = await callDelete(instanceName, overrideUrl, overrideKey);
+
+  if (result.success) {
+    await supabaseAdmin
+      .from('instance_logs')
+      .delete()
+      .eq('instance_id', (await supabaseAdmin
+        .from('instances').select('id').eq('instance_name', instanceName).maybeSingle()
+      ).data?.id);
+
+    await supabaseAdmin
+      .from('instances')
+      .delete()
+      .eq('instance_name', instanceName);
+  }
+
+  return { success: result.success, error: result.error };
 }

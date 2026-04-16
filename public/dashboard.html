@@ -845,18 +845,23 @@
     .tk-conn-no  { color: #f87171 !important; }
 
     /* ─── INSTANCE LIST ─── */
-    .instances-list { display: flex; flex-direction: column; gap: 0.6rem; }
+    .instances-list { display: flex; flex-direction: column; gap: 0.75rem; }
 
     .instance-item {
       background: #0f172a;
       border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 1rem;
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .inst-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 0.75rem;
-      min-height: 64px;
+      padding: 0.9rem 1rem;
+      flex-wrap: wrap;
     }
 
     .instance-info { flex: 1; min-width: 0; }
@@ -871,6 +876,181 @@
     }
 
     .instance-date { font-size: 0.75rem; color: #475569; margin-top: 2px; }
+
+    .inst-badges { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; flex-shrink: 0; }
+
+    .conn-badge {
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      flex-shrink: 0;
+    }
+    .conn-badge.connected    { background: #052e16; color: #4ade80; border: 1px solid #16a34a33; }
+    .conn-badge.disconnected { background: #1e0a0a; color: #f87171; border: 1px solid #dc262633; }
+
+    /* ─── DANGER ZONE ─── */
+    .danger-zone {
+      border-top: 1px dashed #292524;
+      padding: 0.75rem 1rem;
+      background: #0a0505;
+    }
+
+    .danger-zone-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #78350f;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.55rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .danger-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .danger-btn {
+      flex: 1;
+      min-width: 130px;
+      padding: 0.55rem 0.75rem;
+      border-radius: 9px;
+      border: 1.5px solid transparent;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      white-space: nowrap;
+    }
+
+    .danger-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-disconnect {
+      background: rgba(180,83,9,0.1);
+      border-color: #92400e55;
+      color: #fbbf24;
+    }
+    .btn-disconnect:hover:not(:disabled) { background: rgba(180,83,9,0.2); border-color: #d97706; }
+
+    .btn-delete {
+      background: rgba(220,38,38,0.1);
+      border-color: #b91c1c55;
+      color: #f87171;
+    }
+    .btn-delete:hover:not(:disabled) { background: rgba(220,38,38,0.2); border-color: #ef4444; }
+
+    /* ─── CONFIRMATION MODAL ─── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(0,0,0,0.7);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 18px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+      animation: modalIn 0.2s ease;
+    }
+
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.93) translateY(8px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0);   }
+    }
+
+    .modal-icon { font-size: 2.2rem; text-align: center; margin-bottom: 0.75rem; }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      text-align: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .modal-desc {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      text-align: center;
+      line-height: 1.5;
+      margin-bottom: 0.5rem;
+    }
+
+    .modal-instance-name {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #818cf8;
+      text-align: center;
+      margin-bottom: 1.25rem;
+      word-break: break-all;
+    }
+
+    .modal-actions { display: flex; gap: 0.6rem; }
+
+    .modal-btn-cancel {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: 12px;
+      border: 1.5px solid #334155;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s;
+    }
+    .modal-btn-cancel:hover { border-color: #64748b; color: #e2e8f0; }
+
+    .modal-btn-confirm {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: 12px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+    .modal-btn-confirm.danger-disconnect {
+      background: linear-gradient(135deg,#b45309,#d97706);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(180,83,9,0.35);
+    }
+    .modal-btn-confirm.danger-delete {
+      background: linear-gradient(135deg,#b91c1c,#ef4444);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(185,28,28,0.35);
+    }
+    .modal-btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .badge {
       padding: 4px 10px;
@@ -1237,6 +1417,22 @@
 
   </div><!-- /.content-area -->
 
+  <!-- ══════════════════════════
+       MODAL DE CONFIRMAÇÃO
+       ══════════════════════════ -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-box">
+      <div class="modal-icon" id="modal-icon">⚠️</div>
+      <div class="modal-title" id="modal-title">Confirmar ação</div>
+      <div class="modal-desc"  id="modal-desc">Esta ação não pode ser desfeita.</div>
+      <div class="modal-instance-name" id="modal-inst-name"></div>
+      <div class="modal-actions">
+        <button class="modal-btn-cancel"  onclick="closeModal()">Cancelar</button>
+        <button class="modal-btn-confirm" id="modal-confirm-btn" onclick="executeModalAction()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* ─── AUTH GUARD ─── */
     const raw = localStorage.getItem('pa_session');
@@ -1577,6 +1773,133 @@
       }
     });
 
+    /* ─── MODAL DE CONFIRMAÇÃO ─── */
+    let _modalAction = null;
+
+    function openModal({ icon, title, desc, instanceName, btnClass, btnLabel, onConfirm }) {
+      document.getElementById('modal-icon').textContent       = icon;
+      document.getElementById('modal-title').textContent      = title;
+      document.getElementById('modal-desc').textContent       = desc;
+      document.getElementById('modal-inst-name').textContent  = instanceName;
+      const btn = document.getElementById('modal-confirm-btn');
+      btn.className = 'modal-btn-confirm ' + btnClass;
+      btn.textContent = btnLabel;
+      btn.disabled = false;
+      _modalAction = onConfirm;
+      document.getElementById('confirm-modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('confirm-modal').classList.remove('open');
+      document.body.style.overflow = '';
+      _modalAction = null;
+    }
+
+    async function executeModalAction() {
+      if (!_modalAction) return;
+      const btn = document.getElementById('modal-confirm-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Aguarde…';
+      try {
+        await _modalAction();
+      } finally {
+        closeModal();
+      }
+    }
+
+    /* ─── AÇÕES DE INSTÂNCIA ─── */
+    function getApiOverrides() {
+      const cfg = loadAdminConfig ? loadAdminConfig() : null;
+      return {
+        evolutionUrl: cfg?.evolutionUrl || undefined,
+        apiKey:       cfg?.apiKey       || undefined,
+      };
+    }
+
+    function confirmDisconnect(name) {
+      openModal({
+        icon:         '🔌',
+        title:        'Desconectar Instância',
+        desc:         'A instância será desconectada do WhatsApp. Você precisará reconectar pelo QR Code.',
+        instanceName: name,
+        btnClass:     'danger-disconnect',
+        btnLabel:     'Desconectar',
+        onConfirm:    () => executeDisconnect(name),
+      });
+    }
+
+    function confirmDelete(name) {
+      openModal({
+        icon:         '🗑️',
+        title:        'Deletar Instância',
+        desc:         'Esta ação é permanente. A instância será removida da API e do banco de dados.',
+        instanceName: name,
+        btnClass:     'danger-delete',
+        btnLabel:     'Deletar permanentemente',
+        onConfirm:    () => executeDelete(name),
+      });
+    }
+
+    async function executeDisconnect(name) {
+      const overrides = getApiOverrides();
+      const res  = await fetch(`/api/instances/${encodeURIComponent(name)}/disconnect`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(overrides),
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast('✅ Instância desconectada com sucesso.', 'ok');
+        loadInstances();
+      } else {
+        showToast(`❌ Erro: ${json.error || 'Falha ao desconectar.'}`, 'err');
+      }
+    }
+
+    async function executeDelete(name) {
+      const overrides = getApiOverrides();
+      const res  = await fetch(`/api/instances/${encodeURIComponent(name)}`, {
+        method:  'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(overrides),
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast('✅ Instância deletada com sucesso.', 'ok');
+        loadInstances();
+      } else {
+        showToast(`❌ Erro: ${json.error || 'Falha ao deletar.'}`, 'err');
+      }
+    }
+
+    /* ─── TOAST ─── */
+    function showToast(msg, type) {
+      let t = document.getElementById('app-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'app-toast';
+        t.style.cssText = `
+          position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+          z-index:400;padding:0.7rem 1.2rem;border-radius:10px;
+          font-size:0.85rem;font-weight:700;max-width:90vw;text-align:center;
+          transition:opacity 0.3s;pointer-events:none;
+        `;
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      if (type === 'ok') {
+        t.style.background = '#052e16'; t.style.color = '#4ade80';
+        t.style.border = '1px solid #16a34a';
+      } else {
+        t.style.background = '#2d0a0a'; t.style.color = '#f87171';
+        t.style.border = '1px solid #dc2626';
+      }
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => { t.style.opacity = '0'; }, 3000);
+    }
+
     /* ─── LISTA DE INSTÂNCIAS ─── */
     async function loadInstances() {
       const el = document.getElementById('instances-list');
@@ -1590,24 +1913,52 @@
           return;
         }
 
-        const badgeMap = {
-          active:'badge-active', creating:'badge-creating',
-          error:'badge-error',   inactive:'badge-inactive',
-        };
+        const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo' };
+        const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive' };
 
         el.innerHTML = json.data.map(inst => {
-          const cls  = badgeMap[inst.status] || 'badge-inactive';
-          const date = new Date(inst.created_at).toLocaleString('pt-BR', {
-            day:'2-digit', month:'2-digit', year:'2-digit',
-            hour:'2-digit', minute:'2-digit',
+          const sCls  = badgeClass[inst.status] || 'badge-inactive';
+          const sLbl  = statusLabel[inst.status] || inst.status;
+          const date  = new Date(inst.created_at).toLocaleString('pt-BR', {
+            day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit',
           });
+
+          /* connected vem do metadata guardado na criação */
+          const meta      = inst.metadata;
+          const connRaw   = meta?.data?.connected ?? meta?.connected ?? null;
+          const isInactive = inst.status === 'inactive';
+          const connected  = isInactive ? false : (connRaw === true);
+          const connCls    = connected ? 'connected' : 'disconnected';
+          const connLbl    = connected ? '● Conectada' : '○ Desconectada';
+
+          const safeN = inst.instance_name.replace(/'/g, "\\'");
+
           return `
-            <div class="instance-item">
-              <div class="instance-info">
-                <div class="instance-name">${inst.instance_name}</div>
-                <div class="instance-date">${date}</div>
+            <div class="instance-item" id="inst-${CSS.escape(inst.instance_name)}">
+              <div class="inst-header">
+                <div class="instance-info">
+                  <div class="instance-name">${inst.instance_name}</div>
+                  <div class="instance-date">Criada em ${date}</div>
+                </div>
+                <div class="inst-badges">
+                  <span class="badge ${sCls}">${sLbl}</span>
+                  <span class="conn-badge ${connCls}">${connLbl}</span>
+                </div>
               </div>
-              <span class="badge ${cls}">${inst.status}</span>
+              <div class="danger-zone">
+                <div class="danger-zone-label">⚠ Zona de Perigo</div>
+                <div class="danger-actions">
+                  <button class="danger-btn btn-disconnect"
+                    onclick="confirmDisconnect('${safeN}')"
+                    ${connected ? '' : 'disabled title="Já desconectada"'}>
+                    🔌 Desconectar
+                  </button>
+                  <button class="danger-btn btn-delete"
+                    onclick="confirmDelete('${safeN}')">
+                    🗑️ Deletar
+                  </button>
+                </div>
+              </div>
             </div>`;
         }).join('');
       } catch {

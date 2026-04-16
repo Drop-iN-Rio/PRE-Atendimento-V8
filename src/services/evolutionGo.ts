@@ -16,6 +16,55 @@ function maskKey(key: string): string {
   return key.slice(0, 4) + '***' + key.slice(-2);
 }
 
+async function callDelete(path: string, overrideUrl?: string, overrideKey?: string): Promise<EvolutionResponse> {
+  const baseUrl = (overrideUrl || EVOLUTION_API_URL).replace(/\/$/, '');
+  const apiKey  = overrideKey  || GLOBAL_API_KEY;
+
+  if (!baseUrl) return { success: false, error: 'EVOLUTION_API_URL não configurada.' };
+  if (!apiKey)  return { success: false, error: 'GLOBAL_API_KEY não configurada.' };
+
+  const url = `${baseUrl}${path}`;
+  console.log('[Evolution GO] ▶ DELETE', url);
+
+  const controller = new AbortController();
+  const timeout    = setTimeout(() => controller.abort(), 10_000);
+
+  try {
+    const r = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', apikey: apiKey },
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    const rawBody = await r.text();
+    console.log(`[Evolution GO] ◀ HTTP ${r.status}`, rawBody.slice(0, 200));
+    let data: unknown;
+    try { data = JSON.parse(rawBody); } catch { data = rawBody; }
+    return { success: r.ok, data, httpStatus: r.status };
+  } catch (err: unknown) {
+    clearTimeout(timeout);
+    const msg = (err as Error).name === 'AbortError' ? 'Timeout: sem resposta em 10s' : (err as Error).message;
+    console.error('[Evolution GO] ✖', msg);
+    return { success: false, error: msg };
+  }
+}
+
+export async function disconnectInstance(
+  instanceName: string,
+  overrideUrl?: string,
+  overrideKey?: string,
+): Promise<EvolutionResponse> {
+  return callDelete(`/instance/logout/${encodeURIComponent(instanceName)}`, overrideUrl, overrideKey);
+}
+
+export async function deleteInstance(
+  instanceName: string,
+  overrideUrl?: string,
+  overrideKey?: string,
+): Promise<EvolutionResponse> {
+  return callDelete(`/instance/delete/${encodeURIComponent(instanceName)}`, overrideUrl, overrideKey);
+}
+
 export async function createInstance(
   instanceName: string,
   token?: string,

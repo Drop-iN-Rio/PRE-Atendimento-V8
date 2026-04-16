@@ -4,7 +4,12 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { runMigrations } from './db/migrate.js';
-import { createInstanceAndPersist, listInstances } from './services/instanceService.js';
+import {
+  createInstanceAndPersist,
+  listInstances,
+  disconnectInstanceService,
+  deleteInstanceService,
+} from './services/instanceService.js';
 import { loginUser, registerUser } from './services/authService.js';
 
 dotenv.config();
@@ -183,6 +188,38 @@ app.get('/api/instances', async (_req, res) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
     res.status(500).json({ success: false, error: message });
+  }
+});
+
+/* ── Desconectar instância do WhatsApp ── */
+app.post('/api/instances/:name/disconnect', async (req, res) => {
+  const { name } = req.params;
+  const { evolutionUrl, apiKey } = req.body as { evolutionUrl?: string; apiKey?: string };
+  try {
+    const result = await disconnectInstanceService(
+      name,
+      evolutionUrl?.trim() || undefined,
+      apiKey?.trim()       || undefined,
+    );
+    res.status(result.success ? 200 : 502).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Deletar instância permanentemente ── */
+app.delete('/api/instances/:name', async (req, res) => {
+  const { name } = req.params;
+  const { evolutionUrl, apiKey } = req.body as { evolutionUrl?: string; apiKey?: string };
+  try {
+    const result = await deleteInstanceService(
+      name,
+      evolutionUrl?.trim() || undefined,
+      apiKey?.trim()       || undefined,
+    );
+    res.status(result.success ? 200 : 502).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
 
