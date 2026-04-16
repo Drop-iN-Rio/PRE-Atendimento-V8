@@ -891,6 +891,149 @@
     .conn-badge.connected    { background: #052e16; color: #4ade80; border: 1px solid #16a34a33; }
     .conn-badge.disconnected { background: #1e0a0a; color: #f87171; border: 1px solid #dc262633; }
 
+    /* ─── GEAR ICON ─── */
+    .inst-header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .btn-gear {
+      width: 36px; height: 36px;
+      background: transparent;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      color: #64748b;
+      font-size: 1.05rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: manipulation;
+      transition: border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-gear:hover, .btn-gear:focus-visible { border-color: #6366f1; color: #818cf8; outline: none; }
+    .btn-gear:active { background: rgba(99,102,241,0.12); }
+
+    /* ─── PANEL INSTANCE (settings overlay) ─── */
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0.6; }
+      to   { transform: translateX(0);    opacity: 1;   }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0);    opacity: 1;   }
+      to   { transform: translateX(100%); opacity: 0;   }
+    }
+
+    #panel-instance {
+      display: none;
+    }
+    #panel-instance.active {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: #0f172a;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding-bottom: calc(env(safe-area-inset-bottom) + 2rem);
+      animation: slideInRight 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    #panel-instance.sliding-out {
+      display: block !important;
+      position: fixed !important;
+      inset: 0;
+      z-index: 200;
+      background: #0f172a;
+      overflow: hidden;
+      animation: slideOutRight 0.2s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+
+    .is-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0 1rem;
+      padding-top: env(safe-area-inset-top);
+      height: calc(56px + env(safe-area-inset-top));
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding-bottom: 0.75rem;
+      gap: 0.75rem;
+    }
+
+    .btn-back {
+      display: flex; align-items: center; gap: 0.35rem;
+      background: transparent;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      color: #94a3b8;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0 0.75rem;
+      height: 34px;
+      cursor: pointer;
+      white-space: nowrap;
+      touch-action: manipulation;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-back:hover { border-color: #6366f1; color: #818cf8; }
+
+    .is-topbar-name {
+      flex: 1;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .is-body { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .is-section {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .is-section-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 0.75rem 1rem 0.5rem;
+      border-bottom: 1px solid #334155;
+    }
+
+    .is-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 1rem;
+      border-bottom: 1px solid #1e293b88;
+      gap: 0.5rem;
+    }
+    .is-row:last-child { border-bottom: none; }
+    .is-row-label { font-size: 0.8rem; color: #64748b; font-weight: 600; flex-shrink: 0; }
+    .is-row-value { font-size: 0.85rem; color: #e2e8f0; font-weight: 500; text-align: right; }
+
+    .is-section-body { padding: 0.85rem 1rem; }
+    .is-desc {
+      font-size: 0.8rem;
+      color: #64748b;
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+    }
+    .is-danger-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
     /* ─── INST ACTIONS (QR code button) ─── */
     .inst-actions { padding: 0 1rem 0.6rem; }
 
@@ -1531,6 +1674,69 @@
         </div>
       </div>
 
+      <!-- ── CONFIGURAÇÕES DA INSTÂNCIA (SPA sub-view) ── -->
+      <div class="panel" id="panel-instance">
+
+        <!-- Topbar com botão voltar -->
+        <div class="is-topbar">
+          <button class="btn-back" onclick="backToList()">← Voltar</button>
+          <div class="is-topbar-name" id="is-topbar-name">Configurações</div>
+          <div style="width:72px"></div>
+        </div>
+
+        <div class="is-body">
+
+          <!-- Informações gerais -->
+          <div class="is-section">
+            <div class="is-section-title">Informações</div>
+            <div class="is-row">
+              <span class="is-row-label">Nome</span>
+              <span class="is-row-value" id="is-name" style="font-family:'Courier New',monospace;font-size:0.8rem">—</span>
+            </div>
+            <div class="is-row">
+              <span class="is-row-label">Status</span>
+              <span id="is-status">—</span>
+            </div>
+            <div class="is-row">
+              <span class="is-row-label">Conexão</span>
+              <span id="is-connection">—</span>
+            </div>
+            <div class="is-row">
+              <span class="is-row-label">Criada em</span>
+              <span class="is-row-value" id="is-created">—</span>
+            </div>
+          </div>
+
+          <!-- QR Code -->
+          <div class="is-section">
+            <div class="is-section-title">Conexão WhatsApp</div>
+            <div class="is-section-body">
+              <p class="is-desc">Escaneie o QR Code com o WhatsApp para conectar esta instância ao servidor.</p>
+              <button class="btn-qr" id="is-btn-qr" style="width:100%">
+                📷 Abrir QR Code
+              </button>
+            </div>
+          </div>
+
+          <!-- Zona de Perigo -->
+          <div class="is-section" style="border-color:rgba(127,29,29,0.3)">
+            <div class="is-section-title" style="color:#f87171;border-color:rgba(127,29,29,0.25)">⚠ Zona de Perigo</div>
+            <div class="is-section-body">
+              <p class="is-desc">Estas ações afetam diretamente a instância. Prossiga com cautela.</p>
+              <div class="is-danger-actions">
+                <button class="danger-btn btn-disconnect" id="is-btn-disconnect">
+                  🔌 Desconectar
+                </button>
+                <button class="danger-btn btn-delete" id="is-btn-delete">
+                  🗑️ Deletar Instância
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /.is-body -->
+      </div><!-- /#panel-instance -->
+
     </div><!-- /.main -->
 
     <!-- BOTTOM NAV (mobile only) -->
@@ -2002,6 +2208,10 @@
       });
     }
 
+    function _isSettingsPanelOpen() {
+      return document.getElementById('panel-instance')?.classList.contains('active');
+    }
+
     async function executeDisconnect(name) {
       const overrides = getApiOverrides();
       const res  = await fetch(`/api/instances/${encodeURIComponent(name)}/disconnect`, {
@@ -2012,7 +2222,8 @@
       const json = await res.json();
       if (json.success) {
         showToast('✅ Instância desconectada com sucesso.', 'ok');
-        loadInstances();
+        await loadInstances();
+        if (_isSettingsPanelOpen()) backToList();
       } else {
         showToast(`❌ Erro: ${json.error || 'Falha ao desconectar.'}`, 'err');
       }
@@ -2028,7 +2239,8 @@
       const json = await res.json();
       if (json.success) {
         showToast('✅ Instância deletada com sucesso.', 'ok');
-        loadInstances();
+        await loadInstances();
+        if (_isSettingsPanelOpen()) backToList();
       } else {
         showToast(`❌ Erro: ${json.error || 'Falha ao deletar.'}`, 'err');
       }
@@ -2062,6 +2274,8 @@
     }
 
     /* ─── LISTA DE INSTÂNCIAS ─── */
+    let _instances = [];
+
     async function loadInstances() {
       const el = document.getElementById('instances-list');
       el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>`;
@@ -2070,9 +2284,12 @@
         const json = await res.json();
 
         if (!json.success || !json.data?.length) {
+          _instances = [];
           el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div>Nenhuma instância encontrada.</div>`;
           return;
         }
+
+        _instances = json.data;
 
         const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo' };
         const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive' };
@@ -2101,28 +2318,13 @@
                   <div class="instance-name">${inst.instance_name}</div>
                   <div class="instance-date">Criada em ${date}</div>
                 </div>
-                <div class="inst-badges">
-                  <span class="badge ${sCls}">${sLbl}</span>
-                  <span class="conn-badge ${connCls}">${connLbl}</span>
-                </div>
-              </div>
-              <div class="inst-actions">
-                <button class="btn-qr" onclick="openQrModal('${safeN}')">
-                  📷 Ver QR Code
-                </button>
-              </div>
-              <div class="danger-zone">
-                <div class="danger-zone-label">⚠ Zona de Perigo</div>
-                <div class="danger-actions">
-                  <button class="danger-btn btn-disconnect"
-                    onclick="confirmDisconnect('${safeN}')"
-                    ${connected ? '' : 'disabled title="Já desconectada"'}>
-                    🔌 Desconectar
-                  </button>
-                  <button class="danger-btn btn-delete"
-                    onclick="confirmDelete('${safeN}')">
-                    🗑️ Deletar
-                  </button>
+                <div class="inst-header-right">
+                  <div class="inst-badges">
+                    <span class="badge ${sCls}">${sLbl}</span>
+                    <span class="conn-badge ${connCls}">${connLbl}</span>
+                  </div>
+                  <button class="btn-gear" onclick="openInstanceSettings('${safeN}')"
+                    title="Configurações da instância" aria-label="Configurações">⚙</button>
                 </div>
               </div>
             </div>`;
@@ -2130,6 +2332,67 @@
       } catch {
         el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>Erro ao carregar.</div>`;
       }
+    }
+
+    /* ─── INSTANCE SETTINGS (SPA navigation) ─── */
+
+    function openInstanceSettings(name) {
+      const inst = _instances.find(i => i.instance_name === name);
+      if (!inst) { showToast('Instância não encontrada. Recarregue a lista.', false); return; }
+
+      /* Topbar name */
+      document.getElementById('is-topbar-name').textContent = name;
+      document.getElementById('is-name').textContent        = name;
+
+      /* Status badge */
+      const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo' };
+      const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive' };
+      const sCls = badgeClass[inst.status] || 'badge-inactive';
+      const sLbl = statusLabel[inst.status] || inst.status;
+      document.getElementById('is-status').innerHTML = `<span class="badge ${sCls}">${sLbl}</span>`;
+
+      /* Connection badge */
+      const meta       = inst.metadata;
+      const connRaw    = meta?.data?.connected ?? meta?.connected ?? null;
+      const isInactive = inst.status === 'inactive';
+      const connected  = isInactive ? false : (connRaw === true);
+      document.getElementById('is-connection').innerHTML = connected
+        ? '<span class="conn-badge connected">● Conectada</span>'
+        : '<span class="conn-badge disconnected">○ Desconectada</span>';
+
+      /* Created date */
+      const date = inst.created_at
+        ? new Date(inst.created_at).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })
+        : '—';
+      document.getElementById('is-created').textContent = date;
+
+      /* Wire buttons */
+      document.getElementById('is-btn-qr').onclick        = () => openQrModal(name);
+      document.getElementById('is-btn-delete').onclick    = () => confirmDelete(name);
+      const disconnBtn = document.getElementById('is-btn-disconnect');
+      disconnBtn.disabled = !connected;
+      disconnBtn.title    = connected ? '' : 'Já desconectada';
+      disconnBtn.onclick  = () => confirmDisconnect(name);
+
+      /* Navigate */
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      const panel = document.getElementById('panel-instance');
+      panel.classList.remove('sliding-out');
+      panel.classList.add('active');
+      panel.scrollTop = 0;
+
+      /* Hide bottom nav while in settings */
+      document.querySelector('.bottom-nav').style.display = 'none';
+    }
+
+    function backToList() {
+      const panel = document.getElementById('panel-instance');
+      panel.classList.add('sliding-out');
+      setTimeout(() => {
+        panel.classList.remove('active', 'sliding-out');
+        document.querySelector('.bottom-nav').style.display = '';
+        showPanel('panel-list', null, 'bnav-list', 'snav-list');
+      }, 195);
     }
 
     /* ─── QR CODE ─── */
