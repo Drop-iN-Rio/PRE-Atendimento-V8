@@ -528,6 +528,117 @@
       opacity: 0.85;
     }
 
+    /* ─── FORM SECTION DIVIDER ─── */
+    .form-section {
+      margin: 1.1rem 0 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .form-section-line {
+      flex: 1;
+      height: 1px;
+      background: #334155;
+    }
+
+    .form-section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #475569;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ─── INLINE FIELD STATUS DOT ─── */
+    .field-wrap { position: relative; }
+
+    .field-dot {
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #334155;
+      transition: background 0.2s;
+      pointer-events: none;
+    }
+
+    .field-dot.ok  { background: #4ade80; }
+    .field-dot.nok { background: #f87171; }
+
+    .field-wrap input { padding-right: 2.2rem; }
+
+    /* ─── TOKEN RESULT BLOCK ─── */
+    .token-block {
+      display: none;
+      margin-top: 1rem;
+      background: #050e1a;
+      border: 1.5px solid #1e3a5f;
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+    }
+
+    .token-block.visible { display: block; }
+
+    .token-block-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #4ade80;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 0.5rem;
+    }
+
+    .token-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .token-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+      min-width: 58px;
+    }
+
+    .token-value {
+      font-family: 'Courier New', monospace;
+      font-size: 0.78rem;
+      color: #818cf8;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .token-copy {
+      background: transparent;
+      border: 1px solid #334155;
+      border-radius: 7px;
+      color: #64748b;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .token-copy:hover { border-color: #6366f1; color: #818cf8; }
+
     /* ─── INSTANCE LIST ─── */
     .instances-list { display: flex; flex-direction: column; gap: 0.6rem; }
 
@@ -749,13 +860,73 @@
             </div>
           </div>
           <form id="form-instance" novalidate>
-            <label for="instanceName">Nome da Instância</label>
-            <input type="text" id="instanceName"
-              placeholder="ex: minha-loja-01"
-              autocomplete="off" autocorrect="off"
-              autocapitalize="none" spellcheck="false" required />
-            <button type="submit" class="btn" id="btn-instance">Criar Instância</button>
+
+            <!-- ── Conexão com a API ── -->
+            <div class="form-section">
+              <div class="form-section-line"></div>
+              <span class="form-section-label">Conexão com a API</span>
+              <div class="form-section-line"></div>
+            </div>
+
+            <label for="inst-url">URL da Evolution GO <span style="color:#ef4444">*</span></label>
+            <div class="field-wrap">
+              <input type="text" id="inst-url"
+                placeholder="https://evogo.pre-atendimento.com"
+                autocomplete="off" autocorrect="off"
+                autocapitalize="none" spellcheck="false" />
+              <span class="field-dot" id="dot-url"></span>
+            </div>
+
+            <div style="height:0.75rem"></div>
+
+            <label for="inst-key">GLOBAL_API_KEY <span style="color:#ef4444">*</span></label>
+            <div class="field-wrap">
+              <input type="text" id="inst-key"
+                placeholder="Chave de acesso global da API"
+                autocomplete="off" autocorrect="off"
+                autocapitalize="none" spellcheck="false" />
+              <span class="field-dot" id="dot-key"></span>
+            </div>
+
+            <!-- ── Instância ── -->
+            <div class="form-section">
+              <div class="form-section-line"></div>
+              <span class="form-section-label">Instância</span>
+              <div class="form-section-line"></div>
+            </div>
+
+            <label for="instanceName">Nome da Instância <span style="color:#ef4444">*</span></label>
+            <div class="field-wrap">
+              <input type="text" id="instanceName"
+                placeholder="ex: minha-loja-01"
+                autocomplete="off" autocorrect="off"
+                autocapitalize="none" spellcheck="false" required />
+              <span class="field-dot" id="dot-name"></span>
+            </div>
+
+            <button type="submit" class="btn" id="btn-instance" disabled>
+              Criar Instância
+            </button>
           </form>
+
+          <!-- Bloco de token gerado -->
+          <div class="token-block" id="token-block">
+            <div class="token-block-title">✅ Instância criada com sucesso</div>
+            <div class="token-row">
+              <span class="token-label">Instância</span>
+              <span class="token-value" id="tk-name">—</span>
+            </div>
+            <div class="token-row">
+              <span class="token-label">Token</span>
+              <span class="token-value" id="tk-token">—</span>
+              <button class="token-copy" onclick="copyToken()">Copiar</button>
+            </div>
+            <div class="token-row" id="tk-status-row">
+              <span class="token-label">Status</span>
+              <span class="token-value" id="tk-status">—</span>
+            </div>
+          </div>
+
           <div class="alert" id="result-instance"></div>
         </div>
       </div>
@@ -894,10 +1065,7 @@
       /* Banner */
       document.getElementById('config-banner').classList.toggle('visible', !valid);
 
-      /* Botão Criar Instância */
-      const btnInst = document.getElementById('btn-instance');
-      btnInst.disabled = !valid;
-      btnInst.title    = valid ? '' : 'Configure a URL e a API Key antes de criar instâncias.';
+      /* Botão Criar Instância — controlado pelo onInstFieldInput() inline */
 
       /* Status indicators no painel de config */
       const hasUrl = !!(cfg && cfg.evolutionUrl && cfg.evolutionUrl.trim());
@@ -944,6 +1112,7 @@
       setTimeout(() => badge.classList.remove('visible'), 3500);
 
       updateConfigUI();
+      prefillInstFields(true);
     });
 
     /* ─── NAV ─── */
@@ -972,56 +1141,108 @@
       if (panelId === 'panel-list') loadInstances();
     }
 
+    /* ─── VALIDAÇÃO INLINE dos campos de instância ─── */
+    function isInstFormValid() {
+      const url  = document.getElementById('inst-url').value.trim();
+      const key  = document.getElementById('inst-key').value.trim();
+      const name = document.getElementById('instanceName').value.trim();
+      return !!(url && key && name);
+    }
+
+    function updateInstDot(id, dotId) {
+      const val = document.getElementById(id).value.trim();
+      const dot = document.getElementById(dotId);
+      dot.className = 'field-dot ' + (val ? 'ok' : 'nok');
+    }
+
+    function onInstFieldInput() {
+      updateInstDot('inst-url', 'dot-url');
+      updateInstDot('inst-key', 'dot-key');
+      updateInstDot('instanceName', 'dot-name');
+      document.getElementById('btn-instance').disabled = !isInstFormValid();
+    }
+
+    ['inst-url', 'inst-key', 'instanceName'].forEach(id => {
+      document.getElementById(id).addEventListener('input', onInstFieldInput);
+    });
+
+    /* Pré-preenche campos inline com config salva (force=true sempre sobrescreve) */
+    function prefillInstFields(force) {
+      const cfg = loadConfig();
+      if (!cfg) return;
+      const urlEl = document.getElementById('inst-url');
+      const keyEl = document.getElementById('inst-key');
+      if (cfg.evolutionUrl && (force || !urlEl.value)) urlEl.value = cfg.evolutionUrl;
+      if (cfg.apiKey      && (force || !keyEl.value)) keyEl.value = cfg.apiKey;
+      onInstFieldInput();
+    }
+
+    /* ─── TOKEN COPY ─── */
+    function copyToken() {
+      const token = document.getElementById('tk-token').textContent;
+      if (!token || token === '—') return;
+      navigator.clipboard.writeText(token).then(() => {
+        const btn = document.querySelector('.token-copy');
+        btn.textContent = 'Copiado!';
+        setTimeout(() => { btn.textContent = 'Copiar'; }, 2000);
+      }).catch(() => {});
+    }
+
     /* ─── CRIAR INSTÂNCIA ─── */
     document.getElementById('form-instance').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const cfg = loadConfig();
-      if (!isConfigValid(cfg)) {
-        showPanel('panel-config', null, 'bnav-config', 'snav-config');
-        return;
-      }
-
+      const evolutionUrl = document.getElementById('inst-url').value.trim();
+      const apiKey       = document.getElementById('inst-key').value.trim();
       const instanceName = document.getElementById('instanceName').value.trim();
-      const btn   = document.getElementById('btn-instance');
-      const alert = document.getElementById('result-instance');
+      const btn          = document.getElementById('btn-instance');
+      const alertEl      = document.getElementById('result-instance');
 
-      if (!instanceName) {
-        alert.className = 'alert error';
-        alert.textContent = '❌ Informe o nome da instância.';
+      if (!evolutionUrl || !apiKey || !instanceName) {
+        alertEl.className = 'alert error';
+        alertEl.textContent = '❌ Preencha todos os campos obrigatórios.';
         return;
       }
+
+      /* Persiste URL e key na config */
+      let cleanUrl = evolutionUrl;
+      try { cleanUrl = new URL(evolutionUrl).origin; } catch { /* mantém */ }
+      localStorage.setItem(CONFIG_KEY, JSON.stringify({ evolutionUrl: cleanUrl, apiKey }));
+      updateConfigUI();
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Criando...';
-      alert.className = 'alert';
+      alertEl.className = 'alert';
+      document.getElementById('token-block').classList.remove('visible');
 
       try {
         const res  = await fetch('/api/instances', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            instanceName,
-            evolutionUrl: cfg.evolutionUrl,
-            apiKey: cfg.apiKey,
-          }),
+          body: JSON.stringify({ instanceName, evolutionUrl: cleanUrl, apiKey }),
         });
         const json = await res.json();
 
         if (res.ok && json.success) {
-          alert.className = 'alert success';
-          alert.innerHTML = `✅ Instância criada!<pre>${JSON.stringify(json.data, null, 2)}</pre>`;
+          /* Exibe bloco de token */
+          const data = json.data || {};
+          document.getElementById('tk-name').textContent   = data.instance?.instanceName || instanceName;
+          document.getElementById('tk-token').textContent  = data.hash?.apikey || data.token || data.apikey || '(não retornado)';
+          document.getElementById('tk-status').textContent = data.instance?.status || data.status || 'created';
+          document.getElementById('token-block').classList.add('visible');
           document.getElementById('instanceName').value = '';
+          onInstFieldInput();
+          document.getElementById('token-block').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
-          alert.className = 'alert error';
-          alert.innerHTML = `❌ ${json.error || 'Erro desconhecido'}<pre>${JSON.stringify(json, null, 2)}</pre>`;
+          alertEl.className = 'alert error';
+          alertEl.innerHTML = `❌ ${json.error || 'Erro desconhecido'}<pre>${JSON.stringify(json, null, 2)}</pre>`;
+          alertEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-        alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       } catch (err) {
-        alert.className = 'alert error';
-        alert.textContent = `❌ Erro de conexão: ${err.message}`;
+        alertEl.className = 'alert error';
+        alertEl.textContent = `❌ Erro de conexão: ${err.message}`;
       } finally {
-        btn.disabled = !isConfigValid(loadConfig());
+        btn.disabled = !isInstFormValid();
         btn.textContent = 'Criar Instância';
       }
     });
@@ -1066,6 +1287,7 @@
 
     /* ─── INIT ─── */
     updateConfigUI();
+    prefillInstFields();
     loadInstances();
   </script>
 </body>

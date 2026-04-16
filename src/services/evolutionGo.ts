@@ -1,9 +1,3 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || 'https://api.evogo.com.br';
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || '';
-
 interface CreateInstancePayload {
   instanceName: string;
 }
@@ -14,14 +8,20 @@ interface EvolutionResponse {
   error?: string;
 }
 
-export async function createInstance(instanceName: string): Promise<EvolutionResponse> {
+export async function createInstance(
+  instanceName: string,
+  evolutionUrl: string,
+  apiKey: string,
+): Promise<EvolutionResponse> {
   const payload: CreateInstancePayload = { instanceName };
 
-  const response = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
+  const baseUrl = evolutionUrl.replace(/\/$/, '');
+
+  const response = await fetch(`${baseUrl}/instance/create`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'apikey': EVOLUTION_API_KEY,
+      'apikey': apiKey,
     },
     body: JSON.stringify(payload),
   });

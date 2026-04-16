@@ -1,7 +1,11 @@
 import { supabaseAdmin } from './supabase.js';
 import { createInstance as callEvolutionApi } from './evolutionGo.js';
 
-export async function createInstanceAndPersist(instanceName: string) {
+export async function createInstanceAndPersist(
+  instanceName: string,
+  evolutionUrl: string,
+  apiKey: string,
+) {
   const { data: existing } = await supabaseAdmin
     .from('instances')
     .select('id, instance_name, status')
@@ -25,7 +29,7 @@ export async function createInstanceAndPersist(instanceName: string) {
     return { success: false, error: insertError?.message || 'Erro ao salvar instância.' };
   }
 
-  const apiResult = await callEvolutionApi(instanceName);
+  const apiResult = await callEvolutionApi(instanceName, evolutionUrl, apiKey);
 
   const newStatus = apiResult.success ? 'active' : 'error';
 
