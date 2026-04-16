@@ -64,40 +64,47 @@ export async function getQrCode(
 
   const enc = encodeURIComponent(instanceName);
 
-  /* Candidatos em ordem de prioridade:
-     1. /instance/connect/{name}          — Evolution API v2.0 padrão (GET retorna QR code)
-     2. /instance/{name}/connect          — variante path alternativa
-     3. /instance/connectionState/{name}  — v2.0 (pode incluir QR se status=connecting)
-     4. /instance/get-qr-code/{name}      — Evolution GO (já testado — 404, mas mantido como fallback)
-     5. /instance/get-qr-code?instanceName={name} — query-param variant
+  /* ── Candidatos em ordem de prioridade (baseado na documentação oficial Evolution GO) ──
+     1. GET  /instance/get-qr-code?instanceName={name}   ← Evolution GO oficial (query param)
+     2. GET  /instance/{name}/qrcode                     ← citado nas notas da doc Evolution GO
+     3. POST /instance/connect  body:{instanceName}       ← Evolution GO "conectar + retorna QR"
+     4. GET  /instance/connect/{name}                    ← Evolution API v2.0
+     5. GET  /instance/connectionState/{name}            ← v2.0 status (pode ter QR)
   */
-  const candidates: string[] = [
-    `/instance/connect/${enc}`,
-    `/instance/${enc}/connect`,
-    `/instance/connectionState/${enc}`,
-    `/instance/get-qr-code/${enc}`,
-    `/instance/get-qr-code?instanceName=${enc}`,
+  type Candidate = { method: 'GET' | 'POST'; path: string; body?: string };
+  const candidates: Candidate[] = [
+    { method: 'GET',  path: `/instance/get-qr-code?instanceName=${enc}` },
+    { method: 'GET',  path: `/instance/${enc}/qrcode` },
+    { method: 'POST', path: `/instance/connect`,
+      body: JSON.stringify({ instanceName }) },
+    { method: 'GET',  path: `/instance/connect/${enc}` },
+    { method: 'GET',  path: `/instance/connectionState/${enc}` },
   ];
 
   const headers  = { 'Content-Type': 'application/json', apikey: apiKey };
   const attempts: string[] = [];
 
-  for (const path of candidates) {
-    const url = `${baseUrl}${path}`;
-    attempts.push(url);
-    console.log('[QRCode] ▶ GET', url);
+  for (const c of candidates) {
+    const url = `${baseUrl}${c.path}`;
+    attempts.push(`${c.method} ${url}`);
+    console.log(`[QRCode] ▶ ${c.method}`, url);
 
     const controller = new AbortController();
     const timeout    = setTimeout(() => controller.abort(), 12_000);
 
     try {
-      const r = await fetch(url, { method: 'GET', headers, signal: controller.signal });
+      const r = await fetch(url, {
+        method:  c.method,
+        headers,
+        signal:  controller.signal,
+        ...(c.body ? { body: c.body } : {}),
+      });
       clearTimeout(timeout);
       const rawBody = await r.text();
-      console.log(`[QRCode] ◀ HTTP ${r.status}`, rawBody.slice(0, 400));
+      console.log(`[QRCode] ◀ HTTP ${r.status}`, rawBody.slice(0, 500));
 
       if (r.status === 404) {
-        console.log('[QRCode] 404 — testando próximo candidato…');
+        console.log('[QRCode] 404 — próximo candidato…');
         continue;
       }
 
@@ -108,9 +115,13 @@ export async function getQrCode(
         success:    r.ok,
         data,
         httpStatus: r.status,
-        urlCalled:  url,
+        urlCalled:  `${c.method} ${url}`,
         attemptLog: attempts,
-        ...(r.ok ? {} : { error: (data as Record<string,unknown>)?.error as string || `Erro HTTP ${r.status}` }),
+        ...(r.ok ? {} : {
+          error: (data as Record<string,unknown>)?.error as string
+                 || (data as Record<string,unknown>)?.message as string
+                 || `Erro HTTP ${r.status}`,
+        }),
       };
 
     } catch (err: unknown) {
@@ -119,12 +130,12 @@ export async function getQrCode(
         ? `Timeout (12s) em ${url}`
         : (err as Error).message;
       console.error('[QRCode] ✖ Erro:', msg);
-      return { success: false, error: msg, urlCalled: url, attemptLog: attempts };
+      return { success: false, error: msg, urlCalled: `${c.method} ${url}`, attemptLog: attempts };
     }
   }
 
   /* Todos os candidatos retornaram 404 */
-  const msg = `Nenhum endpoint de QR Code respondeu (todos 404). Tentados: ${attempts.join(' | ')}`;
+  const msg = `Endpoint de QR Code não encontrado no servidor (todos retornaram 404).\nTentados:\n${attempts.join('\n')}`;
   console.error('[QRCode] ✖', msg);
   return { success: false, error: msg, urlCalled: attempts.join(' | '), attemptLog: attempts };
 }
