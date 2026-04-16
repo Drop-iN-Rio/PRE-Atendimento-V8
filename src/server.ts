@@ -3,7 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createInstance } from './services/evolutionGo.js';
+import { runMigrations } from './db/migrate.js';
+import { createInstanceAndPersist, listInstances } from './services/instanceService.js';
 
 dotenv.config();
 
@@ -15,7 +16,6 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/health', (_req, res) => {
@@ -35,11 +35,11 @@ app.post('/api/instances', async (req, res) => {
   }
 
   try {
-    const result = await createInstance(instanceName.trim());
+    const result = await createInstanceAndPersist(instanceName.trim());
     if (result.success) {
       res.status(201).json(result);
     } else {
-      res.status(502).json(result);
+      res.status(result.error?.includes('já existe') ? 409 : 502).json(result);
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -47,6 +47,26 @@ app.post('/api/instances', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+app.get('/api/instances', async (_req, res) => {
+  try {
+    const result = await listInstances();
+    res.status(result.success ? 200 : 500).json(result);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro desconhecido';
+    res.status(500).json({ success: false, error: message });
+  }
 });
+
+async function start() {
+  try {
+    await runMigrations();
+  } catch (err) {
+    console.error('⚠️  Migrations falharam, mas o servidor vai iniciar mesmo assim:', err);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  });
+}
+
+start();
