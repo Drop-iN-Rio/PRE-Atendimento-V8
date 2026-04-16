@@ -595,6 +595,14 @@
       el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    function showAlertHTML(type, html) {
+      const el = document.getElementById('alert');
+      el.style.display = '';
+      el.className = 'alert ' + type;
+      el.innerHTML = html;
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
     function hideAlert() {
       const el = document.getElementById('alert');
       el.className = 'alert';
@@ -680,7 +688,19 @@
         const data = await res.json();
 
         if (!data.success) {
-          showAlert('error', data.error || 'Erro ao criar conta.');
+          if (data.error && data.error.includes('Já existe uma conta')) {
+            showAlertHTML('error',
+              'Já existe uma conta com este e-mail. ' +
+              '<a href="#" id="alert-forgot-link" style="color:inherit;font-weight:700;text-decoration:underline;">Esqueci minha senha</a>'
+            );
+            document.getElementById('alert-forgot-link').addEventListener('click', (ev) => {
+              ev.preventDefault();
+              switchView('forgot');
+              document.getElementById('forgot-email').value = email;
+            });
+          } else {
+            showAlert('error', data.error || 'Erro ao criar conta.');
+          }
           return;
         }
 
