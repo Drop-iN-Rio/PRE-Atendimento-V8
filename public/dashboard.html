@@ -326,6 +326,80 @@
 
     .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
 
+    /* ─── CONFIG BANNER ─── */
+    .config-banner {
+      display: none;
+      background: #1c1204;
+      border-bottom: 2px solid #d97706;
+      padding: 0.75rem 1rem;
+      gap: 0.6rem;
+      align-items: flex-start;
+    }
+
+    .config-banner.visible { display: flex; }
+
+    .config-banner-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+    .config-banner-body { flex: 1; min-width: 0; }
+
+    .config-banner-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 2px;
+    }
+
+    .config-banner-text {
+      font-size: 0.78rem;
+      color: #92400e;
+      color: #fcd34d;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+
+    .config-banner-btn {
+      background: #d97706;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      touch-action: manipulation;
+      white-space: nowrap;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    /* ─── CONFIG FORM ─── */
+    .config-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    .config-status.ok    { color: #4ade80; }
+    .config-status.nok   { color: #f87171; }
+
+    .config-saved-badge {
+      display: none;
+      background: #052e16;
+      border: 1.5px solid #16a34a;
+      color: #4ade80;
+      border-radius: 10px;
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+
+    .config-saved-badge.visible { display: block; }
+
     /* ─── BOTTOM NAV ─── */
     .bottom-nav {
       position: fixed;
@@ -410,9 +484,22 @@
     <span class="user-role-badge" id="user-role">—</span>
   </div>
 
+  <!-- BANNER de configuração pendente -->
+  <div class="config-banner" id="config-banner">
+    <div class="config-banner-icon">⚠️</div>
+    <div class="config-banner-body">
+      <div class="config-banner-title">Configuração obrigatória</div>
+      <div class="config-banner-text">Informe a URL da Evolution GO e a GLOBAL_API_KEY antes de criar instâncias.</div>
+    </div>
+    <button class="config-banner-btn" onclick="showPanel('panel-config', null, 'bnav-config')">
+      Configurar
+    </button>
+  </div>
+
   <div class="nav-tabs">
-    <div class="nav-tab active" onclick="showPanel('panel-create', this)">➕ Nova Instância</div>
-    <div class="nav-tab" onclick="showPanel('panel-list', this)">📋 Instâncias</div>
+    <div class="nav-tab active" id="tab-create" onclick="showPanel('panel-create', this)">➕ Nova Instância</div>
+    <div class="nav-tab" id="tab-list"   onclick="showPanel('panel-list',   this)">📋 Instâncias</div>
+    <div class="nav-tab" id="tab-config" onclick="showPanel('panel-config', this)">⚙️ Configuração</div>
   </div>
 
   <div class="main">
@@ -435,6 +522,52 @@
           <button type="submit" class="btn" id="btn-instance">Criar Instância</button>
         </form>
         <div class="alert" id="result-instance"></div>
+      </div>
+    </div>
+
+    <!-- CONFIGURAÇÃO -->
+    <div class="panel" id="panel-config">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-purple">⚙️</div>
+          <div>
+            <div class="card-title">Configuração da API</div>
+            <div class="card-desc">Obrigatório para criar instâncias</div>
+          </div>
+        </div>
+
+        <form id="form-config" novalidate>
+          <label for="cfg-url">URL DA EVOLUTION GO</label>
+          <input type="text" id="cfg-url"
+            placeholder="https://evogo.pre-atendimento.com"
+            autocomplete="off" autocorrect="off"
+            autocapitalize="none" spellcheck="false" />
+
+          <div style="height:1rem"></div>
+
+          <label for="cfg-key">GLOBAL_API_KEY</label>
+          <input type="text" id="cfg-key"
+            placeholder="Chave de acesso global da API"
+            autocomplete="off" autocorrect="off"
+            autocapitalize="none" spellcheck="false" />
+
+          <button type="submit" class="btn" id="btn-save-config" style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 16px rgba(16,185,129,0.3)">
+            ✅ Salvar Configuração
+          </button>
+        </form>
+
+        <div class="config-saved-badge" id="config-saved-badge">
+          ✅ Configuração salva! Agora você pode criar instâncias.
+        </div>
+
+        <div style="margin-top:1rem">
+          <div class="config-status" id="config-status-url">
+            <span id="cfg-icon-url">○</span> URL da Evolution GO
+          </div>
+          <div class="config-status" id="config-status-key">
+            <span id="cfg-icon-key">○</span> GLOBAL_API_KEY
+          </div>
+        </div>
       </div>
     </div>
 
@@ -469,10 +602,14 @@
       onclick="showPanel('panel-list', null, 'bnav-list')">
       <span class="bottom-nav-icon">📋</span>Instâncias
     </div>
+    <div class="bottom-nav-item" id="bnav-config"
+      onclick="showPanel('panel-config', null, 'bnav-config')">
+      <span class="bottom-nav-icon">⚙️</span>Config
+    </div>
   </nav>
 
   <script>
-    // ─── AUTH GUARD ───
+    /* ─── AUTH GUARD ─── */
     const raw = localStorage.getItem('pa_session');
     if (!raw) {
       window.location.href = '/';
@@ -489,6 +626,87 @@
       window.location.href = '/';
     }
 
+    /* ─── CONFIG ─── */
+    const CONFIG_KEY = 'pa_app_config';
+
+    function loadConfig() {
+      try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null'); }
+      catch { return null; }
+    }
+
+    function isConfigValid(cfg) {
+      return cfg && cfg.evolutionUrl && cfg.evolutionUrl.trim() &&
+             cfg.apiKey && cfg.apiKey.trim();
+    }
+
+    function updateConfigUI() {
+      const cfg   = loadConfig();
+      const valid = isConfigValid(cfg);
+
+      /* Banner */
+      const banner = document.getElementById('config-banner');
+      banner.classList.toggle('visible', !valid);
+
+      /* Botão Criar Instância */
+      const btnInst = document.getElementById('btn-instance');
+      btnInst.disabled = !valid;
+      if (!valid) {
+        btnInst.title = 'Configure a URL e a API Key antes de criar instâncias.';
+      } else {
+        btnInst.title = '';
+      }
+
+      /* Status indicators no painel de config */
+      const hasUrl = !!(cfg && cfg.evolutionUrl && cfg.evolutionUrl.trim());
+      const hasKey = !!(cfg && cfg.apiKey && cfg.apiKey.trim());
+
+      const elUrl  = document.getElementById('config-status-url');
+      const elKey  = document.getElementById('config-status-key');
+      const icoUrl = document.getElementById('cfg-icon-url');
+      const icoKey = document.getElementById('cfg-icon-key');
+
+      elUrl.className = 'config-status ' + (hasUrl ? 'ok' : 'nok');
+      icoUrl.textContent = hasUrl ? '✓' : '✗';
+      elKey.className = 'config-status ' + (hasKey ? 'ok' : 'nok');
+      icoKey.textContent = hasKey ? '✓' : '✗';
+
+      /* Preenche os campos do form com valores salvos */
+      if (cfg) {
+        document.getElementById('cfg-url').value = cfg.evolutionUrl || '';
+        document.getElementById('cfg-key').value = cfg.apiKey || '';
+      }
+
+      return valid;
+    }
+
+    /* ─── SAVE CONFIG ─── */
+    document.getElementById('form-config').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const url = document.getElementById('cfg-url').value.trim();
+      const key = document.getElementById('cfg-key').value.trim();
+
+      if (!url || !key) {
+        return;
+      }
+
+      let cleanUrl = url;
+      try {
+        const parsed = new URL(url);
+        cleanUrl = parsed.origin;
+      } catch {
+        /* mantém como digitado */
+      }
+
+      localStorage.setItem(CONFIG_KEY, JSON.stringify({ evolutionUrl: cleanUrl, apiKey: key }));
+
+      const badge = document.getElementById('config-saved-badge');
+      badge.classList.add('visible');
+      setTimeout(() => badge.classList.remove('visible'), 3500);
+
+      updateConfigUI();
+    });
+
+    /* ─── NAV ─── */
     function showPanel(panelId, tabEl, bnavId) {
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       document.getElementById(panelId).classList.add('active');
@@ -497,20 +715,44 @@
         document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
         tabEl.classList.add('active');
       }
-
       if (bnavId) {
         document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
         document.getElementById(bnavId).classList.add('active');
       }
 
+      /* Sync tab highlight when called without tabEl (e.g., from banner btn) */
+      const panelToTab = {
+        'panel-create': 'tab-create',
+        'panel-list':   'tab-list',
+        'panel-config': 'tab-config',
+      };
+      if (!tabEl && panelToTab[panelId]) {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(panelToTab[panelId])?.classList.add('active');
+      }
+
       if (panelId === 'panel-list') loadInstances();
     }
 
+    /* ─── CRIAR INSTÂNCIA ─── */
     document.getElementById('form-instance').addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      const cfg = loadConfig();
+      if (!isConfigValid(cfg)) {
+        showPanel('panel-config', null, 'bnav-config');
+        return;
+      }
+
       const instanceName = document.getElementById('instanceName').value.trim();
       const btn   = document.getElementById('btn-instance');
       const alert = document.getElementById('result-instance');
+
+      if (!instanceName) {
+        alert.className = 'alert error';
+        alert.textContent = '❌ Informe o nome da instância.';
+        return;
+      }
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Criando...';
@@ -520,7 +762,11 @@
         const res  = await fetch('/api/instances', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instanceName }),
+          body: JSON.stringify({
+            instanceName,
+            evolutionUrl: cfg.evolutionUrl,
+            apiKey: cfg.apiKey,
+          }),
         });
         const json = await res.json();
 
@@ -537,11 +783,12 @@
         alert.className = 'alert error';
         alert.textContent = `❌ Erro de conexão: ${err.message}`;
       } finally {
-        btn.disabled = false;
+        btn.disabled = !isConfigValid(loadConfig());
         btn.textContent = 'Criar Instância';
       }
     });
 
+    /* ─── LISTA DE INSTÂNCIAS ─── */
     async function loadInstances() {
       const el = document.getElementById('instances-list');
       el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>`;
@@ -554,12 +801,16 @@
           return;
         }
 
-        const badgeMap = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive' };
+        const badgeMap = {
+          active: 'badge-active', creating: 'badge-creating',
+          error: 'badge-error',   inactive: 'badge-inactive',
+        };
 
         el.innerHTML = json.data.map(inst => {
           const cls  = badgeMap[inst.status] || 'badge-inactive';
           const date = new Date(inst.created_at).toLocaleString('pt-BR', {
-            day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit',
+            day:'2-digit', month:'2-digit', year:'2-digit',
+            hour:'2-digit', minute:'2-digit',
           });
           return `
             <div class="instance-item">
@@ -575,6 +826,8 @@
       }
     }
 
+    /* ─── INIT ─── */
+    updateConfigUI();
     loadInstances();
   </script>
 </body>
