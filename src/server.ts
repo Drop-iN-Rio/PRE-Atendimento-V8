@@ -10,6 +10,7 @@ import {
   disconnectInstanceService,
   logoutInstanceService,
   deleteInstanceService,
+  purgeOrphanedInstance,
 } from './services/instanceService.js';
 import {
   getQrCode,
@@ -451,6 +452,20 @@ app.delete('/api/instances/:name', async (req, res) => {
       apiKey?.trim()       || undefined,
     );
     res.status(result.success ? 200 : 502).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Purgar registro órfão — DELETE /api/instances/:name/purge ────────
+   Remove o registro do banco local SEM chamar a Evolution GO API.
+   Usar para limpar registros fantasmas (sem UUID, criação falhou etc.).
+*/
+app.delete('/api/instances/:name/purge', async (req, res) => {
+  const { name } = req.params;
+  try {
+    const result = await purgeOrphanedInstance(name);
+    res.status(result.success ? 200 : 404).json(result);
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });
   }

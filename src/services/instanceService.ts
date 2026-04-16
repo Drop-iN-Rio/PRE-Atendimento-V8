@@ -60,9 +60,8 @@ async function getInstanceMeta(instanceName: string): Promise<{ uuid: string; to
 }
 
 /* ── Criar e persistir instância ──────────────────────────────────────
-   Swagger:
-     1. POST /instance/create  → body { name, token? }        (GLOBAL_API_KEY)
-     2. POST /instance/connect → body {} ConnectStruct vazio   (token instância)
+   Fluxo API-first: a API é chamada ANTES de qualquer insert no banco.
+   Se a API falhar (ex: "instance already exists"), nenhum registro é criado.
 */
 export async function createInstanceAndPersist(
   instanceName: string,
@@ -70,7 +69,7 @@ export async function createInstanceAndPersist(
   overrideUrl?: string,
   overrideKey?: string,
 ) {
-  /* 1. Verificar duplicata */
+  /* 1. Verificar duplicata no banco local */
   const { data: existing } = await supabaseAdmin
     .from('instances')
     .select('id, instance_name, status')
@@ -84,67 +83,81 @@ export async function createInstanceAndPersist(
     };
   }
 
-  /* 2. Inserir no banco com status "creating" */
+  /* 2. Chamar API PRIMEIRO — sem tocar no banco ainda */
+  console.log('[instanceService] ▶ Passo 1/2: criar instância na API');
+  const createResult = await callCreate(instanceName, token, overrideUrl, overrideKey);
+
+  /* Se a API falhou (ex: "instance already exists", erro de rede etc.)
+     → retornar imediatamente sem criar nenhum registro no banco */
+  if (!createResult.success) {
+    console.error(`[instanceService] ✖ API recusou criar "${instanceName}": ${createResult.error}`);
+    return {
+      success:    false,
+      error:      createResult.error || 'A API rejeitou a criação da instância.',
+      httpStatus: createResult.httpStatus,
+    };
+  }
+
+  /* 3. POST /instance/connect — sem body, instância identificada pelo token */
+  let connectResult = null;
+  const instanceToken = extractInstanceToken(createResult.data);
+
+  if (instanceToken) {
+    console.log('[instanceService] ▶ Passo 2/2: conectar instância (token da instância)');
+    connectResult = await callConnect(instanceToken, overrideUrl);
+  } else {
+    console.warn('[instanceService] ⚠️  Token da instância não encontrado na resposta do /create — pulando connect');
+  }
+
+  /* 4. API confirmou sucesso → inserir no banco */
   const { data: record, error: insertError } = await supabaseAdmin
     .from('instances')
-    .insert({ instance_name: instanceName, status: 'creating' })
+    .insert({
+      instance_name: instanceName,
+      status:        'active',
+      metadata: {
+        create:  createResult.data  ?? null,
+        connect: connectResult?.data ?? null,
+      },
+    })
     .select()
     .single();
 
   if (insertError || !record) {
-    return { success: false, error: insertError?.message || 'Erro ao salvar instância.' };
+    console.error('[instanceService] ✖ Erro ao persistir no banco após sucesso da API:', insertError?.message);
+    /* Instância foi criada na API mas falhou ao salvar localmente — retornar sucesso parcial */
+    return {
+      success: true,
+      data: {
+        instance_name:    instanceName,
+        status:           'active',
+        instance_token:   instanceToken || null,
+        create_response:  createResult.data,
+        connect_response: connectResult?.data ?? null,
+      },
+      warning: 'Instância criada na API mas não foi possível salvar no banco local: ' + (insertError?.message || ''),
+    };
   }
 
-  /* 3. POST /instance/create */
-  console.log('[instanceService] ▶ Passo 1/2: criar instância na API');
-  const createResult = await callCreate(instanceName, token, overrideUrl, overrideKey);
-
-  /* 4. POST /instance/connect — sem body, instância identificada pelo token */
-  let connectResult = null;
-  const instanceToken = extractInstanceToken(createResult.data);
-
-  if (createResult.success && instanceToken) {
-    console.log('[instanceService] ▶ Passo 2/2: conectar instância (token da instância)');
-    connectResult = await callConnect(instanceToken, overrideUrl);
-  } else if (createResult.success && !instanceToken) {
-    console.warn('[instanceService] ⚠️  Token da instância não encontrado na resposta do /create — pulando connect');
-  }
-
-  /* 5. Atualizar status no banco */
-  const newStatus = createResult.success ? 'active' : 'error';
-
-  await supabaseAdmin
-    .from('instances')
-    .update({
-      status:   newStatus,
-      metadata: {
-        create:  createResult.data  ?? null,
-        connect: connectResult?.data ?? null,
-      } as object,
-    })
-    .eq('id', record.id);
-
-  /* 6. Log de evento */
+  /* 5. Log de evento */
   await supabaseAdmin.from('instance_logs').insert({
     instance_id: record.id,
-    event:   createResult.success ? 'created' : 'creation_failed',
+    event:   'created',
     payload: {
-      create:  createResult.success  ? createResult.data  : { error: createResult.error,  data: createResult.data },
-      connect: connectResult         ? { success: connectResult.success, data: connectResult.data, error: connectResult.error } : null,
+      create:  createResult.data,
+      connect: connectResult ? { success: connectResult.success, data: connectResult.data, error: connectResult.error } : null,
     },
   });
 
   return {
-    success:     createResult.success,
+    success: true,
     data: {
       ...record,
-      status:         newStatus,
-      instance_token: instanceToken || null,
+      status:           'active',
+      instance_token:   instanceToken || null,
       create_response:  createResult.data,
       connect_response: connectResult?.data ?? null,
     },
-    error:      createResult.error,
-    httpStatus: createResult.httpStatus,
   };
 }
 
@@ -250,16 +263,27 @@ export async function deleteInstanceService(
   const meta = await getInstanceMeta(instanceName);
   const uuid = meta.uuid;
 
-  /* Se não há UUID, não podemos chamar a API com segurança — abortar */
+  /* ── Sem UUID: registro órfão (criação falhou ou metadata corrompida)
+     → deletar direto do banco sem chamar a API (sem risco de inconsistência) */
   if (!uuid) {
-    console.error(`[deleteInstanceService] UUID não encontrado para "${instanceName}" — deleção bloqueada.`);
+    console.warn(`[deleteInstanceService] UUID não encontrado para "${instanceName}" — removendo registro órfão do banco.`);
+
+    const { data: inst } = await supabaseAdmin
+      .from('instances').select('id').eq('instance_name', instanceName).maybeSingle();
+
+    if (inst?.id) {
+      await supabaseAdmin.from('instance_logs').delete().eq('instance_id', inst.id);
+    }
+    await supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
+
     return {
-      success: false,
-      error:   `Não foi possível localizar o identificador único (UUID) da instância "${instanceName}" no banco de dados. Deleção cancelada para evitar inconsistência.`,
+      success: true,
+      data:    { message: 'Registro órfão removido do banco local.' },
+      orphan:  true,
     };
   }
 
-  /* Chamar API do Evolution GO */
+  /* ── Com UUID: chamar API do Evolution GO */
   const result = await callDelete(uuid, overrideUrl, overrideKey);
 
   /* HTTP 404 = instância já não existe na API → tratar como sucesso */
@@ -286,4 +310,34 @@ export async function deleteInstanceService(
   await supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
 
   return { success: true, data: result.data };
+}
+
+/* ── Purgar registro órfão do banco sem chamar a API ─────────────────
+   Usar quando o registro local não tem UUID válido (criação falhou)
+   ou quando o admin quer forçar limpeza de registro inconsistente.
+*/
+export async function purgeOrphanedInstance(instanceName: string) {
+  const { data: inst, error } = await supabaseAdmin
+    .from('instances')
+    .select('id, instance_name, status, metadata')
+    .eq('instance_name', instanceName)
+    .maybeSingle();
+
+  if (error) return { success: false, error: error.message };
+  if (!inst) return { success: false, error: `Instância "${instanceName}" não encontrada no banco.` };
+
+  /* Remover logs primeiro (FK) */
+  if (inst.id) {
+    await supabaseAdmin.from('instance_logs').delete().eq('instance_id', inst.id);
+  }
+
+  const { error: delErr } = await supabaseAdmin
+    .from('instances')
+    .delete()
+    .eq('instance_name', instanceName);
+
+  if (delErr) return { success: false, error: delErr.message };
+
+  console.log(`[purgeOrphanedInstance] ✅ "${instanceName}" removido do banco local.`);
+  return { success: true, data: { message: `Instância "${instanceName}" removida do banco local.` } };
 }
