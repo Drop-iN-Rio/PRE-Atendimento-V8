@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evolution GO — Criar Instância</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 460px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .logo-text {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .logo-sub {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      margin-top: 1px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 0.4rem;
+    }
+
+    p.desc {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      margin-bottom: 1.8rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 0.5rem;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #6366f1;
+    }
+
+    input[type="text"]::placeholder {
+      color: #475569;
+    }
+
+    button {
+      margin-top: 1.2rem;
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:hover:not(:disabled) { opacity: 0.9; }
+    button:active:not(:disabled) { transform: scale(0.98); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .result {
+      margin-top: 1.5rem;
+      border-radius: 10px;
+      padding: 1rem;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .result.success {
+      background: #052e16;
+      border: 1px solid #16a34a;
+      color: #86efac;
+      display: block;
+    }
+
+    .result.error {
+      background: #2d0a0a;
+      border: 1px solid #dc2626;
+      color: #fca5a5;
+      display: block;
+    }
+
+    .result pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'Courier New', monospace;
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      opacity: 0.85;
+    }
+
+    .result .label {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">Evolution GO</div>
+        <div class="logo-sub">Gerenciador de Instâncias</div>
+      </div>
+    </div>
+
+    <h1>Criar Instância</h1>
+    <p class="desc">Informe o nome da instância para criá-la na Evolution API.</p>
+
+    <form id="form">
+      <label for="instanceName">Nome da Instância</label>
+      <input
+        type="text"
+        id="instanceName"
+        name="instanceName"
+        placeholder="Ex: minha-instancia-01"
+        autocomplete="off"
+        required
+      />
+      <button type="submit" id="btn">Criar Instância</button>
+    </form>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('form');
+    const btn = document.getElementById('btn');
+    const result = document.getElementById('result');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const instanceName = document.getElementById('instanceName').value.trim();
+      if (!instanceName) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Criando...';
+      result.className = 'result';
+      result.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/instances', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instanceName }),
+        });
+
+        const json = await res.json();
+
+        if (res.ok && json.success) {
+          result.className = 'result success';
+          result.innerHTML = `
+            <div class="label">✅ Instância criada com sucesso!</div>
+            <pre>${JSON.stringify(json.data, null, 2)}</pre>
+          `;
+        } else {
+          result.className = 'result error';
+          result.innerHTML = `
+            <div class="label">❌ Erro ao criar instância</div>
+            <pre>${json.error || JSON.stringify(json, null, 2)}</pre>
+          `;
+        }
+      } catch (err) {
+        result.className = 'result error';
+        result.innerHTML = `
+          <div class="label">❌ Erro de conexão</div>
+          <pre>${err.message}</pre>
+        `;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Criar Instância';
+      }
+    });
+  </script>
+</body>
+</html>

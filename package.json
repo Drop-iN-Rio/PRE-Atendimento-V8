@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "build": "echo 'Build not configured yet'"
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --noEmit",
+    "start": "tsx src/server.ts"
   },
   "dependencies": {
     "express": "^4.21.0",
@@ -15,6 +16,7 @@
   "devDependencies": {
     "typescript": "^5.9.2",
     "@types/node": "^22.0.0",
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "tsx": "^4.19.2"
   }
 }

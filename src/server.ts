@@ -1,0 +1,52 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createInstance } from './services/evolutionGo.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+app.use(express.static(path.join(__dirname, '../public')));
+
+app.get('/health', (_req, res) => {
+  res.json({
+    message: '✅ PRE-Atendimento-V8 iniciado com sucesso!',
+    version: '1.0.0',
+    status: 'running',
+  });
+});
+
+app.post('/api/instances', async (req, res) => {
+  const { instanceName } = req.body as { instanceName?: string };
+
+  if (!instanceName || typeof instanceName !== 'string' || instanceName.trim() === '') {
+    res.status(400).json({ success: false, error: 'instanceName é obrigatório.' });
+    return;
+  }
+
+  try {
+    const result = await createInstance(instanceName.trim());
+    if (result.success) {
+      res.status(201).json(result);
+    } else {
+      res.status(502).json(result);
+    }
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Erro desconhecido';
+    res.status(500).json({ success: false, error: message });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+});
