@@ -22,12 +22,14 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0f172a;
       color: #e2e8f0;
-      display: flex;
-      flex-direction: column;
       min-height: 100%;
     }
 
-    /* ─── TOP BAR ─── */
+    /* ════════════════════════════════
+       MOBILE — layout em coluna única
+       ════════════════════════════════ */
+
+    /* ─── TOPBAR (mobile only) ─── */
     .topbar {
       position: sticky;
       top: 0;
@@ -84,7 +86,7 @@
 
     .btn-logout:active { border-color: #ef4444; color: #ef4444; }
 
-    /* ─── USER STRIP ─── */
+    /* ─── USER STRIP (mobile only) ─── */
     .user-strip {
       background: #0f172a;
       border-bottom: 1px solid #1e293b;
@@ -107,7 +109,52 @@
       letter-spacing: 0.05em;
     }
 
-    /* ─── NAV TABS ─── */
+    /* ─── CONFIG BANNER ─── */
+    .config-banner {
+      display: none;
+      background: #1c1204;
+      border-bottom: 2px solid #d97706;
+      padding: 0.75rem 1rem;
+      gap: 0.6rem;
+      align-items: flex-start;
+    }
+
+    .config-banner.visible { display: flex; }
+
+    .config-banner-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+    .config-banner-body { flex: 1; min-width: 0; }
+
+    .config-banner-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 2px;
+    }
+
+    .config-banner-text {
+      font-size: 0.78rem;
+      color: #fcd34d;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+
+    .config-banner-btn {
+      background: #d97706;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.4rem 0.8rem;
+      cursor: pointer;
+      touch-action: manipulation;
+      white-space: nowrap;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    /* ─── NAV TABS (mobile only) ─── */
     .nav-tabs {
       display: flex;
       background: #1e293b;
@@ -138,7 +185,7 @@
 
     .nav-tab.active { color: #818cf8; border-bottom-color: #6366f1; }
 
-    /* ─── MAIN ─── */
+    /* ─── MAIN SCROLL AREA (mobile) ─── */
     .main {
       flex: 1;
       padding: 1rem;
@@ -148,6 +195,235 @@
 
     .panel { display: none; }
     .panel.active { display: block; }
+
+    /* ─── BOTTOM NAV (mobile only) ─── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
+      background: #1e293b;
+      border-top: 1px solid #334155;
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 0.5rem;
+      cursor: pointer;
+      touch-action: manipulation;
+      color: #475569;
+      font-size: 0.65rem;
+      font-weight: 600;
+      gap: 3px;
+      min-height: 60px;
+      transition: color 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .bottom-nav-item.active { color: #818cf8; }
+    .bottom-nav-icon { font-size: 1.4rem; line-height: 1; }
+
+    /* ════════════════════════════════
+       DESKTOP — Divisão Horizontal
+       Sidebar esquerda + conteúdo direita
+       ════════════════════════════════ */
+    @media (min-width: 768px) {
+      body {
+        display: flex;
+        flex-direction: row;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      /* Oculta elementos mobile */
+      .topbar      { display: none; }
+      .user-strip  { display: none; }
+      .nav-tabs    { display: none; }
+      .bottom-nav  { display: none; }
+
+      /* ─── SIDEBAR ─── */
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        width: 260px;
+        min-width: 260px;
+        background: #1e293b;
+        border-right: 1px solid #334155;
+        height: 100vh;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.5rem 1.25rem 1.25rem;
+        border-bottom: 1px solid #334155;
+        flex-shrink: 0;
+      }
+
+      .sidebar-logo {
+        width: 40px; height: 40px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem; flex-shrink: 0;
+      }
+
+      .sidebar-logo-text { font-size: 1.05rem; font-weight: 800; color: #f1f5f9; letter-spacing: -0.01em; }
+      .sidebar-logo-sub  { font-size: 0.65rem; color: #475569; margin-top: 1px; }
+
+      /* User block in sidebar */
+      .sidebar-user {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid #1e293b;
+        flex-shrink: 0;
+      }
+
+      .sidebar-avatar {
+        width: 38px; height: 38px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.9rem; font-weight: 800; color: white;
+        flex-shrink: 0;
+      }
+
+      .sidebar-user-info { min-width: 0; flex: 1; }
+      .sidebar-user-name { font-size: 0.88rem; font-weight: 700; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .sidebar-user-role {
+        display: inline-block;
+        background: #1e3a5f;
+        color: #93c5fd;
+        border-radius: 5px;
+        padding: 1px 7px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-top: 2px;
+      }
+
+      /* Sidebar nav */
+      .sidebar-nav {
+        flex: 1;
+        padding: 0.75rem 0.75rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        overflow-y: auto;
+      }
+
+      .sidebar-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        cursor: pointer;
+        touch-action: manipulation;
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.15s;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+      }
+
+      .sidebar-nav-item:hover { background: #0f172a; color: #94a3b8; }
+
+      .sidebar-nav-item.active {
+        background: rgba(99,102,241,0.12);
+        color: #818cf8;
+      }
+
+      .sidebar-nav-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+      /* Config status in sidebar footer */
+      .sidebar-footer {
+        padding: 0.75rem;
+        border-top: 1px solid #334155;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .sidebar-config-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: #0f172a;
+      }
+
+      .sidebar-config-status.ok  { color: #4ade80; }
+      .sidebar-config-status.nok { color: #f87171; }
+
+      .sidebar-logout {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        cursor: pointer;
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 600;
+        transition: all 0.15s;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+      }
+
+      .sidebar-logout:hover { background: rgba(239,68,68,0.1); color: #f87171; }
+
+      /* ─── CONTENT AREA ─── */
+      .content-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      /* Config banner stays at top of content */
+      .config-banner { border-bottom: 2px solid #d97706; }
+
+      /* Main scrollable */
+      .main {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+        padding-bottom: 2rem;
+        max-width: 860px;
+        width: 100%;
+      }
+
+      .panel { display: none; }
+      .panel.active { display: block; }
+    }
+
+    /* ════════════════════════════════
+       SHARED COMPONENTS
+       ════════════════════════════════ */
 
     /* ─── CARD ─── */
     .card {
@@ -326,53 +602,7 @@
 
     .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
 
-    /* ─── CONFIG BANNER ─── */
-    .config-banner {
-      display: none;
-      background: #1c1204;
-      border-bottom: 2px solid #d97706;
-      padding: 0.75rem 1rem;
-      gap: 0.6rem;
-      align-items: flex-start;
-    }
-
-    .config-banner.visible { display: flex; }
-
-    .config-banner-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
-
-    .config-banner-body { flex: 1; min-width: 0; }
-
-    .config-banner-title {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #fbbf24;
-      margin-bottom: 2px;
-    }
-
-    .config-banner-text {
-      font-size: 0.78rem;
-      color: #92400e;
-      color: #fcd34d;
-      opacity: 0.8;
-      line-height: 1.4;
-    }
-
-    .config-banner-btn {
-      background: #d97706;
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-size: 0.78rem;
-      font-weight: 700;
-      padding: 0.4rem 0.8rem;
-      cursor: pointer;
-      touch-action: manipulation;
-      white-space: nowrap;
-      flex-shrink: 0;
-      align-self: center;
-    }
-
-    /* ─── CONFIG FORM ─── */
+    /* ─── CONFIG FORM EXTRAS ─── */
     .config-status {
       display: flex;
       align-items: center;
@@ -382,8 +612,8 @@
       margin-top: 0.5rem;
     }
 
-    .config-status.ok    { color: #4ade80; }
-    .config-status.nok   { color: #f87171; }
+    .config-status.ok  { color: #4ade80; }
+    .config-status.nok { color: #f87171; }
 
     .config-saved-badge {
       display: none;
@@ -400,39 +630,6 @@
 
     .config-saved-badge.visible { display: block; }
 
-    /* ─── BOTTOM NAV ─── */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 100;
-      background: #1e293b;
-      border-top: 1px solid #334155;
-      display: flex;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-
-    .bottom-nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 0.6rem 0.5rem;
-      cursor: pointer;
-      touch-action: manipulation;
-      color: #475569;
-      font-size: 0.65rem;
-      font-weight: 600;
-      gap: 3px;
-      min-height: 60px;
-      transition: color 0.15s;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .bottom-nav-item.active { color: #818cf8; }
-    .bottom-nav-icon { font-size: 1.4rem; line-height: 1; }
-
     /* ─── SPINNER ─── */
     .spinner {
       width: 18px; height: 18px;
@@ -444,169 +641,212 @@
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ─── DESKTOP ─── */
-    @media (min-width: 768px) {
-      .main {
-        max-width: 960px;
-        margin: 0 auto;
-        padding: 1.5rem 1.5rem 2rem;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.25rem;
-        align-items: start;
-      }
-
-      .main .panel { display: block !important; }
-      .bottom-nav { display: none; }
-      .nav-tabs { display: none; }
-    }
   </style>
 </head>
 <body>
 
-  <nav class="topbar">
-    <div class="topbar-brand">
-      <div class="logo-icon">⚡</div>
+  <!-- ══════════════════════════
+       SIDEBAR (desktop only)
+       ══════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-logo">⚡</div>
       <div>
-        <div class="logo-text">Evolution GO</div>
-        <div class="logo-sub">PRE-Atendimento V8</div>
-      </div>
-    </div>
-    <div class="topbar-right">
-      <div class="user-avatar" id="user-avatar">?</div>
-      <button class="btn-logout" onclick="logout()">Sair</button>
-    </div>
-  </nav>
-
-  <div class="user-strip">
-    <span class="user-strip-name" id="user-name">—</span>
-    <span class="user-role-badge" id="user-role">—</span>
-  </div>
-
-  <!-- BANNER de configuração pendente -->
-  <div class="config-banner" id="config-banner">
-    <div class="config-banner-icon">⚠️</div>
-    <div class="config-banner-body">
-      <div class="config-banner-title">Configuração obrigatória</div>
-      <div class="config-banner-text">Informe a URL da Evolution GO e a GLOBAL_API_KEY antes de criar instâncias.</div>
-    </div>
-    <button class="config-banner-btn" onclick="showPanel('panel-config', null, 'bnav-config')">
-      Configurar
-    </button>
-  </div>
-
-  <div class="nav-tabs">
-    <div class="nav-tab active" id="tab-create" onclick="showPanel('panel-create', this)">➕ Nova Instância</div>
-    <div class="nav-tab" id="tab-list"   onclick="showPanel('panel-list',   this)">📋 Instâncias</div>
-    <div class="nav-tab" id="tab-config" onclick="showPanel('panel-config', this)">⚙️ Configuração</div>
-  </div>
-
-  <div class="main">
-    <!-- CRIAR INSTÂNCIA -->
-    <div class="panel active" id="panel-create">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-icon icon-purple">⚡</div>
-          <div>
-            <div class="card-title">Nova Instância</div>
-            <div class="card-desc">Cria e registra na Evolution GO</div>
-          </div>
-        </div>
-        <form id="form-instance" novalidate>
-          <label for="instanceName">Nome da Instância</label>
-          <input type="text" id="instanceName"
-            placeholder="ex: minha-loja-01"
-            autocomplete="off" autocorrect="off"
-            autocapitalize="none" spellcheck="false" required />
-          <button type="submit" class="btn" id="btn-instance">Criar Instância</button>
-        </form>
-        <div class="alert" id="result-instance"></div>
+        <div class="sidebar-logo-text">Evolution GO</div>
+        <div class="sidebar-logo-sub">PRE-Atendimento V8</div>
       </div>
     </div>
 
-    <!-- CONFIGURAÇÃO -->
-    <div class="panel" id="panel-config">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-icon icon-purple">⚙️</div>
-          <div>
-            <div class="card-title">Configuração da API</div>
-            <div class="card-desc">Obrigatório para criar instâncias</div>
-          </div>
-        </div>
-
-        <form id="form-config" novalidate>
-          <label for="cfg-url">URL DA EVOLUTION GO</label>
-          <input type="text" id="cfg-url"
-            placeholder="https://evogo.pre-atendimento.com"
-            autocomplete="off" autocorrect="off"
-            autocapitalize="none" spellcheck="false" />
-
-          <div style="height:1rem"></div>
-
-          <label for="cfg-key">GLOBAL_API_KEY</label>
-          <input type="text" id="cfg-key"
-            placeholder="Chave de acesso global da API"
-            autocomplete="off" autocorrect="off"
-            autocapitalize="none" spellcheck="false" />
-
-          <button type="submit" class="btn" id="btn-save-config" style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 16px rgba(16,185,129,0.3)">
-            ✅ Salvar Configuração
-          </button>
-        </form>
-
-        <div class="config-saved-badge" id="config-saved-badge">
-          ✅ Configuração salva! Agora você pode criar instâncias.
-        </div>
-
-        <div style="margin-top:1rem">
-          <div class="config-status" id="config-status-url">
-            <span id="cfg-icon-url">○</span> URL da Evolution GO
-          </div>
-          <div class="config-status" id="config-status-key">
-            <span id="cfg-icon-key">○</span> GLOBAL_API_KEY
-          </div>
-        </div>
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebar-name">—</div>
+        <span class="sidebar-user-role" id="sidebar-role">—</span>
       </div>
     </div>
 
-    <!-- LISTA -->
-    <div class="panel" id="panel-list">
-      <div class="card">
-        <div class="list-header">
-          <div class="card-header" style="margin-bottom:0">
-            <div class="card-icon icon-green">📋</div>
+    <nav class="sidebar-nav">
+      <button class="sidebar-nav-item active" id="snav-create"
+        onclick="showPanel('panel-create', null, 'bnav-create', 'snav-create')">
+        <span class="sidebar-nav-icon">➕</span> Nova Instância
+      </button>
+      <button class="sidebar-nav-item" id="snav-list"
+        onclick="showPanel('panel-list', null, 'bnav-list', 'snav-list')">
+        <span class="sidebar-nav-icon">📋</span> Instâncias
+      </button>
+      <button class="sidebar-nav-item" id="snav-config"
+        onclick="showPanel('panel-config', null, 'bnav-config', 'snav-config')">
+        <span class="sidebar-nav-icon">⚙️</span> Configuração
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-config-status nok" id="sidebar-cfg-status">
+        ○ API não configurada
+      </div>
+      <button class="sidebar-logout" onclick="logout()">
+        <span>🚪</span> Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════
+       CONTENT AREA
+       ══════════════════════════ -->
+  <div class="content-area">
+
+    <!-- TOPBAR (mobile only) -->
+    <nav class="topbar">
+      <div class="topbar-brand">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <div class="logo-text">Evolution GO</div>
+          <div class="logo-sub">PRE-Atendimento V8</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <button class="btn-logout" onclick="logout()">Sair</button>
+      </div>
+    </nav>
+
+    <!-- USER STRIP (mobile only) -->
+    <div class="user-strip">
+      <span class="user-strip-name" id="user-name">—</span>
+      <span class="user-role-badge" id="user-role">—</span>
+    </div>
+
+    <!-- CONFIG BANNER -->
+    <div class="config-banner" id="config-banner">
+      <div class="config-banner-icon">⚠️</div>
+      <div class="config-banner-body">
+        <div class="config-banner-title">Configuração obrigatória</div>
+        <div class="config-banner-text">Informe a URL da Evolution GO e a GLOBAL_API_KEY antes de criar instâncias.</div>
+      </div>
+      <button class="config-banner-btn" onclick="showPanel('panel-config', null, 'bnav-config', 'snav-config')">
+        Configurar
+      </button>
+    </div>
+
+    <!-- NAV TABS (mobile only) -->
+    <div class="nav-tabs">
+      <div class="nav-tab active" id="tab-create" onclick="showPanel('panel-create', this)">➕ Nova Instância</div>
+      <div class="nav-tab"        id="tab-list"   onclick="showPanel('panel-list',   this)">📋 Instâncias</div>
+      <div class="nav-tab"        id="tab-config" onclick="showPanel('panel-config', this)">⚙️ Configuração</div>
+    </div>
+
+    <!-- PANELS -->
+    <div class="main">
+
+      <!-- ── CRIAR INSTÂNCIA ── -->
+      <div class="panel active" id="panel-create">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon icon-purple">⚡</div>
             <div>
-              <div class="card-title">Instâncias</div>
-              <div class="card-desc">Registradas no Supabase</div>
+              <div class="card-title">Nova Instância</div>
+              <div class="card-desc">Cria e registra na Evolution GO</div>
             </div>
           </div>
-          <button class="btn-refresh" onclick="loadInstances()">↻ Atualizar</button>
+          <form id="form-instance" novalidate>
+            <label for="instanceName">Nome da Instância</label>
+            <input type="text" id="instanceName"
+              placeholder="ex: minha-loja-01"
+              autocomplete="off" autocorrect="off"
+              autocapitalize="none" spellcheck="false" required />
+            <button type="submit" class="btn" id="btn-instance">Criar Instância</button>
+          </form>
+          <div class="alert" id="result-instance"></div>
         </div>
-        <div style="margin-top:1rem">
-          <div class="instances-list" id="instances-list">
-            <div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>
+      </div>
+
+      <!-- ── CONFIGURAÇÃO ── -->
+      <div class="panel" id="panel-config">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon icon-purple">⚙️</div>
+            <div>
+              <div class="card-title">Configuração da API</div>
+              <div class="card-desc">Obrigatório para criar instâncias</div>
+            </div>
+          </div>
+
+          <form id="form-config" novalidate>
+            <label for="cfg-url">URL DA EVOLUTION GO</label>
+            <input type="text" id="cfg-url"
+              placeholder="https://evogo.pre-atendimento.com"
+              autocomplete="off" autocorrect="off"
+              autocapitalize="none" spellcheck="false" />
+
+            <div style="height:1rem"></div>
+
+            <label for="cfg-key">GLOBAL_API_KEY</label>
+            <input type="text" id="cfg-key"
+              placeholder="Chave de acesso global da API"
+              autocomplete="off" autocorrect="off"
+              autocapitalize="none" spellcheck="false" />
+
+            <button type="submit" class="btn" id="btn-save-config"
+              style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 16px rgba(16,185,129,0.3)">
+              ✅ Salvar Configuração
+            </button>
+          </form>
+
+          <div class="config-saved-badge" id="config-saved-badge">
+            ✅ Configuração salva! Agora você pode criar instâncias.
+          </div>
+
+          <div style="margin-top:1rem">
+            <div class="config-status" id="config-status-url">
+              <span id="cfg-icon-url">○</span> URL da Evolution GO
+            </div>
+            <div class="config-status" id="config-status-key">
+              <span id="cfg-icon-key">○</span> GLOBAL_API_KEY
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <nav class="bottom-nav">
-    <div class="bottom-nav-item active" id="bnav-create"
-      onclick="showPanel('panel-create', null, 'bnav-create')">
-      <span class="bottom-nav-icon">➕</span>Nova
-    </div>
-    <div class="bottom-nav-item" id="bnav-list"
-      onclick="showPanel('panel-list', null, 'bnav-list')">
-      <span class="bottom-nav-icon">📋</span>Instâncias
-    </div>
-    <div class="bottom-nav-item" id="bnav-config"
-      onclick="showPanel('panel-config', null, 'bnav-config')">
-      <span class="bottom-nav-icon">⚙️</span>Config
-    </div>
-  </nav>
+      <!-- ── LISTA ── -->
+      <div class="panel" id="panel-list">
+        <div class="card">
+          <div class="list-header">
+            <div class="card-header" style="margin-bottom:0">
+              <div class="card-icon icon-green">📋</div>
+              <div>
+                <div class="card-title">Instâncias</div>
+                <div class="card-desc">Registradas no Supabase</div>
+              </div>
+            </div>
+            <button class="btn-refresh" onclick="loadInstances()">↻ Atualizar</button>
+          </div>
+          <div style="margin-top:1rem">
+            <div class="instances-list" id="instances-list">
+              <div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.main -->
+
+    <!-- BOTTOM NAV (mobile only) -->
+    <nav class="bottom-nav">
+      <div class="bottom-nav-item active" id="bnav-create"
+        onclick="showPanel('panel-create', null, 'bnav-create')">
+        <span class="bottom-nav-icon">➕</span>Nova
+      </div>
+      <div class="bottom-nav-item" id="bnav-list"
+        onclick="showPanel('panel-list', null, 'bnav-list')">
+        <span class="bottom-nav-icon">📋</span>Instâncias
+      </div>
+      <div class="bottom-nav-item" id="bnav-config"
+        onclick="showPanel('panel-config', null, 'bnav-config')">
+        <span class="bottom-nav-icon">⚙️</span>Config
+      </div>
+    </nav>
+
+  </div><!-- /.content-area -->
 
   <script>
     /* ─── AUTH GUARD ─── */
@@ -615,10 +855,18 @@
       window.location.href = '/';
     } else {
       const user = JSON.parse(raw);
-      document.getElementById('user-name').textContent = user.name || user.email;
-      document.getElementById('user-role').textContent = user.role || 'user';
-      document.getElementById('user-avatar').textContent =
-        (user.name || user.email || '?')[0].toUpperCase();
+      const display = user.name || user.email || '?';
+      const initial = display[0].toUpperCase();
+
+      /* mobile topbar */
+      document.getElementById('user-avatar').textContent = initial;
+      document.getElementById('user-name').textContent   = display;
+      document.getElementById('user-role').textContent   = user.role || 'user';
+
+      /* desktop sidebar */
+      document.getElementById('sidebar-avatar').textContent = initial;
+      document.getElementById('sidebar-name').textContent   = display;
+      document.getElementById('sidebar-role').textContent   = user.role || 'user';
     }
 
     function logout() {
@@ -644,33 +892,33 @@
       const valid = isConfigValid(cfg);
 
       /* Banner */
-      const banner = document.getElementById('config-banner');
-      banner.classList.toggle('visible', !valid);
+      document.getElementById('config-banner').classList.toggle('visible', !valid);
 
       /* Botão Criar Instância */
       const btnInst = document.getElementById('btn-instance');
       btnInst.disabled = !valid;
-      if (!valid) {
-        btnInst.title = 'Configure a URL e a API Key antes de criar instâncias.';
-      } else {
-        btnInst.title = '';
-      }
+      btnInst.title    = valid ? '' : 'Configure a URL e a API Key antes de criar instâncias.';
 
       /* Status indicators no painel de config */
       const hasUrl = !!(cfg && cfg.evolutionUrl && cfg.evolutionUrl.trim());
       const hasKey = !!(cfg && cfg.apiKey && cfg.apiKey.trim());
 
-      const elUrl  = document.getElementById('config-status-url');
-      const elKey  = document.getElementById('config-status-key');
-      const icoUrl = document.getElementById('cfg-icon-url');
-      const icoKey = document.getElementById('cfg-icon-key');
+      document.getElementById('config-status-url').className = 'config-status ' + (hasUrl ? 'ok' : 'nok');
+      document.getElementById('cfg-icon-url').textContent    = hasUrl ? '✓' : '✗';
+      document.getElementById('config-status-key').className = 'config-status ' + (hasKey ? 'ok' : 'nok');
+      document.getElementById('cfg-icon-key').textContent    = hasKey ? '✓' : '✗';
 
-      elUrl.className = 'config-status ' + (hasUrl ? 'ok' : 'nok');
-      icoUrl.textContent = hasUrl ? '✓' : '✗';
-      elKey.className = 'config-status ' + (hasKey ? 'ok' : 'nok');
-      icoKey.textContent = hasKey ? '✓' : '✗';
+      /* Sidebar status (desktop) */
+      const sideStatus = document.getElementById('sidebar-cfg-status');
+      if (valid) {
+        sideStatus.className = 'sidebar-config-status ok';
+        sideStatus.textContent = '✓ API configurada';
+      } else {
+        sideStatus.className = 'sidebar-config-status nok';
+        sideStatus.textContent = '✗ API não configurada';
+      }
 
-      /* Preenche os campos do form com valores salvos */
+      /* Preenche campos com valores salvos */
       if (cfg) {
         document.getElementById('cfg-url').value = cfg.evolutionUrl || '';
         document.getElementById('cfg-key').value = cfg.apiKey || '';
@@ -684,18 +932,10 @@
       e.preventDefault();
       const url = document.getElementById('cfg-url').value.trim();
       const key = document.getElementById('cfg-key').value.trim();
-
-      if (!url || !key) {
-        return;
-      }
+      if (!url || !key) return;
 
       let cleanUrl = url;
-      try {
-        const parsed = new URL(url);
-        cleanUrl = parsed.origin;
-      } catch {
-        /* mantém como digitado */
-      }
+      try { cleanUrl = new URL(url).origin; } catch { /* mantém */ }
 
       localStorage.setItem(CONFIG_KEY, JSON.stringify({ evolutionUrl: cleanUrl, apiKey: key }));
 
@@ -707,29 +947,27 @@
     });
 
     /* ─── NAV ─── */
-    function showPanel(panelId, tabEl, bnavId) {
+    const panelToTab  = { 'panel-create':'tab-create', 'panel-list':'tab-list', 'panel-config':'tab-config' };
+    const panelToSnav = { 'panel-create':'snav-create','panel-list':'snav-list','panel-config':'snav-config' };
+
+    function showPanel(panelId, tabEl, bnavId, snavId) {
+      /* Panels */
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       document.getElementById(panelId).classList.add('active');
 
-      if (tabEl) {
-        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-        tabEl.classList.add('active');
-      }
-      if (bnavId) {
-        document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-        document.getElementById(bnavId).classList.add('active');
-      }
+      /* Mobile top tabs */
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      if (tabEl) tabEl.classList.add('active');
+      else document.getElementById(panelToTab[panelId])?.classList.add('active');
 
-      /* Sync tab highlight when called without tabEl (e.g., from banner btn) */
-      const panelToTab = {
-        'panel-create': 'tab-create',
-        'panel-list':   'tab-list',
-        'panel-config': 'tab-config',
-      };
-      if (!tabEl && panelToTab[panelId]) {
-        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(panelToTab[panelId])?.classList.add('active');
-      }
+      /* Mobile bottom nav */
+      document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+      if (bnavId) document.getElementById(bnavId)?.classList.add('active');
+
+      /* Desktop sidebar nav */
+      document.querySelectorAll('.sidebar-nav-item').forEach(s => s.classList.remove('active'));
+      const snavTarget = snavId || panelToSnav[panelId];
+      if (snavTarget) document.getElementById(snavTarget)?.classList.add('active');
 
       if (panelId === 'panel-list') loadInstances();
     }
@@ -740,7 +978,7 @@
 
       const cfg = loadConfig();
       if (!isConfigValid(cfg)) {
-        showPanel('panel-config', null, 'bnav-config');
+        showPanel('panel-config', null, 'bnav-config', 'snav-config');
         return;
       }
 
@@ -802,8 +1040,8 @@
         }
 
         const badgeMap = {
-          active: 'badge-active', creating: 'badge-creating',
-          error: 'badge-error',   inactive: 'badge-inactive',
+          active:'badge-active', creating:'badge-creating',
+          error:'badge-error',   inactive:'badge-inactive',
         };
 
         el.innerHTML = json.data.map(inst => {
