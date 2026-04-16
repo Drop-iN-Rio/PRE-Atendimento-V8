@@ -1137,11 +1137,16 @@
       display: flex; align-items: center; gap: 0.45rem;
       padding: 0.5rem 1.15rem; border: 1.5px solid #16a34a; border-radius: 8px;
       background: transparent; color: #16a34a; font-size: 0.88rem; font-weight: 700;
-      cursor: pointer; transition: background 0.15s; touch-action: manipulation;
+      cursor: pointer; transition: all 0.15s; touch-action: manipulation;
       min-height: 42px; letter-spacing: 0.01em;
     }
     .btn-connect:hover  { background: #f0fdf4; }
     .btn-connect:active { background: #dcfce7; }
+    /* Variante: quando a instância está conectada → botão vira Desconectar */
+    .btn-connect.is-connected {
+      border-color: #d97706; color: #fbbf24; background: rgba(180,83,9,0.08);
+    }
+    .btn-connect.is-connected:hover { background: rgba(180,83,9,0.18); border-color: #f59e0b; }
 
     /* Ícones de ação no card */
     .btn-icon-card {
@@ -1897,6 +1902,10 @@
     [data-theme="dark"] .btn-icon-card.danger:hover  { background: rgba(248,113,113,0.1); color: #fca5a5; }
     [data-theme="dark"] .btn-connect             { border-color: #16a34a; color: #4ade80; }
     [data-theme="dark"] .btn-connect:hover       { background: rgba(74,222,128,0.08); }
+    [data-theme="dark"] .btn-connect.is-connected { border-color: #d97706; color: #fbbf24; background: rgba(180,83,9,0.12); }
+    [data-theme="dark"] .btn-connect.is-connected:hover { background: rgba(180,83,9,0.22); border-color: #f59e0b; }
+    [data-theme="light"] .btn-connect.is-connected { border-color: #b45309; color: #92400e; background: rgba(180,83,9,0.06); }
+    [data-theme="light"] .btn-connect.is-connected:hover { background: rgba(180,83,9,0.12); }
     [data-theme="dark"] .conn-badge.connected    { background: #052e16; color: #4ade80; }
     [data-theme="dark"] .conn-badge.disconnected { background: #1e0a0a; color: #f87171; }
     [data-theme="dark"] .conn-badge.checking     { background: var(--surface); color: var(--tx4); }
@@ -3401,7 +3410,7 @@
                 </div>
               </div>` : `
               <div class="inst-card-footer">
-                <button class="btn-connect" onclick="openQrModal('${safeN}')">
+                <button class="btn-connect" id="connbtn-${inst.instance_name}" onclick="openQrModal('${safeN}')">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>
                   </svg>
@@ -3450,7 +3459,10 @@
       }
     }
 
-    /* Atualiza badge, valor de status e painel de configurações */
+    const _SVG_CONNECT    = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>`;
+    const _SVG_DISCONNECT = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18.36" y1="17.64" x2="12" y2="12"/><path d="M5.64 17.64a9 9 0 1 1 12.73 0"/><line x1="12" y1="22" x2="12" y2="12"/></svg>`;
+
+    /* Atualiza badge, botão do card, valor de status e painel de configurações */
     function _applyStatusBadge(name, connected) {
       /* Badge de conexão na lista */
       const listBadge = document.getElementById(`connbadge-${name}`);
@@ -3458,6 +3470,21 @@
         listBadge.className   = `conn-badge ${connected ? 'connected' : 'disconnected'}`;
         listBadge.textContent = connected ? 'Conectado' : 'Desconectado';
       }
+
+      /* Botão dinâmico no card: Conectar ↔ Desconectar */
+      const cardBtn = document.getElementById(`connbtn-${name}`);
+      if (cardBtn) {
+        if (connected) {
+          cardBtn.className = 'btn-connect is-connected';
+          cardBtn.innerHTML = `${_SVG_DISCONNECT} Desconectar`;
+          cardBtn.onclick   = () => confirmDisconnect(name);
+        } else {
+          cardBtn.className = 'btn-connect';
+          cardBtn.innerHTML = `${_SVG_CONNECT} Conectar`;
+          cardBtn.onclick   = () => openQrModal(name);
+        }
+      }
+
       /* Valor de status (close / open) na linha Status do card */
       const statusVal = document.getElementById(`statusval-${name}`);
       if (statusVal) statusVal.textContent = connected ? 'open' : 'close';
