@@ -1,0 +1,52 @@
+[33m21dbbde[m[33m ([m[1;34mgrafted[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Published your App
+ .gitignore                                                  |   49 [32m+[m
+ .npmrc                                                      |    2 [32m+[m
+ .replit                                                     |   36 [32m+[m
+ .replitignore                                               |    5 [32m+[m
+ artifacts/api-server/.replit-artifact/artifact.toml         |   32 [32m+[m
+ artifacts/api-server/build.mjs                              |  126 [32m+[m
+ artifacts/api-server/package.json                           |   39 [32m+[m
+ artifacts/api-server/src/app.ts                             |   49 [32m+[m
+ artifacts/api-server/src/index.ts                           |   33 [32m+[m
+ artifacts/api-server/src/lib/.gitkeep                       |    0
+ artifacts/api-server/src/lib/auth-middleware.ts             |   54 [32m+[m
+ artifacts/api-server/src/lib/db-migrate.ts                  |   85 [32m+[m
+ artifacts/api-server/src/lib/logger.ts                      |   20 [32m+[m
+ artifacts/api-server/src/lib/supabase.ts                    |   14 [32m+[m
+ artifacts/api-server/src/middlewares/.gitkeep               |    0
+ artifacts/api-server/src/routes/admin.ts                    |  265 [32m++[m
+ artifacts/api-server/src/routes/auth.ts                     |   98 [32m+[m
+ artifacts/api-server/src/routes/contacts.ts                 |  323 [32m++[m
+ artifacts/api-server/src/routes/evolution-config.ts         |   84 [32m+[m
+ artifacts/api-server/src/routes/evolution.ts                |   62 [32m+[m
+ artifacts/api-server/src/routes/health.ts                   |   11 [32m+[m
+ artifacts/api-server/src/routes/index.ts                    |   20 [32m+[m
+ artifacts/api-server/src/routes/instances.ts                |  230 [32m+[m
+ artifacts/api-server/src/store/audit.ts                     |   72 [32m+[m
+ artifacts/api-server/src/store/evolution-config.ts          |   91 [32m+[m
+ artifacts/api-server/src/store/users.ts                     |  156 [32m+[m
+ artifacts/api-server/tsconfig.json                          |   17 [32m+[m
+ artifacts/frontend/.replit-artifact/artifact.toml           |   31 [32m+[m
+ artifacts/frontend/components.json                          |   20 [32m+[m
+ artifacts/frontend/index.html                               |   16 [32m+[m
+ artifacts/frontend/package.json                             |   27 [32m+[m
+ artifacts/frontend/public/favicon.svg                       |    3 [32m+[m
+ artifacts/frontend/public/opengraph.jpg                     |  Bin [31m0[m -> [32m21944[m bytes
+ artifacts/frontend/src/App.tsx                              |   36 [32m+[m
+ artifacts/frontend/src/components/AdminShell.tsx            |   12 [32m+[m
+ artifacts/frontend/src/components/AppShell.tsx              |  112 [32m+[m
+ artifacts/frontend/src/index.css                            | 2185 [32m+++++++++[m
+ artifacts/frontend/src/lib/api.ts                           |  307 [32m++[m
+ artifacts/frontend/src/lib/auth.ts                          |   51 [32m+[m
+ artifacts/frontend/src/main.tsx                             |    5 [32m+[m
+ artifacts/frontend/src/pages/Contatos.tsx                   |  648 [32m+++[m
+ artifacts/frontend/src/pages/Dashboard.tsx                  |   80 [32m+[m
+ artifacts/frontend/src/pages/Login.tsx                      |  111 [32m+[m
+ artifacts/frontend/src/pages/MinhaEvolution.tsx             |  718 [32m+++[m
+ artifacts/frontend/src/pages/Perfil.tsx                     |   57 [32m+[m
+ artifacts/frontend/src/pages/Register.tsx                   |  139 [32m+[m
+ artifacts/frontend/src/pages/admin/Auditoria.tsx            |  144 [32m+[m
+ artifacts/frontend/src/pages/admin/Configuracoes.tsx        |  350 [32m++[m
+ artifacts/frontend/src/pages/admin/EvolutionConnections.tsx |  377 [32m++[m
+ artifacts/frontend/src/pages/admin/UsuarioEvolution.tsx     |  181 [32m+[m
+ artifacts/frontend/src/pages/admin/Usuario

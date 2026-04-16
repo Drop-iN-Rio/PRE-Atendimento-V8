@@ -1,0 +1,174 @@
+REFATORAR COMPLETAMENTE a integração atual e substituir TODOS os endpoints antigos pelos novos endpoints da Evolution GO.
+
+ATENÇÃO:
+- NÃO é para adicionar
+- NÃO é para adaptar parcialmente
+- É para SUBSTITUIR 100% da integração existente
+
+OBJETIVO:
+Migrar todo o sistema para utilizar exclusivamente os endpoints da Evolution GO.
+
+---
+
+# 1. REMOVER INTEGRAÇÃO ANTIGA
+
+- Remover TODAS as chamadas antigas de API
+- Remover URLs antigas
+- Remover funções antigas relacionadas à Evolution anterior
+- NÃO deixar código duplicado
+
+---
+
+# 2. CRIAR CAMADA DE SERVIÇO (OBRIGATÓRIO)
+
+Criar arquivo:
+
+services/evolutionApi.ts
+
+Todas as requisições devem passar por esse arquivo.
+
+---
+
+# 3. CONFIGURAÇÃO BASE
+
+Base URL:
+(definir variável ENV)
+
+Headers obrigatórios:
+- Content-Type: application/json
+- apikey: SUA_CHAVE
+
+---
+
+# 4. IMPLEMENTAR NOVOS ENDPOINTS
+
+## INSTÂNCIAS
+
+- GET /instance/all
+- POST /instance/create
+- POST /instance/connect
+- POST /instance/disconnect
+- DELETE /instance/delete
+- DELETE /instance/logout
+- POST /instance/request-pairing-code
+- DELETE /instance/delete-proxy
+- GET /instance/get-qr-code
+- GET /instance/status
+
+## MENSAGENS
+
+- POST /message/send-text
+- POST /message/send-media
+- POST /message/send-link
+- POST /message/send-location
+- POST /message/send-contact
+- POST /message/send-sticker
+- POST /message/send-poll
+
+## AÇÕES DE MENSAGEM
+
+- POST /message/react
+- POST /message/edit
+- POST /message/delete-for-everyone
+- POST /message/mark-as-read
+- POST /message/set-presence
+- POST /message/download-image
+- POST /message/get-status
+
+## GRUPOS
+
+- POST /group/create
+- GET /group/list
+- GET /group/my-groups
+- POST /group/get-info
+- POST /group/get-invite-link
+- POST /group/join-link
+- POST /group/set-name
+- POST /group/set-photo
+- POST /group/update-participant
+
+## USUÁRIO
+
+- POST /user/get
+- GET /user/get-contacts
+- POST /user/check
+- POST /user/get-avatar
+- POST /user/block-contact
+- POST /user/unblock-contact
+- GET /user/get-block-list
+- GET /user/get-privacy-settings
+- POST /user/set-profile-picture
+
+---
+
+# 5. EXEMPLO OBRIGATÓRIO (CRIAR INSTÂNCIA)
+
+Implementar corretamente:
+
+POST /instance/create
+
+Body padrão:
+
+{
+  "instanceName": "nome-da-instancia",
+  "qrcode": true,
+  "integration": "WHATSAPP-BAILEYS",
+  "token": "",
+  "number": "",
+  "webhook": {
+    "enabled": true,
+    "url": "",
+    "events": ["message", "status"]
+  }
+}
+
+Resposta deve suportar:
+- QR Code base64
+- status da instância
+
+---
+
+# 6. PADRONIZAÇÃO
+
+- Criar funções como:
+
+createInstance()
+connectInstance()
+getQrCode()
+sendTextMessage()
+getInstanceStatus()
+
+---
+
+# 7. TRATAMENTO DE ERROS
+
+- Evitar "signal timed out"
+- Implementar timeout de 5s
+- Retornar erro amigável
+- Logar erros no console
+
+---
+
+# 8. PROIBIDO
+
+- NÃO usar endpoints antigos
+- NÃO misturar APIs
+- NÃO manter código legado
+
+---
+
+# 9. NÃO ALTERAR
+
+- Layout
+- UI
+- Rotas
+- Estrutura visual
+
+---
+
+# RESULTADO FINAL
+
+- Sistema usando 100% Evolution GO
+- Código limpo e centralizado
+- Sem erros de timeout
+- Pronto para escalar

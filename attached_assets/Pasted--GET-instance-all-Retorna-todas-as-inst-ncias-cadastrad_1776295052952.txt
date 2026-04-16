@@ -1,0 +1,185 @@
+
+GET /instance/all - Retorna todas as instâncias cadastradas
+
+POST /instance/create - Cria uma nova instância
+POST /instance/connect - Conecta uma instância
+POST /instance/disconnect - Desconecta uma instância
+DELETE /instance/delete - Deleta uma instância
+DELETE /instance/logout - Faz logout da instância
+POST /instance/request-pairing-code - Solicita código de pareamento
+DELETE /instance/delete-proxy - Remove proxy da instância
+GET /instance/get-qr-code - Retorna o QR Code da instância
+GET /instance/status - Retorna o status da instância
+
+POST /message/send-text - Envia mensagem de texto
+POST /message/send-media - Envia mensagem com mídia (foto, vídeo, áudio, documento)
+POST /message/send-link - Envia mensagem com link
+POST /message/send-location - Envia mensagem de localização
+POST /message/send-contact - Envia mensagem de contato
+POST /message/send-sticker - Envia sticker
+POST /message/send-poll - Envia enquete (poll)
+
+POST /message/react - Reage a uma mensagem
+POST /message/edit - Edita uma mensagem enviada
+POST /message/delete-for-everyone - Apaga mensagem para todos
+POST /message/mark-as-read - Marca mensagem como lida
+POST /message/set-presence - Define presença (online, digitando, etc.)
+POST /message/download-image - Baixa uma imagem
+POST /message/get-status - Consulta status da mensagem
+
+POST /group/create - Cria um novo grupo
+GET /group/list - Lista todos os grupos
+GET /group/my-groups - Lista os grupos que você participa
+POST /group/get-info - Obtém informações do grupo
+POST /group/get-invite-link - Gera link de convite do grupo
+POST /group/join-link - Entra em um grupo pelo link
+POST /group/set-name - Altera nome do grupo
+POST /group/set-photo - Define foto do grupo
+POST /group/update-participant - Adiciona/remove/promove participante
+
+POST /user/get - Obtém informações de um usuário
+GET /user/get-contacts - Lista todos os contatos
+POST /user/check - Verifica se um número existe no WhatsApp
+POST /user/get-avatar - Obtém foto de perfil de um usuário
+POST /user/block-contact - Bloqueia um contato
+POST /user/unblock-contact - Desbloqueia um contato
+GET /user/get-block-list - Lista contatos bloqueados
+GET /user/get-privacy-settings - Obtém configurações de privacidade
+POST /user/set-profile-picture - Define sua foto de perfil
+
+POST /newsletter/create - Cria um newsletter (canal)
+GET /newsletter/list - Lista todos os newsletters
+POST /newsletter/get - Obtém detalhes de um newsletter
+POST /newsletter/get-messages - Obtém mensagens de um newsletter
+POST /newsletter/subscribe - Inscreve-se em um newsletter
+POST /newsletter/get-invite - Gera convite para newsletter
+
+POST /label/edit - Cria ou edita uma label
+POST /label/add-to-chat - Adiciona label a um chat
+POST /label/add-to-message - Adiciona label a uma mensagem
+POST /label/remove-from-chat - Remove label de um chat
+POST /label/remove-from-message - Remove label de uma mensagem
+
+
+
+Aqui estão os detalhes completos do endpoint POST /instance/create da Evolution Go API:
+Método e URL
+
+Método: POST
+Endpoint: /instance/create
+URL exemplo: http://localhost:8080/instance/create
+
+Descrição
+Cria uma nova instância WhatsApp no servidor. Após criar, a instância começa desconectada e você precisa conectar usando QR Code ou pairing code.
+Headers (obrigatórios)
+
+Content-Type: application/json
+apikey: SUA_CHAVE_API_GLOBAL
+
+Body (JSON) – Parâmetros principais
+Campos mais comuns e recomendados:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+CampoTipoObrigatórioDescrição / Valor padrãoExemploinstanceNamestringSimNome único da instância (usado em todos os endpoints)"minha-instancia"qrcodebooleanNãoSe true, gera QR Code na criação (padrão: true)trueintegrationstringNãoTipo de integração (geralmente "WHATSAPP-BAILEYS")"WHATSAPP-BAILEYS"tokenstringNãoToken personalizado para a instância""numberstringNãoNúmero de telefone (para Cloud API ou casos específicos)""webhookobjectNãoConfiguração de webhookVer abaixo
+Objeto webhook (opcional)
+JSON{
+  "enabled": true,
+  "url": "https://seusite.com/webhook",
+  "events": ["message", "status", "connection", "call"]
+}
+Exemplo completo de Requisição (cURL)
+Bashcurl --request POST \
+  --url http://localhost:8080/instance/create \
+  --header 'Content-Type: application/json' \
+  --header 'apikey: SUA_CHAVE_API_AQUI' \
+  --data '{
+    "instanceName": "minha-instancia",
+    "qrcode": true,
+    "integration": "WHATSAPP-BAILEYS",
+    "token": "",
+    "number": "",
+    "webhook": {
+      "enabled": true,
+      "url": "https://exemplo.com/webhook",
+      "events": ["message", "status"]
+    }
+  }'
+Resposta de Sucesso (exemplo)
+Status: 200 ou 201
+JSON{
+  "instance": {
+    "instanceName": "minha-instancia",
+    "instanceId": "uuid-exemplo",
+    "integration": "WHATSAPP-BAILEYS",
+    "status": "connecting"
+  },
+  "qrcode": {
+    "code": "...",
+    "base64": "data:image/png;base64,..."
+  },
+  "settings": {
+    "alwaysOnline": false,
+    "rejectCall": false,
+    "readMessages": false
+  }
+}
+Após criar, use o endpoint /instance/{instanceName}/qrcode ou /instance/connect para conectar.
+Observações importantes
+
+O instanceName deve ser único.
+Se qrcode: true, a resposta já pode vir com o QR Code em base64.
+A instância é criada desconectada (connected: false).
+Para conectar depois: use POST /instance/connect ou peça o QR Code.
+

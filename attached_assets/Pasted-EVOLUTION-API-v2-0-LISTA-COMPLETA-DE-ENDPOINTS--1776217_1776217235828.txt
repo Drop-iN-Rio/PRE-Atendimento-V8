@@ -1,0 +1,94 @@
+EVOLUTION API v2.0 - LISTA COMPLETA DE ENDPOINTS
+================================================
+Base URL = CAMPO > URL da Evolution API
+
+Autenticação: Header = CAMPO > "API Key"
+
+instance =  CAMPO > Instância na Evolution API
+
+CAMPO EM BRNACO SERA PRENCHIDO POR > Criar instância
+
+
+
+=== INSTANCE ===
+POST   /instance/create
+GET    /instance/fetchInstances
+GET    /instance/connectionState/{instanceName}
+GET    /instance/connect/{instanceName}
+DELETE /instance/delete/{instanceName}
+DELETE /instance/logout/{instanceName}
+POST   /instance/restart/{instanceName}
+POST   /instance/setPresence/{instanceName}
+
+=== MESSAGE ===
+POST   /message/sendText/{instanceName}
+POST   /message/sendMedia/{instanceName}
+POST   /message/sendButtons/{instanceName}
+POST   /message/sendList/{instanceName}
+POST   /message/sendLocation/{instanceName}
+POST   /message/sendContact/{instanceName}
+POST   /message/sendPoll/{instanceName}
+POST   /message/sendReaction/{instanceName}
+POST   /message/sendTemplate/{instanceName}
+
+=== CHAT ===
+POST   /chat/findChats/{instanceName}
+POST   /chat/findContacts/{instanceName}
+POST   /chat/findMessages/{instanceName}
+POST   /chat/markMessageAsRead/{instanceName}
+POST   /chat/archiveChat/{instanceName}
+POST   /chat/whatsappNumbers/{instanceName}
+POST   /chat/updateProfileName/{instanceName}
+POST   /chat/updateProfilePicture/{instanceName}
+POST   /chat/updateProfileStatus/{instanceName}
+POST   /chat/fetchProfilePictureUrl/{instanceName}
+
+=== GROUP ===
+POST   /group/create/{instanceName}
+GET    /group/findGroupInfos/{instanceName}
+GET    /group/participants/{instanceName}
+POST   /group/updateParticipant/{instanceName}
+POST   /group/updateGroupSubject/{instanceName}
+POST   /group/updateGroupPicture/{instanceName}
+POST   /group/updateGroupDescription/{instanceName}
+
+=== BUSINESS ===
+POST   /business/getCatalog/{instanceName}
+POST   /business/getCollections/{instanceName}
+
+=== TEMPLATE (Meta Business) ===
+POST   /template/create/{instanceName}
+GET    /template/find/{instanceName}
+POST   /template/edit/{instanceName}
+DELETE /template/delete/{instanceName}
+
+=== SETTINGS ===
+GET    /settings/find/{instanceName}
+POST   /settings/set/{instanceName}
+
+=== PROXY ===
+GET    /proxy/find/{instanceName}
+POST   /proxy/set/{instanceName}
+
+=== LABEL ===
+GET    /label/findLabels/{instanceName}
+POST   /label/handleLabel/{instanceName}
+
+=== CALL ===
+POST   /call/offer/{instanceName}
+
+=== EVENTS / WEBHOOK ===
+GET    /webhook/find/{instanceName}
+POST   /webhook/set/{instanceName}
+POST   /websocket/set/{instanceName}
+
+=== OUTROS ÚTEIS ===
+POST   /message/sendText (com quotedMessage)
+POST   /chat/findMessages (com filtros)
+GET    /instance/fetchInstances (com status detalhado)
+
+Observações v2.0:
+- A maioria dos endpoints usa {instanceName} no path
+- Envio de mídia usa multipart/form-data
+- Respostas geralmente seguem padrão { "status": "success", "data": {...} }
+- Autenticação via header "apikey"
