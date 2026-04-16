@@ -158,6 +158,53 @@ const SQL_MIGRATIONS: { name: string; sql: string }[] = [
       CREATE INDEX IF NOT EXISTS idx_instances_created_by ON public.instances (created_by);
     `,
   },
+  /* ── 009: corrigir RLS — remover acesso anônimo irrestrito ── */
+  {
+    name: '009_fix_rls_instance_isolation',
+    sql: `
+      /* ── Remover políticas permissivas que expõem dados a qualquer pessoa ── */
+      DROP POLICY IF EXISTS "anon_select_instances" ON public.instances;
+      DROP POLICY IF EXISTS "anon_select_logs"      ON public.instance_logs;
+
+      /* ── Política para authenticated: usuário só vê suas próprias instâncias ── */
+      DO $$ BEGIN
+        CREATE POLICY "owner_select_instances" ON public.instances
+          FOR SELECT TO authenticated
+          USING (created_by::text = auth.uid()::text);
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+      DO $$ BEGIN
+        CREATE POLICY "owner_insert_instances" ON public.instances
+          FOR INSERT TO authenticated
+          WITH CHECK (created_by::text = auth.uid()::text);
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+      DO $$ BEGIN
+        CREATE POLICY "owner_update_instances" ON public.instances
+          FOR UPDATE TO authenticated
+          USING (created_by::text = auth.uid()::text)
+          WITH CHECK (created_by::text = auth.uid()::text);
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+      DO $$ BEGIN
+        CREATE POLICY "owner_delete_instances" ON public.instances
+          FOR DELETE TO authenticated
+          USING (created_by::text = auth.uid()::text);
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+      /* ── Logs: usuário só vê logs das suas próprias instâncias ── */
+      DO $$ BEGIN
+        CREATE POLICY "owner_select_logs" ON public.instance_logs
+          FOR SELECT TO authenticated
+          USING (
+            instance_id IN (
+              SELECT id FROM public.instances
+              WHERE created_by::text = auth.uid()::text
+            )
+          );
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+    `,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

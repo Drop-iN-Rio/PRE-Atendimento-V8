@@ -9,6 +9,19 @@ Plataforma de gerenciamento de instâncias WhatsApp via Evolution GO API.
 - **DB:** Supabase PostgreSQL (via pooler)
 - **API WhatsApp:** Evolution GO em `https://evogo.pre-atendimento.com`
 
+## Isolamento de Dados (Segurança)
+
+Isolamento obrigatório em **dupla camada** para usuários comuns:
+- **`tenant_id`** — isola por organização
+- **`created_by` (user_id)** — isola por dono da instância
+
+Regra: usuário comum vê/modifica **apenas** instâncias criadas pelo próprio `userId`.
+Admin não recebe filtro restritivo (vê tudo).
+
+Filtro aplicado em **todas** as queries de instâncias: listagem, status, QRCode, connect, disconnect, logout, pair, delete, purge.
+
+RLS Supabase (migration 009): removida política `anon_select_instances` (era irrestrita); políticas `owner_*` garantem isolamento também no nível do banco para acessos diretos.
+
 ## Estrutura de Arquivos
 
 ```

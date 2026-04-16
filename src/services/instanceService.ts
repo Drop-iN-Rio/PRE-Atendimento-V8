@@ -26,22 +26,26 @@ function extractInstanceToken(data: unknown): string {
   return '';
 }
 
-/* ── Buscar UUID e token da instância no banco ──
-   Suporta dois formatos de metadata.
-   isAdmin: se true, não filtra por tenantId.
+/* ── Buscar UUID e token da instância no banco ──────────────────────────
+   Filtros aplicados para usuário comum (isAdmin=false):
+     - tenant_id = tenantId  (isola pelo tenant)
+     - created_by = userId   (isola pelo dono — bloqueio principal)
+   Admin não recebe nenhum filtro restritivo.
 */
 async function getInstanceMeta(
   instanceName: string,
   tenantId?: string,
   isAdmin = false,
+  userId?: string,
 ): Promise<{ uuid: string; token: string; found: boolean }> {
   let query = supabaseAdmin
     .from('instances')
     .select('metadata')
     .eq('instance_name', instanceName);
 
-  if (!isAdmin && tenantId) {
-    query = query.eq('tenant_id', tenantId);
+  if (!isAdmin) {
+    if (tenantId) query = query.eq('tenant_id', tenantId);
+    if (userId)   query = query.eq('created_by', userId);
   }
 
   const { data: inst } = await query.maybeSingle();
@@ -111,7 +115,7 @@ export async function createInstanceAndPersist(
     console.warn('[instanceService] ⚠️  Token não encontrado — pulando connect');
   }
 
-  /* 4. Persistir no banco vinculado ao tenant */
+  /* 4. Persistir no banco vinculado ao tenant e ao usuário criador */
   const { data: record, error: insertError } = await supabaseAdmin
     .from('instances')
     .insert({
@@ -166,16 +170,17 @@ export async function createInstanceAndPersist(
 
 /* ── Listar instâncias ────────────────────────────────────────────────
    Admin (isAdmin=true): retorna todas as instâncias de todos os tenants.
-   Usuário comum: retorna apenas as do próprio tenant.
+   Usuário comum: retorna APENAS as do próprio tenant E criadas pelo próprio usuário.
 */
-export async function listInstances(tenantId?: string, isAdmin = false) {
+export async function listInstances(tenantId?: string, isAdmin = false, userId?: string) {
   let query = supabaseAdmin
     .from('instances')
     .select('id, instance_name, status, created_at, updated_at, metadata, tenant_id, created_by')
     .order('created_at', { ascending: false });
 
-  if (!isAdmin && tenantId) {
-    query = query.eq('tenant_id', tenantId);
+  if (!isAdmin) {
+    if (tenantId) query = query.eq('tenant_id', tenantId);
+    if (userId)   query = query.eq('created_by', userId);
   }
 
   const { data, error } = await query;
@@ -190,10 +195,11 @@ export async function disconnectInstanceService(
   isAdmin?:       boolean,
   instanceToken?: string,
   overrideUrl?:   string,
+  userId?:        string,
 ) {
   let token = instanceToken || '';
   if (!token) {
-    const meta = await getInstanceMeta(instanceName, tenantId, isAdmin);
+    const meta = await getInstanceMeta(instanceName, tenantId, isAdmin, userId);
     if (!meta.found) return { success: false, error: `Instância "${instanceName}" não encontrada ou sem permissão.` };
     token = meta.token;
   }
@@ -202,11 +208,17 @@ export async function disconnectInstanceService(
 
   if (result.success) {
     let upd = supabaseAdmin.from('instances').update({ status: 'inactive' }).eq('instance_name', instanceName);
-    if (!isAdmin && tenantId) upd = upd.eq('tenant_id', tenantId);
+    if (!isAdmin) {
+      if (tenantId) upd = upd.eq('tenant_id', tenantId);
+      if (userId)   upd = upd.eq('created_by', userId);
+    }
     await upd;
 
     let q = supabaseAdmin.from('instances').select('id').eq('instance_name', instanceName);
-    if (!isAdmin && tenantId) q = q.eq('tenant_id', tenantId);
+    if (!isAdmin) {
+      if (tenantId) q = q.eq('tenant_id', tenantId);
+      if (userId)   q = q.eq('created_by', userId);
+    }
     const { data: inst } = await q.maybeSingle();
     if (inst?.id) {
       await supabaseAdmin.from('instance_logs').insert({
@@ -225,10 +237,11 @@ export async function logoutInstanceService(
   isAdmin?:       boolean,
   instanceToken?: string,
   overrideUrl?:   string,
+  userId?:        string,
 ) {
   let token = instanceToken || '';
   if (!token) {
-    const meta = await getInstanceMeta(instanceName, tenantId, isAdmin);
+    const meta = await getInstanceMeta(instanceName, tenantId, isAdmin, userId);
     if (!meta.found) return { success: false, error: `Instância "${instanceName}" não encontrada ou sem permissão.` };
     token = meta.token;
   }
@@ -237,11 +250,17 @@ export async function logoutInstanceService(
 
   if (result.success) {
     let upd = supabaseAdmin.from('instances').update({ status: 'inactive' }).eq('instance_name', instanceName);
-    if (!isAdmin && tenantId) upd = upd.eq('tenant_id', tenantId);
+    if (!isAdmin) {
+      if (tenantId) upd = upd.eq('tenant_id', tenantId);
+      if (userId)   upd = upd.eq('created_by', userId);
+    }
     await upd;
 
     let q = supabaseAdmin.from('instances').select('id').eq('instance_name', instanceName);
-    if (!isAdmin && tenantId) q = q.eq('tenant_id', tenantId);
+    if (!isAdmin) {
+      if (tenantId) q = q.eq('tenant_id', tenantId);
+      if (userId)   q = q.eq('created_by', userId);
+    }
     const { data: inst } = await q.maybeSingle();
     if (inst?.id) {
       await supabaseAdmin.from('instance_logs').insert({
@@ -256,7 +275,7 @@ export async function logoutInstanceService(
 /* ── Deletar ──────────────────────────────────────────────────────────
    - Sem UUID: registro órfão → deletar do banco diretamente.
    - Com UUID: chamar API → só limpar banco após confirmação.
-   - Tenant check: admin pode deletar qualquer; usuário só do seu tenant.
+   - Controle de acesso: admin pode deletar qualquer; usuário só o que criou.
 */
 export async function deleteInstanceService(
   instanceName: string,
@@ -264,8 +283,9 @@ export async function deleteInstanceService(
   isAdmin?:     boolean,
   overrideUrl?: string,
   overrideKey?: string,
+  userId?:      string,
 ) {
-  const meta = await getInstanceMeta(instanceName, tenantId, isAdmin);
+  const meta = await getInstanceMeta(instanceName, tenantId, isAdmin, userId);
 
   if (!meta.found) {
     return { success: false, error: `Instância "${instanceName}" não encontrada ou sem permissão.` };
@@ -274,13 +294,19 @@ export async function deleteInstanceService(
   if (!meta.uuid) {
     console.warn(`[deleteInstanceService] UUID não encontrado para "${instanceName}" — removendo registro órfão.`);
     let q = supabaseAdmin.from('instances').select('id').eq('instance_name', instanceName);
-    if (!isAdmin && tenantId) q = q.eq('tenant_id', tenantId);
+    if (!isAdmin) {
+      if (tenantId) q = q.eq('tenant_id', tenantId);
+      if (userId)   q = q.eq('created_by', userId);
+    }
     const { data: inst } = await q.maybeSingle();
     if (inst?.id) {
       await supabaseAdmin.from('instance_logs').delete().eq('instance_id', inst.id);
     }
     let del = supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
-    if (!isAdmin && tenantId) del = del.eq('tenant_id', tenantId);
+    if (!isAdmin) {
+      if (tenantId) del = del.eq('tenant_id', tenantId);
+      if (userId)   del = del.eq('created_by', userId);
+    }
     await del;
     return { success: true, data: { message: 'Registro órfão removido do banco local.' }, orphan: true };
   }
@@ -298,14 +324,20 @@ export async function deleteInstanceService(
   }
 
   let q = supabaseAdmin.from('instances').select('id').eq('instance_name', instanceName);
-  if (!isAdmin && tenantId) q = q.eq('tenant_id', tenantId);
+  if (!isAdmin) {
+    if (tenantId) q = q.eq('tenant_id', tenantId);
+    if (userId)   q = q.eq('created_by', userId);
+  }
   const { data: inst } = await q.maybeSingle();
   if (inst?.id) {
     await supabaseAdmin.from('instance_logs').delete().eq('instance_id', inst.id);
   }
 
   let del = supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
-  if (!isAdmin && tenantId) del = del.eq('tenant_id', tenantId);
+  if (!isAdmin) {
+    if (tenantId) del = del.eq('tenant_id', tenantId);
+    if (userId)   del = del.eq('created_by', userId);
+  }
   await del;
 
   return { success: true, data: result.data };
@@ -316,14 +348,16 @@ export async function purgeOrphanedInstance(
   instanceName: string,
   tenantId?:    string,
   isAdmin?:     boolean,
+  userId?:      string,
 ) {
   let query = supabaseAdmin
     .from('instances')
     .select('id, instance_name, status')
     .eq('instance_name', instanceName);
 
-  if (!isAdmin && tenantId) {
-    query = query.eq('tenant_id', tenantId);
+  if (!isAdmin) {
+    if (tenantId) query = query.eq('tenant_id', tenantId);
+    if (userId)   query = query.eq('created_by', userId);
   }
 
   const { data: inst, error } = await query.maybeSingle();
@@ -336,7 +370,10 @@ export async function purgeOrphanedInstance(
   }
 
   let del = supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
-  if (!isAdmin && tenantId) del = del.eq('tenant_id', tenantId);
+  if (!isAdmin) {
+    if (tenantId) del = del.eq('tenant_id', tenantId);
+    if (userId)   del = del.eq('created_by', userId);
+  }
   const { error: delErr } = await del;
 
   if (delErr) return { success: false, error: delErr.message };

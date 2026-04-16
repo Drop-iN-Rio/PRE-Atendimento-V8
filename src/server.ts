@@ -373,27 +373,33 @@ app.post('/api/instances', requireAuth, async (req, res) => {
 app.get('/api/instances', requireAuth, async (req, res) => {
   const user     = req.user!;
   const isAdmin  = user.role === 'admin';
-  /* Admin pode filtrar por tenant via query param */
+  /* Admin pode filtrar por tenant via query param; usuário comum usa seu próprio tenant */
   const filterTenantId = isAdmin
     ? ((req.query.tenantId as string | undefined)?.trim() || undefined)
     : user.tenantId;
+  /* Usuário comum: retorna somente instâncias criadas por ele */
+  const filterUserId = isAdmin ? undefined : user.userId;
 
   try {
-    const result = await listInstances(filterTenantId, isAdmin && !filterTenantId);
+    const result = await listInstances(filterTenantId, isAdmin && !filterTenantId, filterUserId);
     res.status(result.success ? 200 : 500).json(result);
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
 
-/* ── Helper: buscar token da instância com controle de tenant ────────── */
+/* ── Helper: buscar token da instância com controle de dono ──────────── */
 async function fetchInstanceToken(
   name: string,
   tenantId: string | undefined,
   isAdmin: boolean,
+  userId?: string,
 ): Promise<string> {
   let query = supabaseAdmin.from('instances').select('metadata').eq('instance_name', name);
-  if (!isAdmin && tenantId) query = query.eq('tenant_id', tenantId);
+  if (!isAdmin) {
+    if (tenantId) query = query.eq('tenant_id', tenantId);
+    if (userId)   query = query.eq('created_by', userId);
+  }
   const { data: inst } = await query.maybeSingle();
   if (!inst?.metadata) return '';
   return extractInstanceToken(inst.metadata as Record<string, unknown>);
@@ -408,7 +414,7 @@ app.get('/api/instances/:name/qrcode', requireAuth, async (req, res) => {
   let   instanceToken = (req.query.instanceToken as string | undefined)?.trim() || '';
 
   if (!instanceToken) {
-    try { instanceToken = await fetchInstanceToken(name, user.tenantId, isAdmin); } catch { /* ok */ }
+    try { instanceToken = await fetchInstanceToken(name, user.tenantId, isAdmin, isAdmin ? undefined : user.userId); } catch { /* ok */ }
   }
 
   try {
@@ -451,7 +457,10 @@ app.get('/api/instances/:name/status', requireAuth, async (req, res) => {
   let currentDbStatus = '';
   try {
     let q = supabaseAdmin.from('instances').select('metadata, status').eq('instance_name', name);
-    if (!isAdmin && user.tenantId) q = q.eq('tenant_id', user.tenantId);
+    if (!isAdmin) {
+      if (user.tenantId) q = q.eq('tenant_id', user.tenantId);
+      q = q.eq('created_by', user.userId);
+    }
     const { data: inst } = await q.maybeSingle();
 
     if (inst?.metadata) {
@@ -478,7 +487,13 @@ app.get('/api/instances/:name/status', requireAuth, async (req, res) => {
       }
 
       if (newStatus) {
-        await supabaseAdmin.from('instances').update({ status: newStatus }).eq('instance_name', name);
+        /* Atualizar status somente na instância do próprio usuário */
+        let upd = supabaseAdmin.from('instances').update({ status: newStatus }).eq('instance_name', name);
+        if (!isAdmin) {
+          if (user.tenantId) upd = upd.eq('tenant_id', user.tenantId);
+          upd = upd.eq('created_by', user.userId);
+        }
+        await upd;
       }
 
       res.json({ success: result.success, data: result.data, connected: loggedIn, running, dbStatus: newStatus || currentDbStatus });
@@ -486,7 +501,12 @@ app.get('/api/instances/:name/status', requireAuth, async (req, res) => {
     }
 
     if (currentDbStatus === 'connected') {
-      await supabaseAdmin.from('instances').update({ status: 'active' }).eq('instance_name', name);
+      let upd = supabaseAdmin.from('instances').update({ status: 'active' }).eq('instance_name', name);
+      if (!isAdmin) {
+        if (user.tenantId) upd = upd.eq('tenant_id', user.tenantId);
+        upd = upd.eq('created_by', user.userId);
+      }
+      await upd;
     }
     res.json({ success: true, connected: false, running: false, dbStatus: currentDbStatus });
   } catch (err: unknown) {
@@ -506,7 +526,7 @@ app.post('/api/instances/:name/connect', requireAuth, async (req, res) => {
 
   let token = instanceToken?.trim() || '';
   if (!token) {
-    try { token = await fetchInstanceToken(name, user.tenantId, isAdmin); } catch { /* ok */ }
+    try { token = await fetchInstanceToken(name, user.tenantId, isAdmin, isAdmin ? undefined : user.userId); } catch { /* ok */ }
   }
 
   if (!token) {
@@ -526,11 +546,13 @@ app.post('/api/instances/:name/connect', requireAuth, async (req, res) => {
 app.post('/api/instances/:name/disconnect', requireAuth, async (req, res) => {
   const { name } = req.params;
   const user     = req.user!;
+  const isAdmin  = user.role === 'admin';
   const { instanceToken, evolutionUrl } = req.body as { instanceToken?: string; evolutionUrl?: string };
   try {
     const result = await disconnectInstanceService(
-      name, user.tenantId, user.role === 'admin',
+      name, user.tenantId, isAdmin,
       instanceToken?.trim() || undefined, evolutionUrl?.trim() || undefined,
+      isAdmin ? undefined : user.userId,
     );
     res.status(result.success ? 200 : 502).json(result);
   } catch (err: unknown) {
@@ -542,11 +564,13 @@ app.post('/api/instances/:name/disconnect', requireAuth, async (req, res) => {
 app.delete('/api/instances/:name/logout', requireAuth, async (req, res) => {
   const { name } = req.params;
   const user     = req.user!;
+  const isAdmin  = user.role === 'admin';
   const { instanceToken, evolutionUrl } = req.body as { instanceToken?: string; evolutionUrl?: string };
   try {
     const result = await logoutInstanceService(
-      name, user.tenantId, user.role === 'admin',
+      name, user.tenantId, isAdmin,
       instanceToken?.trim() || undefined, evolutionUrl?.trim() || undefined,
+      isAdmin ? undefined : user.userId,
     );
     res.status(result.success ? 200 : 502).json(result);
   } catch (err: unknown) {
@@ -565,7 +589,7 @@ app.post('/api/instances/:name/pair', requireAuth, async (req, res) => {
 
   let token = instanceToken?.trim() || '';
   if (!token) {
-    try { token = await fetchInstanceToken(name, user.tenantId, isAdmin); } catch { /* ok */ }
+    try { token = await fetchInstanceToken(name, user.tenantId, isAdmin, isAdmin ? undefined : user.userId); } catch { /* ok */ }
   }
 
   if (!token) {
@@ -589,11 +613,13 @@ app.post('/api/instances/:name/pair', requireAuth, async (req, res) => {
 app.delete('/api/instances/:name', requireAuth, async (req, res) => {
   const { name } = req.params;
   const user     = req.user!;
+  const isAdmin  = user.role === 'admin';
   const { evolutionUrl, apiKey } = req.body as { evolutionUrl?: string; apiKey?: string };
   try {
     const result = await deleteInstanceService(
-      name, user.tenantId, user.role === 'admin',
+      name, user.tenantId, isAdmin,
       evolutionUrl?.trim() || undefined, apiKey?.trim() || undefined,
+      isAdmin ? undefined : user.userId,
     );
     res.status(result.success ? 200 : 502).json(result);
   } catch (err: unknown) {
@@ -605,8 +631,9 @@ app.delete('/api/instances/:name', requireAuth, async (req, res) => {
 app.delete('/api/instances/:name/purge', requireAuth, async (req, res) => {
   const { name } = req.params;
   const user     = req.user!;
+  const isAdmin  = user.role === 'admin';
   try {
-    const result = await purgeOrphanedInstance(name, user.tenantId, user.role === 'admin');
+    const result = await purgeOrphanedInstance(name, user.tenantId, isAdmin, isAdmin ? undefined : user.userId);
     res.status(result.success ? 200 : 404).json(result);
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });
