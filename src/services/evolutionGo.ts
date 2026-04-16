@@ -19,20 +19,25 @@ function maskKey(key: string): string {
 export async function createInstance(
   instanceName: string,
   token?: string,
+  overrideUrl?: string,
+  overrideKey?: string,
 ): Promise<EvolutionResponse> {
-  if (!EVOLUTION_API_URL) {
+  const baseUrl = (overrideUrl || EVOLUTION_API_URL).replace(/\/$/, '');
+  const apiKey  = overrideKey  || GLOBAL_API_KEY;
+
+  if (!baseUrl) {
     return { success: false, error: 'EVOLUTION_API_URL não configurada no servidor.' };
   }
-  if (!GLOBAL_API_KEY) {
+  if (!apiKey) {
     return { success: false, error: 'GLOBAL_API_KEY não configurada no servidor.' };
   }
 
-  const url = `${EVOLUTION_API_URL}/instance/create`;
+  const url = `${baseUrl}/instance/create`;
 
   const payload = { name: instanceName, token: token || '' };
 
   console.log('[Evolution GO] ▶ POST', url);
-  console.log('[Evolution GO] Headers:', { 'Content-Type': 'application/json', apikey: maskKey(GLOBAL_API_KEY) });
+  console.log('[Evolution GO] Headers:', { 'Content-Type': 'application/json', apikey: maskKey(apiKey) });
   console.log('[Evolution GO] Body:', JSON.stringify(payload));
 
   const controller = new AbortController();
@@ -43,7 +48,7 @@ export async function createInstance(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': GLOBAL_API_KEY,
+        'apikey': apiKey,
       },
       body: JSON.stringify(payload),
       signal: controller.signal,

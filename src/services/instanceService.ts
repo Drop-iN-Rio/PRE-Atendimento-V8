@@ -4,6 +4,8 @@ import { createInstance as callEvolutionApi } from './evolutionGo.js';
 export async function createInstanceAndPersist(
   instanceName: string,
   token?: string,
+  overrideUrl?: string,
+  overrideKey?: string,
 ) {
   const { data: existing } = await supabaseAdmin
     .from('instances')
@@ -28,7 +30,7 @@ export async function createInstanceAndPersist(
     return { success: false, error: insertError?.message || 'Erro ao salvar instância.' };
   }
 
-  const apiResult = await callEvolutionApi(instanceName, token);
+  const apiResult = await callEvolutionApi(instanceName, token, overrideUrl, overrideKey);
 
   const newStatus = apiResult.success ? 'active' : 'error';
 

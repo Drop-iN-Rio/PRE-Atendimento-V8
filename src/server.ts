@@ -99,9 +99,11 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/instances', async (req, res) => {
-  const { instanceName, token } = req.body as {
+  const { instanceName, token, evolutionUrl, apiKey } = req.body as {
     instanceName?: string;
     token?: string;
+    evolutionUrl?: string;
+    apiKey?: string;
   };
 
   if (!instanceName || typeof instanceName !== 'string' || instanceName.trim() === '') {
@@ -110,7 +112,12 @@ app.post('/api/instances', async (req, res) => {
   }
 
   try {
-    const result = await createInstanceAndPersist(instanceName.trim(), token?.trim());
+    const result = await createInstanceAndPersist(
+      instanceName.trim(),
+      token?.trim(),
+      evolutionUrl?.trim() || undefined,
+      apiKey?.trim()       || undefined,
+    );
     if (result.success) {
       res.status(201).json(result);
     } else {

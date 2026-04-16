@@ -361,7 +361,10 @@
         gap: 0.5rem;
       }
 
-      .sidebar-config-status {
+      /* ─── ADMIN ONLY ─── */
+    .admin-only { display: none !important; }
+
+    .sidebar-config-status {
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -806,9 +809,14 @@
         onclick="showPanel('panel-list', null, 'bnav-list', 'snav-list')">
         <span class="sidebar-nav-icon">📋</span> Instâncias
       </button>
+      <button class="sidebar-nav-item admin-only" id="snav-config"
+        onclick="showPanel('panel-config', null, 'bnav-config', 'snav-config')">
+        <span class="sidebar-nav-icon">⚙️</span> Configuração
+      </button>
     </nav>
 
     <div class="sidebar-footer">
+      <div class="sidebar-config-status admin-only" id="sidebar-cfg-status">○ API não configurada</div>
       <button class="sidebar-logout" onclick="logout()">
         <span>🚪</span> Sair
       </button>
@@ -845,6 +853,7 @@
     <div class="nav-tabs">
       <div class="nav-tab active" id="tab-create" onclick="showPanel('panel-create', this)">➕ Nova Instância</div>
       <div class="nav-tab"        id="tab-list"   onclick="showPanel('panel-list',   this)">📋 Instâncias</div>
+      <div class="nav-tab admin-only" id="tab-config" onclick="showPanel('panel-config', this)">⚙️ Config</div>
     </div>
 
     <!-- PANELS -->
@@ -915,6 +924,60 @@
         </div>
       </div>
 
+      <!-- ── CONFIGURAÇÃO (admin only) ── -->
+      <div class="panel admin-only" id="panel-config">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon icon-purple">⚙️</div>
+            <div>
+              <div class="card-title">Configuração da API</div>
+              <div class="card-desc">Visível somente para administradores</div>
+            </div>
+          </div>
+
+          <form id="form-config" novalidate>
+            <label for="cfg-url">URL DA EVOLUTION GO</label>
+            <div class="field-wrap">
+              <input type="text" id="cfg-url"
+                placeholder="https://evogo.pre-atendimento.com"
+                autocomplete="off" autocorrect="off"
+                autocapitalize="none" spellcheck="false" />
+            </div>
+
+            <div style="height:0.9rem"></div>
+
+            <label for="cfg-key">GLOBAL_API_KEY</label>
+            <div class="field-wrap">
+              <input type="password" id="cfg-key"
+                placeholder="Chave de acesso global da API"
+                autocomplete="off" autocorrect="off"
+                autocapitalize="none" spellcheck="false" />
+            </div>
+
+            <button type="submit" class="btn" id="btn-save-config" style="margin-top:1rem;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 16px rgba(16,185,129,0.3)">
+              ✅ Salvar Configuração
+            </button>
+          </form>
+
+          <div class="config-saved-badge" id="config-saved-badge">
+            ✅ Configuração salva com sucesso.
+          </div>
+
+          <div style="margin-top:1rem">
+            <div class="config-status" id="config-status-url">
+              <span id="cfg-icon-url">○</span> URL da Evolution GO
+            </div>
+            <div class="config-status" id="config-status-key">
+              <span id="cfg-icon-key">○</span> GLOBAL_API_KEY
+            </div>
+          </div>
+
+          <p style="margin-top:1rem;font-size:0.75rem;color:#475569;line-height:1.5">
+            💡 Se em branco, o sistema usa as variáveis de ambiente configuradas no servidor. Os valores aqui salvos sobrescrevem o padrão apenas para esta sessão.
+          </p>
+        </div>
+      </div>
+
       <!-- ── LISTA ── -->
       <div class="panel" id="panel-list">
         <div class="card">
@@ -948,6 +1011,10 @@
         onclick="showPanel('panel-list', null, 'bnav-list')">
         <span class="bottom-nav-icon">📋</span>Instâncias
       </div>
+      <div class="bottom-nav-item admin-only" id="bnav-config"
+        onclick="showPanel('panel-config', null, 'bnav-config')">
+        <span class="bottom-nav-icon">⚙️</span>Config
+      </div>
     </nav>
 
   </div><!-- /.content-area -->
@@ -958,7 +1025,8 @@
     if (!raw) {
       window.location.href = '/';
     } else {
-      const user = JSON.parse(raw);
+      const user    = JSON.parse(raw);
+      const isAdmin = user.role === 'admin';
       const display = user.name || user.email || '?';
       const initial = display[0].toUpperCase();
 
@@ -971,6 +1039,13 @@
       document.getElementById('sidebar-avatar').textContent = initial;
       document.getElementById('sidebar-name').textContent   = display;
       document.getElementById('sidebar-role').textContent   = user.role || 'user';
+
+      /* ── Mostrar elementos exclusivos de admin ── */
+      if (isAdmin) {
+        document.querySelectorAll('.admin-only').forEach(el => {
+          el.classList.remove('admin-only');
+        });
+      }
     }
 
     function logout() {
@@ -979,8 +1054,8 @@
     }
 
     /* ─── NAV ─── */
-    const panelToTab  = { 'panel-create':'tab-create', 'panel-list':'tab-list' };
-    const panelToSnav = { 'panel-create':'snav-create','panel-list':'snav-list' };
+    const panelToTab  = { 'panel-create':'tab-create', 'panel-list':'tab-list', 'panel-config':'tab-config' };
+    const panelToSnav = { 'panel-create':'snav-create','panel-list':'snav-list','panel-config':'snav-config' };
 
     function showPanel(panelId, tabEl, bnavId, snavId) {
       /* Panels */
@@ -1002,6 +1077,64 @@
       if (snavTarget) document.getElementById(snavTarget)?.classList.add('active');
 
       if (panelId === 'panel-list') loadInstances();
+    }
+
+    /* ─── CONFIG ADMIN ─── */
+    const CFG_KEY = 'pa_admin_config';
+
+    function loadAdminConfig() {
+      try { return JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); }
+      catch { return null; }
+    }
+
+    function updateAdminConfigUI() {
+      const cfg    = loadAdminConfig();
+      const hasUrl = !!(cfg?.evolutionUrl?.trim());
+      const hasKey = !!(cfg?.apiKey?.trim());
+
+      const statusUrl = document.getElementById('config-status-url');
+      const statusKey = document.getElementById('config-status-key');
+      const sideStatus = document.getElementById('sidebar-cfg-status');
+      if (!statusUrl) return;
+
+      statusUrl.className = 'config-status ' + (hasUrl ? 'ok' : 'nok');
+      document.getElementById('cfg-icon-url').textContent = hasUrl ? '✓' : '✗';
+      statusKey.className = 'config-status ' + (hasKey ? 'ok' : 'nok');
+      document.getElementById('cfg-icon-key').textContent = hasKey ? '✓' : '✗';
+
+      if (sideStatus) {
+        if (hasUrl && hasKey) {
+          sideStatus.className = 'sidebar-config-status ok';
+          sideStatus.textContent = '✓ API personalizada';
+        } else {
+          sideStatus.className = 'sidebar-config-status nok';
+          sideStatus.textContent = '○ Usando config padrão';
+        }
+      }
+
+      if (cfg) {
+        document.getElementById('cfg-url').value = cfg.evolutionUrl || '';
+      }
+    }
+
+    const formConfig = document.getElementById('form-config');
+    if (formConfig) {
+      formConfig.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const url = document.getElementById('cfg-url').value.trim();
+        const key = document.getElementById('cfg-key').value.trim();
+
+        let cleanUrl = url;
+        try { if (url) cleanUrl = new URL(url).origin; } catch { /* mantém */ }
+
+        localStorage.setItem(CFG_KEY, JSON.stringify({ evolutionUrl: cleanUrl || '', apiKey: key || '' }));
+
+        const badge = document.getElementById('config-saved-badge');
+        badge.classList.add('visible');
+        setTimeout(() => badge.classList.remove('visible'), 3500);
+
+        updateAdminConfigUI();
+      });
     }
 
     /* ─── VALIDAÇÃO INLINE ─── */
@@ -1052,7 +1185,15 @@
         const res  = await fetch('/api/instances', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instanceName, token: token || undefined }),
+          body: JSON.stringify((() => {
+            const adminCfg = loadAdminConfig ? loadAdminConfig() : null;
+            return {
+              instanceName,
+              token: token || undefined,
+              ...(adminCfg?.evolutionUrl ? { evolutionUrl: adminCfg.evolutionUrl } : {}),
+              ...(adminCfg?.apiKey       ? { apiKey:       adminCfg.apiKey       } : {}),
+            };
+          })()),
         });
         const json = await res.json();
 
@@ -1193,6 +1334,7 @@
 
     /* ─── INIT ─── */
     loadInstances();
+    updateAdminConfigUI();
   </script>
 </body>
 </html>
