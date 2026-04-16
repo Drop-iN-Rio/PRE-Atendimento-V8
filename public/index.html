@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Evolution GO — Criar Instância</title>
+  <title>Evolution GO — Painel</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -12,71 +12,128 @@
       background: #0f172a;
       color: #e2e8f0;
       min-height: 100vh;
+    }
+
+    /* TOP BAR */
+    .topbar {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0 1.5rem;
+      height: 56px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+    }
+
+    .logo-text { font-size: 1rem; font-weight: 700; color: #f1f5f9; }
+    .logo-sub  { font-size: 0.7rem; color: #64748b; }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.85rem;
+    }
+
+    .user-avatar {
+      width: 26px; height: 26px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    .user-name { color: #cbd5e1; font-weight: 500; }
+    .user-role {
+      background: #1e3a5f;
+      color: #93c5fd;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      border-radius: 8px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover { border-color: #ef4444; color: #ef4444; }
+
+    /* CONTENT */
+    .content {
+      display: flex;
+      align-items: flex-start;
       justify-content: center;
-      padding: 1.5rem;
+      padding: 2.5rem 1.5rem;
+      gap: 1.5rem;
+      flex-wrap: wrap;
     }
 
     .card {
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 16px;
-      padding: 2.5rem 2rem;
+      padding: 2rem;
       width: 100%;
       max-width: 460px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      margin-bottom: 1.8rem;
-    }
-
-    .logo-icon {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-    }
-
-    .logo-text {
-      font-size: 1.3rem;
+    .card-title {
+      font-size: 1.1rem;
       font-weight: 700;
       color: #f1f5f9;
+      margin-bottom: 0.3rem;
     }
 
-    .logo-sub {
-      font-size: 0.75rem;
-      color: #94a3b8;
-      margin-top: 1px;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #f1f5f9;
-      margin-bottom: 0.4rem;
-    }
-
-    p.desc {
-      font-size: 0.9rem;
-      color: #94a3b8;
-      margin-bottom: 1.8rem;
+    .card-desc {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 1.5rem;
     }
 
     label {
       display: block;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
-      color: #cbd5e1;
-      margin-bottom: 0.5rem;
+      color: #94a3b8;
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     input[type="text"] {
@@ -91,16 +148,11 @@
       transition: border-color 0.2s;
     }
 
-    input[type="text"]:focus {
-      border-color: #6366f1;
-    }
+    input[type="text"]:focus { border-color: #6366f1; }
+    input[type="text"]::placeholder { color: #475569; }
 
-    input[type="text"]::placeholder {
-      color: #475569;
-    }
-
-    button {
-      margin-top: 1.2rem;
+    .btn {
+      margin-top: 1rem;
       width: 100%;
       padding: 0.85rem;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
@@ -113,104 +165,153 @@
       transition: opacity 0.2s, transform 0.1s;
     }
 
-    button:hover:not(:disabled) { opacity: 0.9; }
-    button:active:not(:disabled) { transform: scale(0.98); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn:hover:not(:disabled) { opacity: 0.9; }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .result {
-      margin-top: 1.5rem;
+    .alert {
+      margin-top: 1.2rem;
       border-radius: 10px;
-      padding: 1rem;
+      padding: 0.9rem 1rem;
       font-size: 0.85rem;
       display: none;
     }
 
-    .result.success {
-      background: #052e16;
-      border: 1px solid #16a34a;
-      color: #86efac;
-      display: block;
+    .alert.success {
+      background: #052e16; border: 1px solid #16a34a; color: #86efac; display: block;
     }
 
-    .result.error {
-      background: #2d0a0a;
-      border: 1px solid #dc2626;
-      color: #fca5a5;
-      display: block;
+    .alert.error {
+      background: #2d0a0a; border: 1px solid #dc2626; color: #fca5a5; display: block;
     }
 
-    .result pre {
-      white-space: pre-wrap;
-      word-break: break-word;
+    .alert pre {
+      white-space: pre-wrap; word-break: break-word;
       font-family: 'Courier New', monospace;
-      font-size: 0.8rem;
-      margin-top: 0.5rem;
-      opacity: 0.85;
-    }
-
-    .result .label {
-      font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.78rem; margin-top: 0.4rem; opacity: 0.85;
     }
 
     .spinner {
       display: inline-block;
-      width: 14px;
-      height: 14px;
+      width: 14px; height: 14px;
       border: 2px solid rgba(255,255,255,0.4);
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
+      vertical-align: middle; margin-right: 6px;
+    }
+
+    /* INSTANCES LIST */
+    .instances-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .instance-item {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .instance-name { font-weight: 600; color: #f1f5f9; font-size: 0.9rem; }
+    .instance-date { font-size: 0.75rem; color: #64748b; }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-active   { background: #052e16; color: #4ade80; }
+    .badge-creating { background: #1c2a00; color: #a3e635; }
+    .badge-error    { background: #2d0a0a; color: #f87171; }
+    .badge-inactive { background: #1e293b; color: #64748b; }
+
+    .empty-state {
+      text-align: center;
+      color: #475569;
+      font-size: 0.9rem;
+      padding: 2rem 0;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo">
+
+  <nav class="topbar">
+    <div class="topbar-left">
       <div class="logo-icon">⚡</div>
       <div>
         <div class="logo-text">Evolution GO</div>
-        <div class="logo-sub">Gerenciador de Instâncias</div>
+        <div class="logo-sub">PRE-Atendimento V8</div>
       </div>
     </div>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span class="user-name" id="user-name">—</span>
+        <span class="user-role" id="user-role">—</span>
+      </div>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </nav>
 
-    <h1>Criar Instância</h1>
-    <p class="desc">Informe o nome da instância para criá-la na Evolution API.</p>
+  <div class="content">
+    <!-- CRIAR INSTÂNCIA -->
+    <div class="card">
+      <div class="card-title">Criar Instância</div>
+      <div class="card-desc">Registra uma nova instância na Evolution GO e salva no banco.</div>
 
-    <form id="form">
-      <label for="instanceName">Nome da Instância</label>
-      <input
-        type="text"
-        id="instanceName"
-        name="instanceName"
-        placeholder="Ex: minha-instancia-01"
-        autocomplete="off"
-        required
-      />
-      <button type="submit" id="btn">Criar Instância</button>
-    </form>
+      <form id="form-instance">
+        <label for="instanceName">Nome da Instância</label>
+        <input type="text" id="instanceName" placeholder="Ex: minha-instancia-01" autocomplete="off" required />
+        <button type="submit" class="btn" id="btn-instance">Criar Instância</button>
+      </form>
 
-    <div class="result" id="result"></div>
+      <div class="alert" id="result-instance"></div>
+    </div>
+
+    <!-- LISTA DE INSTÂNCIAS -->
+    <div class="card">
+      <div class="card-title">Instâncias Registradas</div>
+      <div class="card-desc">Todas as instâncias salvas no Supabase.</div>
+      <div class="instances-list" id="instances-list">
+        <div class="empty-state">Carregando...</div>
+      </div>
+    </div>
   </div>
 
   <script>
-    const form = document.getElementById('form');
-    const btn = document.getElementById('btn');
-    const result = document.getElementById('result');
+    // Auth guard
+    const raw = localStorage.getItem('pa_session');
+    if (!raw) {
+      window.location.href = '/auth.html';
+    } else {
+      const user = JSON.parse(raw);
+      document.getElementById('user-name').textContent = user.name || user.email;
+      document.getElementById('user-role').textContent = user.role || 'user';
+      document.getElementById('user-avatar').textContent = (user.name || user.email || '?')[0].toUpperCase();
+    }
 
-    form.addEventListener('submit', async (e) => {
+    function logout() {
+      localStorage.removeItem('pa_session');
+      window.location.href = '/auth.html';
+    }
+
+    // Criar instância
+    document.getElementById('form-instance').addEventListener('submit', async (e) => {
       e.preventDefault();
       const instanceName = document.getElementById('instanceName').value.trim();
-      if (!instanceName) return;
+      const btn = document.getElementById('btn-instance');
+      const alert = document.getElementById('result-instance');
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Criando...';
-      result.className = 'result';
-      result.style.display = 'none';
+      alert.className = 'alert';
 
       try {
         const res = await fetch('/api/instances', {
@@ -218,33 +319,63 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ instanceName }),
         });
-
         const json = await res.json();
 
         if (res.ok && json.success) {
-          result.className = 'result success';
-          result.innerHTML = `
-            <div class="label">✅ Instância criada com sucesso!</div>
-            <pre>${JSON.stringify(json.data, null, 2)}</pre>
-          `;
+          alert.className = 'alert success';
+          alert.innerHTML = `✅ Instância criada!<pre>${JSON.stringify(json.data, null, 2)}</pre>`;
+          document.getElementById('instanceName').value = '';
+          loadInstances();
         } else {
-          result.className = 'result error';
-          result.innerHTML = `
-            <div class="label">❌ Erro ao criar instância</div>
-            <pre>${json.error || JSON.stringify(json, null, 2)}</pre>
-          `;
+          alert.className = 'alert error';
+          alert.innerHTML = `❌ Erro<pre>${json.error || JSON.stringify(json, null, 2)}</pre>`;
         }
       } catch (err) {
-        result.className = 'result error';
-        result.innerHTML = `
-          <div class="label">❌ Erro de conexão</div>
-          <pre>${err.message}</pre>
-        `;
+        alert.className = 'alert error';
+        alert.innerHTML = `❌ Erro de conexão<pre>${err.message}</pre>`;
       } finally {
         btn.disabled = false;
         btn.textContent = 'Criar Instância';
       }
     });
+
+    // Carregar instâncias
+    async function loadInstances() {
+      const el = document.getElementById('instances-list');
+      try {
+        const res = await fetch('/api/instances');
+        const json = await res.json();
+
+        if (!json.success || !json.data?.length) {
+          el.innerHTML = '<div class="empty-state">Nenhuma instância encontrada.</div>';
+          return;
+        }
+
+        el.innerHTML = json.data.map(inst => {
+          const badgeClass = {
+            active: 'badge-active',
+            creating: 'badge-creating',
+            error: 'badge-error',
+            inactive: 'badge-inactive',
+          }[inst.status] || 'badge-inactive';
+
+          const date = new Date(inst.created_at).toLocaleString('pt-BR');
+          return `
+            <div class="instance-item">
+              <div>
+                <div class="instance-name">${inst.instance_name}</div>
+                <div class="instance-date">${date}</div>
+              </div>
+              <span class="badge ${badgeClass}">${inst.status}</span>
+            </div>
+          `;
+        }).join('');
+      } catch {
+        el.innerHTML = '<div class="empty-state">Erro ao carregar instâncias.</div>';
+      }
+    }
+
+    loadInstances();
   </script>
 </body>
 </html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRE-Atendimento — Entrar</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-bottom: 2rem;
+      justify-content: center;
+    }
+
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .logo-text { font-size: 1.4rem; font-weight: 700; color: #f1f5f9; }
+    .logo-sub  { font-size: 0.75rem; color: #64748b; }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 1.8rem;
+    }
+
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.55rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: #64748b;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .tab.active {
+      background: #1e293b;
+      color: #f1f5f9;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    .form-group { margin-bottom: 1.1rem; }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: #6366f1; }
+    input::placeholder { color: #475569; }
+
+    .btn {
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn:hover:not(:disabled) { opacity: 0.9; }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .alert {
+      margin-top: 1.2rem;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .alert.success {
+      background: #052e16;
+      border: 1px solid #16a34a;
+      color: #86efac;
+      display: block;
+    }
+
+    .alert.error {
+      background: #2d0a0a;
+      border: 1px solid #dc2626;
+      color: #fca5a5;
+      display: block;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    .divider {
+      text-align: center;
+      color: #475569;
+      font-size: 0.8rem;
+      margin: 1rem 0 0;
+    }
+
+    .role-select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .role-select:focus { border-color: #6366f1; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">PRE-Atendimento</div>
+        <div class="logo-sub">Evolution GO · v8</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" id="tab-login" onclick="switchTab('login')">Entrar</div>
+      <div class="tab" id="tab-register" onclick="switchTab('register')">Criar Conta</div>
+    </div>
+
+    <!-- LOGIN -->
+    <form id="form-login">
+      <div class="form-group">
+        <label for="login-email">E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" required />
+      </div>
+      <div class="form-group">
+        <label for="login-password">Senha</label>
+        <input type="password" id="login-password" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn" id="btn-login">Entrar</button>
+    </form>
+
+    <!-- REGISTER -->
+    <form id="form-register" style="display:none">
+      <div class="form-group">
+        <label for="reg-name">Nome completo</label>
+        <input type="text" id="reg-name" placeholder="João Silva" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-email">E-mail</label>
+        <input type="email" id="reg-email" placeholder="seu@email.com" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-password">Senha</label>
+        <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" minlength="6" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-confirm">Confirmar senha</label>
+        <input type="password" id="reg-confirm" placeholder="Repita a senha" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-role">Perfil</label>
+        <select class="role-select" id="reg-role">
+          <option value="user">Usuário</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <button type="submit" class="btn" id="btn-register">Criar Conta</button>
+    </form>
+
+    <div class="alert" id="alert"></div>
+  </div>
+
+  <script>
+    let supabase = null;
+
+    async function init() {
+      const cfg = await fetch('/api/config').then(r => r.json());
+      supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+
+      const session = localStorage.getItem('pa_session');
+      if (session) {
+        window.location.href = '/';
+      }
+    }
+
+    function switchTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('tab-login').classList.toggle('active', isLogin);
+      document.getElementById('tab-register').classList.toggle('active', !isLogin);
+      document.getElementById('form-login').style.display = isLogin ? '' : 'none';
+      document.getElementById('form-register').style.display = isLogin ? 'none' : '';
+      hideAlert();
+    }
+
+    function showAlert(type, msg) {
+      const el = document.getElementById('alert');
+      el.className = 'alert ' + type;
+      el.textContent = msg;
+    }
+
+    function hideAlert() {
+      document.getElementById('alert').className = 'alert';
+    }
+
+    function setLoading(btnId, loading, label) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.innerHTML = loading
+        ? `<span class="spinner"></span>${label}`
+        : label;
+    }
+
+    // LOGIN
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      setLoading('btn-login', true, 'Entrando...');
+
+      try {
+        const { data: users, error } = await supabase
+          .from('users')
+          .select('id, name, email, password_hash, role, active')
+          .eq('email', email)
+          .limit(1);
+
+        if (error) throw new Error(error.message);
+        if (!users || users.length === 0) {
+          showAlert('error', 'E-mail ou senha incorretos.');
+          return;
+        }
+
+        const user = users[0];
+
+        if (!user.active) {
+          showAlert('error', 'Conta desativada. Entre em contato com o administrador.');
+          return;
+        }
+
+        const match = await bcrypt.compare(password, user.password_hash);
+        if (!match) {
+          showAlert('error', 'E-mail ou senha incorretos.');
+          return;
+        }
+
+        localStorage.setItem('pa_session', JSON.stringify({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        }));
+
+        showAlert('success', `Bem-vindo, ${user.name}! Redirecionando...`);
+        setTimeout(() => { window.location.href = '/'; }, 1000);
+
+      } catch (err) {
+        showAlert('error', err.message || 'Erro ao fazer login.');
+      } finally {
+        setLoading('btn-login', false, 'Entrar');
+      }
+    });
+
+    // REGISTER
+    document.getElementById('form-register').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const name     = document.getElementById('reg-name').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirm  = document.getElementById('reg-confirm').value;
+      const role     = document.getElementById('reg-role').value;
+
+      if (password !== confirm) {
+        showAlert('error', 'As senhas não coincidem.');
+        return;
+      }
+
+      if (password.length < 6) {
+        showAlert('error', 'A senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
+
+      setLoading('btn-register', true, 'Criando conta...');
+
+      try {
+        const { data: existing } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', email)
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          showAlert('error', 'Já existe uma conta com este e-mail.');
+          return;
+        }
+
+        const saltRounds = 10;
+        const password_hash = await bcrypt.hash(password, saltRounds);
+
+        const { error } = await supabase
+          .from('users')
+          .insert({ name, email, password_hash, role, active: true });
+
+        if (error) throw new Error(error.message);
+
+        showAlert('success', '✅ Conta criada com sucesso! Faça login para continuar.');
+        document.getElementById('form-register').reset();
+        setTimeout(() => switchTab('login'), 2000);
+
+      } catch (err) {
+        showAlert('error', err.message || 'Erro ao criar conta.');
+      } finally {
+        setLoading('btn-register', false, 'Criar Conta');
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

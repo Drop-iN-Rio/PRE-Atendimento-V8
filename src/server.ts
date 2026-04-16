@@ -18,6 +18,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
+app.get('/api/config', (_req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_DB_URL || '',
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+  });
+});
+
 app.get('/health', (_req, res) => {
   res.json({
     message: '✅ PRE-Atendimento-V8 iniciado com sucesso!',
