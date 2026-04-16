@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#050714" />
   <title>PRE-Atendimento — Entrar</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
@@ -15,265 +15,377 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body { height: 100%; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
+    html {
+      height: 100%;
+      /* permite scroll quando o formulário de cadastro é maior que a tela */
+      overflow-y: auto;
     }
 
-    .screen {
-      flex: 1;
+    body {
+      min-height: 100%;
+      min-height: 100dvh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #050714;
+      color: #e2e8f0;
       display: flex;
-      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      position: relative;
+      /* safe areas no iOS */
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
     }
 
-    .hero {
-      background: linear-gradient(160deg, #1e1b4b 0%, #0f172a 60%);
-      padding: 3rem 1.5rem 2rem;
+    /* ── ORBES DE FUNDO ── */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(70px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .orb-1 {
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, rgba(99,102,241,0.38) 0%, transparent 70%);
+      top: -120px; left: -120px;
+      animation: drift1 8s ease-in-out infinite alternate;
+    }
+
+    .orb-2 {
+      width: 360px; height: 360px;
+      background: radial-gradient(circle, rgba(139,92,246,0.32) 0%, transparent 70%);
+      bottom: -80px; right: -80px;
+      animation: drift2 10s ease-in-out infinite alternate;
+    }
+
+    .orb-3 {
+      width: 260px; height: 260px;
+      background: radial-gradient(circle, rgba(236,72,153,0.14) 0%, transparent 70%);
+      top: 55%; left: 65%;
+      animation: drift3 13s ease-in-out infinite alternate;
+    }
+
+    @keyframes drift1 { to { transform: translate(50px, 35px); } }
+    @keyframes drift2 { to { transform: translate(-40px, -25px); } }
+    @keyframes drift3 { to { transform: translate(-35px, 55px); } }
+
+    /* ── CARD ── */
+    .card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 420px;
+      margin: 1.5rem 1rem;
+      padding: 2rem 1.5rem 1.75rem;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 28px;
+      box-shadow:
+        0 0 0 1px rgba(99, 102, 241, 0.1),
+        0 40px 80px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    /* ── LOGO ── */
+    .logo-row {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      text-align: center;
+      gap: 0.7rem;
+      margin-bottom: 1.75rem;
     }
 
     .logo-icon {
-      width: 64px;
-      height: 64px;
+      width: 42px; height: 42px;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 8px 32px rgba(99,102,241,0.4);
+      border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.15rem;
+      box-shadow: 0 4px 18px rgba(99, 102, 241, 0.55);
+      flex-shrink: 0;
     }
 
-    .logo-text {
-      font-size: 1.5rem;
+    .logo-name {
+      font-size: 0.97rem;
       font-weight: 800;
-      color: #f1f5f9;
-      letter-spacing: -0.02em;
+      color: rgba(255, 255, 255, 0.92);
+      letter-spacing: -0.01em;
     }
 
-    .logo-sub { font-size: 0.85rem; color: #64748b; margin-top: 2px; }
+    .logo-version { font-size: 0.67rem; color: rgba(255, 255, 255, 0.3); margin-top: 1px; }
 
-    .form-area {
-      flex: 1;
-      background: #1e293b;
-      border-radius: 24px 24px 0 0;
-      padding: 1.5rem 1.25rem 1rem;
-      margin-top: -12px;
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
+    /* ── TÍTULO ── */
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
     }
 
+    .page-sub {
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.38);
+      margin-top: 5px;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── TABS ── */
     .tabs {
       display: flex;
-      background: #0f172a;
-      border-radius: 12px;
-      padding: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 11px;
+      padding: 3px;
+      gap: 3px;
       margin-bottom: 1.5rem;
-      gap: 4px;
     }
 
     .tab {
       flex: 1;
       text-align: center;
-      padding: 0.75rem 0.5rem;
-      border-radius: 9px;
-      font-size: 0.95rem;
+      padding: 0.65rem 0.5rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
       font-weight: 600;
+      color: rgba(255, 255, 255, 0.35);
       cursor: pointer;
-      color: #64748b;
-      transition: all 0.2s;
       user-select: none;
       touch-action: manipulation;
       min-height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.18s;
     }
 
     .tab.active {
-      background: #1e293b;
-      color: #f1f5f9;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      background: rgba(99, 102, 241, 0.22);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
     }
 
+    /* ── FORM ── */
     .form-group { margin-bottom: 1rem; }
 
     label {
       display: block;
-      font-size: 0.78rem;
+      font-size: 0.68rem;
       font-weight: 700;
-      color: #64748b;
-      margin-bottom: 0.5rem;
-      letter-spacing: 0.06em;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+      margin-bottom: 0.45rem;
     }
 
+    /* font-size: 16px evita zoom no iOS */
     input, select {
       width: 100%;
       font-size: 16px;
-      padding: 0.9rem 1rem;
-      background: #0f172a;
-      border: 1.5px solid #334155;
-      border-radius: 12px;
-      color: #f1f5f9;
+      padding: 0.82rem 1rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1.5px solid rgba(255, 255, 255, 0.08);
+      border-radius: 13px;
+      color: rgba(255, 255, 255, 0.92);
       outline: none;
-      transition: border-color 0.15s;
       min-height: 52px;
+      transition: border-color 0.18s, background 0.18s;
       -webkit-appearance: none;
       appearance: none;
+      font-family: inherit;
     }
 
-    input:focus, select:focus { border-color: #6366f1; }
-    input::placeholder { color: #475569; }
+    input::placeholder { color: rgba(255, 255, 255, 0.18); }
+    input:focus, select:focus {
+      border-color: rgba(99, 102, 241, 0.6);
+      background: rgba(99, 102, 241, 0.07);
+    }
 
     select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,0.35)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 1rem center;
       padding-right: 2.5rem;
       cursor: pointer;
+      color: rgba(255,255,255,0.7);
     }
 
+    select option {
+      background: #0f172a;
+      color: #f1f5f9;
+    }
+
+    /* ── BOTÃO PRINCIPAL ── */
     .btn {
       width: 100%;
-      min-height: 56px;
-      padding: 0 1rem;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      min-height: 54px;
+      padding: 0 1.25rem;
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
       border: none;
       border-radius: 14px;
       color: #fff;
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       cursor: pointer;
       margin-top: 0.5rem;
-      transition: opacity 0.2s, transform 0.1s;
+      transition: opacity 0.18s, transform 0.1s;
       touch-action: manipulation;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      box-shadow: 0 4px 16px rgba(99,102,241,0.35);
+      box-shadow: 0 4px 24px rgba(99, 102, 241, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      font-family: inherit;
+      letter-spacing: -0.01em;
     }
 
-    .btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.9; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.88; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
 
+    /* ── ALERTAS ── */
     .alert {
       margin-top: 1rem;
       border-radius: 12px;
-      padding: 1rem;
-      font-size: 0.9rem;
+      padding: 0.9rem 1rem;
+      font-size: 0.86rem;
       line-height: 1.5;
       display: none;
     }
 
-    .alert.success { background: #052e16; border: 1.5px solid #16a34a; color: #86efac; display: block; }
-    .alert.error   { background: #2d0a0a; border: 1.5px solid #dc2626; color: #fca5a5; display: block; }
+    .alert.success {
+      background: rgba(5, 46, 22, 0.8);
+      border: 1.5px solid rgba(22, 163, 74, 0.6);
+      color: #86efac;
+      display: block;
+    }
 
+    .alert.error {
+      background: rgba(45, 10, 10, 0.8);
+      border: 1.5px solid rgba(220, 38, 38, 0.6);
+      color: #fca5a5;
+      display: block;
+    }
+
+    /* ── SPINNER ── */
     .spinner {
-      width: 18px;
-      height: 18px;
-      border: 2.5px solid rgba(255,255,255,0.35);
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255, 255, 255, 0.3);
       border-top-color: #fff;
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
+      animation: spin 0.65s linear infinite;
       flex-shrink: 0;
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    @media (min-width: 600px) {
-      .screen { align-items: center; justify-content: center; padding: 2rem; }
-      .hero { border-radius: 20px 20px 0 0; padding: 2.5rem 2rem 1.5rem; }
-      .form-area { border-radius: 0 0 20px 20px; padding: 2rem; margin-top: 0; }
-      .card-wrap {
-        width: 100%;
-        max-width: 420px;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    /* ── RODAPÉ ── */
+    .card-footer {
+      margin-top: 1.25rem;
+      text-align: center;
+      font-size: 0.72rem;
+      color: rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    /* ── DESKTOP ── */
+    @media (min-width: 520px) {
+      body {
+        align-items: center;
+        padding: 2rem 1rem;
+      }
+
+      .card {
+        margin: 0;
+        padding: 2.5rem 2.25rem 2rem;
       }
     }
   </style>
 </head>
 <body>
-  <div class="screen">
-    <div class="card-wrap">
-      <div class="hero">
-        <div class="logo-icon">⚡</div>
-        <div class="logo-text">PRE-Atendimento</div>
-        <div class="logo-sub">Evolution GO · v8</div>
-      </div>
 
-      <div class="form-area">
-        <div class="tabs">
-          <div class="tab active" id="tab-login" onclick="switchTab('login')">Entrar</div>
-          <div class="tab" id="tab-register" onclick="switchTab('register')">Criar Conta</div>
-        </div>
+  <!-- Orbes de fundo -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
 
-        <!-- LOGIN -->
-        <form id="form-login" novalidate>
-          <div class="form-group">
-            <label for="login-email">E-mail</label>
-            <input type="email" id="login-email" placeholder="seu@email.com"
-              autocomplete="email" inputmode="email" required />
-          </div>
-          <div class="form-group">
-            <label for="login-password">Senha</label>
-            <input type="password" id="login-password" placeholder="••••••••"
-              autocomplete="current-password" required />
-          </div>
-          <button type="submit" class="btn" id="btn-login">Entrar</button>
-        </form>
+  <div class="card">
 
-        <!-- REGISTER -->
-        <form id="form-register" style="display:none" novalidate>
-          <div class="form-group">
-            <label for="reg-name">Nome completo</label>
-            <input type="text" id="reg-name" placeholder="João Silva"
-              autocomplete="name" required />
-          </div>
-          <div class="form-group">
-            <label for="reg-email">E-mail</label>
-            <input type="email" id="reg-email" placeholder="seu@email.com"
-              autocomplete="email" inputmode="email" required />
-          </div>
-          <div class="form-group">
-            <label for="reg-password">Senha</label>
-            <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres"
-              autocomplete="new-password" minlength="6" required />
-          </div>
-          <div class="form-group">
-            <label for="reg-confirm">Confirmar senha</label>
-            <input type="password" id="reg-confirm" placeholder="Repita a senha"
-              autocomplete="new-password" required />
-          </div>
-          <div class="form-group">
-            <label for="reg-role">Perfil</label>
-            <select id="reg-role">
-              <option value="user">Usuário</option>
-              <option value="admin">Administrador</option>
-            </select>
-          </div>
-          <button type="submit" class="btn" id="btn-register">Criar Conta</button>
-        </form>
-
-        <div class="alert" id="alert"></div>
+    <!-- Logo -->
+    <div class="logo-row">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-name">PRE-Atendimento</div>
+        <div class="logo-version">Evolution GO · v8</div>
       </div>
     </div>
+
+    <!-- Título dinâmico -->
+    <div class="page-title" id="page-title">Acesse sua<br/>conta</div>
+    <p class="page-sub" id="page-sub">Gerencie suas instâncias WhatsApp</p>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" id="tab-login" onclick="switchTab('login')">Entrar</div>
+      <div class="tab" id="tab-register" onclick="switchTab('register')">Criar conta</div>
+    </div>
+
+    <!-- FORMULÁRIO: LOGIN -->
+    <form id="form-login" novalidate>
+      <div class="form-group">
+        <label for="login-email">E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com"
+          autocomplete="email" inputmode="email" required />
+      </div>
+      <div class="form-group">
+        <label for="login-password">Senha</label>
+        <input type="password" id="login-password" placeholder="••••••••"
+          autocomplete="current-password" required />
+      </div>
+      <button type="submit" class="btn" id="btn-login">Entrar</button>
+    </form>
+
+    <!-- FORMULÁRIO: CADASTRO -->
+    <form id="form-register" style="display:none" novalidate>
+      <div class="form-group">
+        <label for="reg-name">Nome completo</label>
+        <input type="text" id="reg-name" placeholder="João Silva"
+          autocomplete="name" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-email">E-mail</label>
+        <input type="email" id="reg-email" placeholder="seu@email.com"
+          autocomplete="email" inputmode="email" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-password">Senha</label>
+        <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres"
+          autocomplete="new-password" minlength="6" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-confirm">Confirmar senha</label>
+        <input type="password" id="reg-confirm" placeholder="Repita a senha"
+          autocomplete="new-password" required />
+      </div>
+      <div class="form-group">
+        <label for="reg-role">Perfil de acesso</label>
+        <select id="reg-role">
+          <option value="user">Usuário</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <button type="submit" class="btn" id="btn-register">Criar conta</button>
+    </form>
+
+    <!-- Alertas -->
+    <div class="alert" id="alert"></div>
+
+    <!-- Rodapé -->
+    <div class="card-footer">🔒 Conexão segura e criptografada</div>
+
   </div>
 
   <script>
@@ -284,16 +396,29 @@
         window.location.href = '/dashboard.html';
         return;
       }
-      const cfg = await fetch('/api/config').then(r => r.json());
-      supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+      try {
+        const cfg = await fetch('/api/config').then(r => r.json());
+        supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+      } catch (err) {
+        showAlert('error', 'Erro ao conectar com o servidor. Tente novamente.');
+      }
     }
 
     function switchTab(tab) {
       const isLogin = tab === 'login';
+
       document.getElementById('tab-login').classList.toggle('active', isLogin);
       document.getElementById('tab-register').classList.toggle('active', !isLogin);
       document.getElementById('form-login').style.display = isLogin ? '' : 'none';
       document.getElementById('form-register').style.display = isLogin ? 'none' : '';
+
+      document.getElementById('page-title').innerHTML = isLogin
+        ? 'Acesse sua<br/>conta'
+        : 'Crie sua<br/>conta';
+      document.getElementById('page-sub').textContent = isLogin
+        ? 'Gerencie suas instâncias WhatsApp'
+        : 'Preencha os dados para começar';
+
       hideAlert();
     }
 
@@ -313,14 +438,23 @@
     function setLoading(btnId, loading, label) {
       const btn = document.getElementById(btnId);
       btn.disabled = loading;
-      btn.innerHTML = loading ? `<span class="spinner"></span>${label}` : label;
+      btn.innerHTML = loading
+        ? `<span class="spinner"></span>${label}`
+        : label;
     }
 
+    /* ── LOGIN ── */
     document.getElementById('form-login').addEventListener('submit', async (e) => {
       e.preventDefault();
       hideAlert();
+
       const email    = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
+
+      if (!email || !password) {
+        showAlert('error', 'Preencha e-mail e senha.');
+        return;
+      }
 
       setLoading('btn-login', true, 'Entrando...');
       try {
@@ -331,17 +465,27 @@
           .limit(1);
 
         if (error) throw new Error(error.message);
-        if (!users?.length) { showAlert('error', 'E-mail ou senha incorretos.'); return; }
+        if (!users?.length) {
+          showAlert('error', 'E-mail ou senha incorretos.');
+          return;
+        }
 
         const user = users[0];
-        if (!user.active) { showAlert('error', 'Conta desativada. Fale com o administrador.'); return; }
+        if (!user.active) {
+          showAlert('error', 'Conta desativada. Fale com o administrador.');
+          return;
+        }
 
         const match = await bcrypt.compare(password, user.password_hash);
-        if (!match) { showAlert('error', 'E-mail ou senha incorretos.'); return; }
+        if (!match) {
+          showAlert('error', 'E-mail ou senha incorretos.');
+          return;
+        }
 
         localStorage.setItem('pa_session', JSON.stringify({
           id: user.id, name: user.name, email: user.email, role: user.role,
         }));
+
         showAlert('success', `Bem-vindo, ${user.name}! Redirecionando...`);
         setTimeout(() => { window.location.href = '/dashboard.html'; }, 900);
       } catch (err) {
@@ -351,6 +495,7 @@
       }
     });
 
+    /* ── CADASTRO ── */
     document.getElementById('form-register').addEventListener('submit', async (e) => {
       e.preventDefault();
       hideAlert();
@@ -361,29 +506,46 @@
       const confirm  = document.getElementById('reg-confirm').value;
       const role     = document.getElementById('reg-role').value;
 
-      if (password !== confirm) { showAlert('error', 'As senhas não coincidem.'); return; }
-      if (password.length < 6)  { showAlert('error', 'A senha deve ter pelo menos 6 caracteres.'); return; }
+      if (!name || !email || !password) {
+        showAlert('error', 'Preencha todos os campos obrigatórios.');
+        return;
+      }
+      if (password !== confirm) {
+        showAlert('error', 'As senhas não coincidem.');
+        return;
+      }
+      if (password.length < 6) {
+        showAlert('error', 'A senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
 
       setLoading('btn-register', true, 'Criando conta...');
       try {
         const { data: existing } = await supabase
-          .from('users').select('id').eq('email', email).limit(1);
+          .from('users')
+          .select('id')
+          .eq('email', email)
+          .limit(1);
 
-        if (existing?.length) { showAlert('error', 'Já existe uma conta com este e-mail.'); return; }
+        if (existing?.length) {
+          showAlert('error', 'Já existe uma conta com este e-mail.');
+          return;
+        }
 
         const password_hash = await bcrypt.hash(password, 10);
         const { error } = await supabase
-          .from('users').insert({ name, email, password_hash, role, active: true });
+          .from('users')
+          .insert({ name, email, password_hash, role, active: true });
 
         if (error) throw new Error(error.message);
 
-        showAlert('success', '✅ Conta criada! Faça login para continuar.');
+        showAlert('success', 'Conta criada com sucesso! Faça login para continuar.');
         document.getElementById('form-register').reset();
-        setTimeout(() => switchTab('login'), 1800);
+        setTimeout(() => switchTab('login'), 2000);
       } catch (err) {
         showAlert('error', err.message || 'Erro ao criar conta.');
       } finally {
-        setLoading('btn-register', false, 'Criar Conta');
+        setLoading('btn-register', false, 'Criar conta');
       }
     });
 
