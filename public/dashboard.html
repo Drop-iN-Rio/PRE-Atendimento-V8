@@ -1268,12 +1268,14 @@
           const data    = json.data || {};
           const apiResp = data.api_response || {};
 
+          /* Formato validado: { message:"success", data:{ name, token } } */
+          const apiData = apiResp.data || {};
           document.getElementById('tk-name').textContent  =
-            apiResp.instance?.instanceName || data.instance_name || instanceName;
+            apiData.name  || data.instance_name || instanceName;
           document.getElementById('tk-token').textContent =
-            apiResp.hash?.apikey || apiResp.token || apiResp.apikey || '(não retornado pela API)';
+            apiData.token || '(não retornado pela API)';
           document.getElementById('tk-status').textContent =
-            apiResp.instance?.status || apiResp.status || data.status || 'created';
+            apiResp.message === 'success' ? 'success' : (data.status || 'created');
 
           const tb = document.getElementById('token-block');
           tb.classList.remove('warn');

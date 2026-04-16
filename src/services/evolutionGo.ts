@@ -1,16 +1,3 @@
-interface CreateInstancePayload {
-  instanceName: string;
-  qrcode: boolean;
-  integration: string;
-  token: string;
-  number: string;
-  webhook: {
-    enabled: boolean;
-    url: string;
-    events: string[];
-  };
-}
-
 interface EvolutionResponse {
   success: boolean;
   data?: unknown;
@@ -32,17 +19,9 @@ export async function createInstance(
   const baseUrl = evolutionUrl.replace(/\/$/, '');
   const url     = `${baseUrl}/instance/create`;
 
-  const payload: CreateInstancePayload = {
-    instanceName,
-    qrcode: true,
-    integration: 'WHATSAPP-BAILEYS',
+  const payload: { name: string; token: string } = {
+    name: instanceName,
     token: token || '',
-    number: '',
-    webhook: {
-      enabled: false,
-      url: '',
-      events: ['message', 'status'],
-    },
   };
 
   const headers = {
@@ -52,13 +31,10 @@ export async function createInstance(
 
   console.log('[Evolution GO] ▶ POST', url);
   console.log('[Evolution GO] Headers:', { 'Content-Type': 'application/json', apikey: maskKey(apiKey) });
-  console.log('[Evolution GO] Body:', JSON.stringify(payload, null, 2));
+  console.log('[Evolution GO] Body:', JSON.stringify(payload));
 
   const controller = new AbortController();
   const timeout    = setTimeout(() => controller.abort(), 10_000);
-
-  let rawBody = '';
-  let status  = 0;
 
   try {
     const response = await fetch(url, {
@@ -69,31 +45,26 @@ export async function createInstance(
     });
 
     clearTimeout(timeout);
-    status  = response.status;
-    rawBody = await response.text();
-
-    console.log(`[Evolution GO] ◀ HTTP ${status}`);
+    const rawBody = await response.text();
+    console.log(`[Evolution GO] ◀ HTTP ${response.status}`);
     console.log('[Evolution GO] Response body:', rawBody);
 
     let data: unknown;
     try { data = JSON.parse(rawBody); } catch { data = rawBody; }
 
-    if (!response.ok) {
-      const d = data as Record<string, unknown>;
-      const errorMsg =
-        (d?.message as string) ||
-        (d?.error as string) ||
-        `Erro HTTP ${status}`;
+    const d = data as Record<string, unknown>;
 
-      return {
-        success: false,
-        data,
-        error: errorMsg,
-        httpStatus: status,
-      };
+    /* Sucesso: message === "success" com data.name e data.token */
+    if (d?.message === 'success') {
+      return { success: true, data, httpStatus: response.status };
     }
 
-    return { success: true, data, httpStatus: status };
+    const errorMsg =
+      (d?.message as string) ||
+      (d?.error as string) ||
+      `Erro HTTP ${response.status}`;
+
+    return { success: false, data, error: errorMsg, httpStatus: response.status };
 
   } catch (err: unknown) {
     clearTimeout(timeout);
