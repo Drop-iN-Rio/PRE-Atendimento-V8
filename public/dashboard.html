@@ -806,16 +806,9 @@
         onclick="showPanel('panel-list', null, 'bnav-list', 'snav-list')">
         <span class="sidebar-nav-icon">📋</span> Instâncias
       </button>
-      <button class="sidebar-nav-item" id="snav-config"
-        onclick="showPanel('panel-config', null, 'bnav-config', 'snav-config')">
-        <span class="sidebar-nav-icon">⚙️</span> Configuração
-      </button>
     </nav>
 
     <div class="sidebar-footer">
-      <div class="sidebar-config-status nok" id="sidebar-cfg-status">
-        ○ API não configurada
-      </div>
       <button class="sidebar-logout" onclick="logout()">
         <span>🚪</span> Sair
       </button>
@@ -848,23 +841,10 @@
       <span class="user-role-badge" id="user-role">—</span>
     </div>
 
-    <!-- CONFIG BANNER -->
-    <div class="config-banner" id="config-banner">
-      <div class="config-banner-icon">⚠️</div>
-      <div class="config-banner-body">
-        <div class="config-banner-title">Configuração obrigatória</div>
-        <div class="config-banner-text">Informe a URL da Evolution GO e a GLOBAL_API_KEY antes de criar instâncias.</div>
-      </div>
-      <button class="config-banner-btn" onclick="showPanel('panel-config', null, 'bnav-config', 'snav-config')">
-        Configurar
-      </button>
-    </div>
-
     <!-- NAV TABS (mobile only) -->
     <div class="nav-tabs">
       <div class="nav-tab active" id="tab-create" onclick="showPanel('panel-create', this)">➕ Nova Instância</div>
       <div class="nav-tab"        id="tab-list"   onclick="showPanel('panel-list',   this)">📋 Instâncias</div>
-      <div class="nav-tab"        id="tab-config" onclick="showPanel('panel-config', this)">⚙️ Configuração</div>
     </div>
 
     <!-- PANELS -->
@@ -881,40 +861,6 @@
             </div>
           </div>
           <form id="form-instance" novalidate>
-
-            <!-- ── Conexão com a API ── -->
-            <div class="form-section">
-              <div class="form-section-line"></div>
-              <span class="form-section-label">Conexão com a API</span>
-              <div class="form-section-line"></div>
-            </div>
-
-            <label for="inst-url">URL da Evolution GO <span style="color:#ef4444">*</span></label>
-            <div class="field-wrap">
-              <input type="text" id="inst-url"
-                placeholder="https://evogo.pre-atendimento.com"
-                autocomplete="off" autocorrect="off"
-                autocapitalize="none" spellcheck="false" />
-              <span class="field-dot" id="dot-url"></span>
-            </div>
-
-            <div style="height:0.75rem"></div>
-
-            <label for="inst-key">GLOBAL_API_KEY <span style="color:#ef4444">*</span></label>
-            <div class="field-wrap">
-              <input type="text" id="inst-key"
-                placeholder="Chave de acesso global da API"
-                autocomplete="off" autocorrect="off"
-                autocapitalize="none" spellcheck="false" />
-              <span class="field-dot" id="dot-key"></span>
-            </div>
-
-            <!-- ── Instância ── -->
-            <div class="form-section">
-              <div class="form-section-line"></div>
-              <span class="form-section-label">Instância</span>
-              <div class="form-section-line"></div>
-            </div>
 
             <div class="fields-row">
               <div>
@@ -969,53 +915,6 @@
         </div>
       </div>
 
-      <!-- ── CONFIGURAÇÃO ── -->
-      <div class="panel" id="panel-config">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-icon icon-purple">⚙️</div>
-            <div>
-              <div class="card-title">Configuração da API</div>
-              <div class="card-desc">Obrigatório para criar instâncias</div>
-            </div>
-          </div>
-
-          <form id="form-config" novalidate>
-            <label for="cfg-url">URL DA EVOLUTION GO</label>
-            <input type="text" id="cfg-url"
-              placeholder="https://evogo.pre-atendimento.com"
-              autocomplete="off" autocorrect="off"
-              autocapitalize="none" spellcheck="false" />
-
-            <div style="height:1rem"></div>
-
-            <label for="cfg-key">GLOBAL_API_KEY</label>
-            <input type="text" id="cfg-key"
-              placeholder="Chave de acesso global da API"
-              autocomplete="off" autocorrect="off"
-              autocapitalize="none" spellcheck="false" />
-
-            <button type="submit" class="btn" id="btn-save-config"
-              style="background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 16px rgba(16,185,129,0.3)">
-              ✅ Salvar Configuração
-            </button>
-          </form>
-
-          <div class="config-saved-badge" id="config-saved-badge">
-            ✅ Configuração salva! Agora você pode criar instâncias.
-          </div>
-
-          <div style="margin-top:1rem">
-            <div class="config-status" id="config-status-url">
-              <span id="cfg-icon-url">○</span> URL da Evolution GO
-            </div>
-            <div class="config-status" id="config-status-key">
-              <span id="cfg-icon-key">○</span> GLOBAL_API_KEY
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- ── LISTA ── -->
       <div class="panel" id="panel-list">
         <div class="card">
@@ -1049,10 +948,6 @@
         onclick="showPanel('panel-list', null, 'bnav-list')">
         <span class="bottom-nav-icon">📋</span>Instâncias
       </div>
-      <div class="bottom-nav-item" id="bnav-config"
-        onclick="showPanel('panel-config', null, 'bnav-config')">
-        <span class="bottom-nav-icon">⚙️</span>Config
-      </div>
     </nav>
 
   </div><!-- /.content-area -->
@@ -1083,79 +978,9 @@
       window.location.href = '/';
     }
 
-    /* ─── CONFIG ─── */
-    const CONFIG_KEY = 'pa_app_config';
-
-    function loadConfig() {
-      try { return JSON.parse(localStorage.getItem(CONFIG_KEY) || 'null'); }
-      catch { return null; }
-    }
-
-    function isConfigValid(cfg) {
-      return cfg && cfg.evolutionUrl && cfg.evolutionUrl.trim() &&
-             cfg.apiKey && cfg.apiKey.trim();
-    }
-
-    function updateConfigUI() {
-      const cfg   = loadConfig();
-      const valid = isConfigValid(cfg);
-
-      /* Banner */
-      document.getElementById('config-banner').classList.toggle('visible', !valid);
-
-      /* Botão Criar Instância — controlado pelo onInstFieldInput() inline */
-
-      /* Status indicators no painel de config */
-      const hasUrl = !!(cfg && cfg.evolutionUrl && cfg.evolutionUrl.trim());
-      const hasKey = !!(cfg && cfg.apiKey && cfg.apiKey.trim());
-
-      document.getElementById('config-status-url').className = 'config-status ' + (hasUrl ? 'ok' : 'nok');
-      document.getElementById('cfg-icon-url').textContent    = hasUrl ? '✓' : '✗';
-      document.getElementById('config-status-key').className = 'config-status ' + (hasKey ? 'ok' : 'nok');
-      document.getElementById('cfg-icon-key').textContent    = hasKey ? '✓' : '✗';
-
-      /* Sidebar status (desktop) */
-      const sideStatus = document.getElementById('sidebar-cfg-status');
-      if (valid) {
-        sideStatus.className = 'sidebar-config-status ok';
-        sideStatus.textContent = '✓ API configurada';
-      } else {
-        sideStatus.className = 'sidebar-config-status nok';
-        sideStatus.textContent = '✗ API não configurada';
-      }
-
-      /* Preenche campos com valores salvos */
-      if (cfg) {
-        document.getElementById('cfg-url').value = cfg.evolutionUrl || '';
-        document.getElementById('cfg-key').value = cfg.apiKey || '';
-      }
-
-      return valid;
-    }
-
-    /* ─── SAVE CONFIG ─── */
-    document.getElementById('form-config').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const url = document.getElementById('cfg-url').value.trim();
-      const key = document.getElementById('cfg-key').value.trim();
-      if (!url || !key) return;
-
-      let cleanUrl = url;
-      try { cleanUrl = new URL(url).origin; } catch { /* mantém */ }
-
-      localStorage.setItem(CONFIG_KEY, JSON.stringify({ evolutionUrl: cleanUrl, apiKey: key }));
-
-      const badge = document.getElementById('config-saved-badge');
-      badge.classList.add('visible');
-      setTimeout(() => badge.classList.remove('visible'), 3500);
-
-      updateConfigUI();
-      prefillInstFields(true);
-    });
-
     /* ─── NAV ─── */
-    const panelToTab  = { 'panel-create':'tab-create', 'panel-list':'tab-list', 'panel-config':'tab-config' };
-    const panelToSnav = { 'panel-create':'snav-create','panel-list':'snav-list','panel-config':'snav-config' };
+    const panelToTab  = { 'panel-create':'tab-create', 'panel-list':'tab-list' };
+    const panelToSnav = { 'panel-create':'snav-create','panel-list':'snav-list' };
 
     function showPanel(panelId, tabEl, bnavId, snavId) {
       /* Panels */
@@ -1179,41 +1004,18 @@
       if (panelId === 'panel-list') loadInstances();
     }
 
-    /* ─── VALIDAÇÃO INLINE dos campos de instância ─── */
+    /* ─── VALIDAÇÃO INLINE ─── */
     function isInstFormValid() {
-      const url  = document.getElementById('inst-url').value.trim();
-      const key  = document.getElementById('inst-key').value.trim();
-      const name = document.getElementById('instanceName').value.trim();
-      return !!(url && key && name);
-    }
-
-    function updateInstDot(id, dotId) {
-      const val = document.getElementById(id).value.trim();
-      const dot = document.getElementById(dotId);
-      dot.className = 'field-dot ' + (val ? 'ok' : 'nok');
+      return !!document.getElementById('instanceName').value.trim();
     }
 
     function onInstFieldInput() {
-      updateInstDot('inst-url', 'dot-url');
-      updateInstDot('inst-key', 'dot-key');
-      updateInstDot('instanceName', 'dot-name');
-      document.getElementById('btn-instance').disabled = !isInstFormValid();
+      const val = document.getElementById('instanceName').value.trim();
+      document.getElementById('dot-name').className = 'field-dot ' + (val ? 'ok' : 'nok');
+      document.getElementById('btn-instance').disabled = !val;
     }
 
-    ['inst-url', 'inst-key', 'instanceName'].forEach(id => {
-      document.getElementById(id).addEventListener('input', onInstFieldInput);
-    });
-
-    /* Pré-preenche campos inline com config salva (force=true sempre sobrescreve) */
-    function prefillInstFields(force) {
-      const cfg = loadConfig();
-      if (!cfg) return;
-      const urlEl = document.getElementById('inst-url');
-      const keyEl = document.getElementById('inst-key');
-      if (cfg.evolutionUrl && (force || !urlEl.value)) urlEl.value = cfg.evolutionUrl;
-      if (cfg.apiKey      && (force || !keyEl.value)) keyEl.value = cfg.apiKey;
-      onInstFieldInput();
-    }
+    document.getElementById('instanceName').addEventListener('input', onInstFieldInput);
 
     /* ─── TOKEN COPY ─── */
     function copyToken() {
@@ -1230,24 +1032,16 @@
     document.getElementById('form-instance').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const evolutionUrl = document.getElementById('inst-url').value.trim();
-      const apiKey       = document.getElementById('inst-key').value.trim();
       const instanceName = document.getElementById('instanceName').value.trim();
       const token        = document.getElementById('inst-token').value.trim();
       const btn          = document.getElementById('btn-instance');
       const alertEl      = document.getElementById('result-instance');
 
-      if (!evolutionUrl || !apiKey || !instanceName) {
+      if (!instanceName) {
         alertEl.className = 'alert error';
-        alertEl.textContent = '❌ Preencha todos os campos obrigatórios.';
+        alertEl.textContent = '❌ Informe o nome da instância.';
         return;
       }
-
-      /* Persiste URL e key na config */
-      let cleanUrl = evolutionUrl;
-      try { cleanUrl = new URL(evolutionUrl).origin; } catch { /* mantém */ }
-      localStorage.setItem(CONFIG_KEY, JSON.stringify({ evolutionUrl: cleanUrl, apiKey }));
-      updateConfigUI();
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Criando...';
@@ -1258,7 +1052,7 @@
         const res  = await fetch('/api/instances', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instanceName, evolutionUrl: cleanUrl, apiKey, token: token || undefined }),
+          body: JSON.stringify({ instanceName, token: token || undefined }),
         });
         const json = await res.json();
 
@@ -1398,8 +1192,6 @@
     }
 
     /* ─── INIT ─── */
-    updateConfigUI();
-    prefillInstFields();
     loadInstances();
   </script>
 </body>

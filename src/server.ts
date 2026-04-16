@@ -99,10 +99,8 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/instances', async (req, res) => {
-  const { instanceName, evolutionUrl, apiKey, token } = req.body as {
+  const { instanceName, token } = req.body as {
     instanceName?: string;
-    evolutionUrl?: string;
-    apiKey?: string;
     token?: string;
   };
 
@@ -110,22 +108,9 @@ app.post('/api/instances', async (req, res) => {
     res.status(400).json({ success: false, error: 'instanceName é obrigatório.' });
     return;
   }
-  if (!evolutionUrl || typeof evolutionUrl !== 'string' || evolutionUrl.trim() === '') {
-    res.status(400).json({ success: false, error: 'evolutionUrl é obrigatório.' });
-    return;
-  }
-  if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
-    res.status(400).json({ success: false, error: 'apiKey é obrigatório.' });
-    return;
-  }
 
   try {
-    const result = await createInstanceAndPersist(
-      instanceName.trim(),
-      evolutionUrl.trim(),
-      apiKey.trim(),
-      token?.trim(),
-    );
+    const result = await createInstanceAndPersist(instanceName.trim(), token?.trim());
     if (result.success) {
       res.status(201).json(result);
     } else {

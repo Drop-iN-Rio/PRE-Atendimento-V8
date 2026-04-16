@@ -1,3 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
+const EVOLUTION_API_URL = (process.env.EVOLUTION_API_URL || '').replace(/\/$/, '');
+const GLOBAL_API_KEY    = process.env.GLOBAL_API_KEY || '';
+
 interface EvolutionResponse {
   success: boolean;
   data?: unknown;
@@ -12,25 +18,21 @@ function maskKey(key: string): string {
 
 export async function createInstance(
   instanceName: string,
-  evolutionUrl: string,
-  apiKey: string,
   token?: string,
 ): Promise<EvolutionResponse> {
-  const baseUrl = evolutionUrl.replace(/\/$/, '');
-  const url     = `${baseUrl}/instance/create`;
+  if (!EVOLUTION_API_URL) {
+    return { success: false, error: 'EVOLUTION_API_URL não configurada no servidor.' };
+  }
+  if (!GLOBAL_API_KEY) {
+    return { success: false, error: 'GLOBAL_API_KEY não configurada no servidor.' };
+  }
 
-  const payload: { name: string; token: string } = {
-    name: instanceName,
-    token: token || '',
-  };
+  const url = `${EVOLUTION_API_URL}/instance/create`;
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'apikey': apiKey,
-  };
+  const payload = { name: instanceName, token: token || '' };
 
   console.log('[Evolution GO] ▶ POST', url);
-  console.log('[Evolution GO] Headers:', { 'Content-Type': 'application/json', apikey: maskKey(apiKey) });
+  console.log('[Evolution GO] Headers:', { 'Content-Type': 'application/json', apikey: maskKey(GLOBAL_API_KEY) });
   console.log('[Evolution GO] Body:', JSON.stringify(payload));
 
   const controller = new AbortController();
@@ -39,7 +41,10 @@ export async function createInstance(
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': GLOBAL_API_KEY,
+      },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
@@ -54,7 +59,6 @@ export async function createInstance(
 
     const d = data as Record<string, unknown>;
 
-    /* Sucesso: message === "success" com data.name e data.token */
     if (d?.message === 'success') {
       return { success: true, data, httpStatus: response.status };
     }
