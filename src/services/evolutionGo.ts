@@ -9,6 +9,8 @@ interface EvolutionResponse {
   data?: unknown;
   error?: string;
   httpStatus?: number;
+  urlCalled?: string;
+  attemptLog?: string[];
 }
 
 function maskKey(key: string): string {
@@ -60,29 +62,71 @@ export async function getQrCode(
   if (!baseUrl) return { success: false, error: 'EVOLUTION_API_URL não configurada.' };
   if (!apiKey)  return { success: false, error: 'GLOBAL_API_KEY não configurada.' };
 
-  const url = `${baseUrl}/instance/get-qr-code/${encodeURIComponent(instanceName)}`;
-  console.log('[QRCode] GET', url);
+  const enc = encodeURIComponent(instanceName);
 
-  const controller = new AbortController();
-  const timeout    = setTimeout(() => controller.abort(), 15_000);
+  /* Candidatos em ordem de prioridade:
+     1. /instance/connect/{name}          — Evolution API v2.0 padrão (GET retorna QR code)
+     2. /instance/{name}/connect          — variante path alternativa
+     3. /instance/connectionState/{name}  — v2.0 (pode incluir QR se status=connecting)
+     4. /instance/get-qr-code/{name}      — Evolution GO (já testado — 404, mas mantido como fallback)
+     5. /instance/get-qr-code?instanceName={name} — query-param variant
+  */
+  const candidates: string[] = [
+    `/instance/connect/${enc}`,
+    `/instance/${enc}/connect`,
+    `/instance/connectionState/${enc}`,
+    `/instance/get-qr-code/${enc}`,
+    `/instance/get-qr-code?instanceName=${enc}`,
+  ];
 
-  try {
-    const r = await fetch(url, {
-      method:  'GET',
-      headers: { 'Content-Type': 'application/json', apikey: apiKey },
-      signal:  controller.signal,
-    });
-    clearTimeout(timeout);
-    const rawBody = await r.text();
-    console.log(`[QRCode] HTTP ${r.status}`, rawBody.slice(0, 300));
-    let data: unknown;
-    try { data = JSON.parse(rawBody); } catch { data = rawBody; }
-    return { success: r.ok, data, httpStatus: r.status };
-  } catch (err: unknown) {
-    clearTimeout(timeout);
-    const msg = (err as Error).name === 'AbortError' ? 'Timeout: sem resposta em 15s' : (err as Error).message;
-    return { success: false, error: msg };
+  const headers  = { 'Content-Type': 'application/json', apikey: apiKey };
+  const attempts: string[] = [];
+
+  for (const path of candidates) {
+    const url = `${baseUrl}${path}`;
+    attempts.push(url);
+    console.log('[QRCode] ▶ GET', url);
+
+    const controller = new AbortController();
+    const timeout    = setTimeout(() => controller.abort(), 12_000);
+
+    try {
+      const r = await fetch(url, { method: 'GET', headers, signal: controller.signal });
+      clearTimeout(timeout);
+      const rawBody = await r.text();
+      console.log(`[QRCode] ◀ HTTP ${r.status}`, rawBody.slice(0, 400));
+
+      if (r.status === 404) {
+        console.log('[QRCode] 404 — testando próximo candidato…');
+        continue;
+      }
+
+      let data: unknown;
+      try { data = JSON.parse(rawBody); } catch { data = rawBody; }
+
+      return {
+        success:    r.ok,
+        data,
+        httpStatus: r.status,
+        urlCalled:  url,
+        attemptLog: attempts,
+        ...(r.ok ? {} : { error: (data as Record<string,unknown>)?.error as string || `Erro HTTP ${r.status}` }),
+      };
+
+    } catch (err: unknown) {
+      clearTimeout(timeout);
+      const msg = (err as Error).name === 'AbortError'
+        ? `Timeout (12s) em ${url}`
+        : (err as Error).message;
+      console.error('[QRCode] ✖ Erro:', msg);
+      return { success: false, error: msg, urlCalled: url, attemptLog: attempts };
+    }
   }
+
+  /* Todos os candidatos retornaram 404 */
+  const msg = `Nenhum endpoint de QR Code respondeu (todos 404). Tentados: ${attempts.join(' | ')}`;
+  console.error('[QRCode] ✖', msg);
+  return { success: false, error: msg, urlCalled: attempts.join(' | '), attemptLog: attempts };
 }
 
 export async function disconnectInstance(
