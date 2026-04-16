@@ -62,6 +62,30 @@ Variáveis de ambiente necessárias (todas configuradas como secrets):
 | GET | `/api/config` | Config do servidor |
 | GET | `/health` | Health check |
 
+## Lógica de Status das Instâncias
+
+### Valores de status no banco (campo `status`)
+| Status | Significado | Badge exibido |
+|---|---|---|
+| `creating` | Criação em andamento | Criando |
+| `active` | Criada mas WhatsApp não autenticado | ○ Desconectada |
+| `connected` | QR escaneado, WhatsApp autenticado | ● Conectada |
+| `inactive` | Desconectada manualmente | ○ Desconectada |
+| `error` | Falha na criação | ○ Desconectada |
+
+### Regra de negócio
+- **`status === 'connected'`** é o único estado que exibe "Conectada"
+- O badge de conexão é determinado EXCLUSIVAMENTE por `inst.status === 'connected'` (nunca pelo metadata)
+- O campo `metadata.create.data.connected` é sempre `false` na criação e não deve ser usado para status
+
+### Fluxo de atualização automática
+1. `GET /api/instances/:name/status` chama Evolution GO e avalia `data.LoggedIn`:
+   - `LoggedIn: true` → DB atualiza para `connected` (WhatsApp autenticado via QR)
+   - `LoggedIn: false + DB=connected` → DB volta para `active` (sessão expirou)
+   - `Connected: true` (sozinho) = apenas o processo está rodando, não WhatsApp
+2. Após exibir o QR code, o frontend faz polling a cada 4s em `/api/instances/:name/status`
+3. Quando `connected: true` é detectado → modal fecha automaticamente → lista atualiza
+
 ## Evolution GO — Descobertas Críticas (verificadas por teste)
 
 ### Autenticação por endpoint

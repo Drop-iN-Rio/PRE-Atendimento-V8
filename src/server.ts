@@ -213,30 +213,72 @@ app.get('/api/instances/:name/qrcode', async (req, res) => {
 
 /* ── Status da instância — GET /instance/status ─────────────────────
    Swagger: GET /instance/status — sem params; instância identificada pelo token.
+   Efeito colateral: atualiza o status no DB com base em data.Connected.
+     - Connected: true  → status = 'connected'
+     - Connected: false → status = 'active' (se estava 'connected'; foi desconectado externamente)
 */
 app.get('/api/instances/:name/status', async (req, res) => {
   const { name } = req.params;
   const evolutionUrl  = (req.query.evolutionUrl  as string | undefined)?.trim() || undefined;
   let   instanceToken = (req.query.instanceToken as string | undefined)?.trim() || '';
 
-  if (!instanceToken) {
-    try {
-      const { data: inst } = await supabaseAdmin
-        .from('instances')
-        .select('metadata')
-        .eq('instance_name', name)
-        .maybeSingle();
+  /* Buscar token e status atual do banco */
+  let currentDbStatus = '';
+  try {
+    const { data: inst } = await supabaseAdmin
+      .from('instances')
+      .select('metadata, status')
+      .eq('instance_name', name)
+      .maybeSingle();
 
-      if (inst?.metadata) {
-        const meta       = inst.metadata as Record<string, unknown>;
-        const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
-        instanceToken = String(createData?.token || '');
-      }
-    } catch { /* continua */ }
-  }
+    if (inst?.metadata) {
+      const meta       = inst.metadata as Record<string, unknown>;
+      const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
+      if (!instanceToken) instanceToken = String(createData?.token || '');
+    }
+    currentDbStatus = inst?.status || '';
+  } catch { /* continua */ }
 
   try {
     const result = await getInstanceStatus(instanceToken, evolutionUrl);
+
+    /* Atualizar DB com status real da API
+       Connected = processo da instância está rodando (true após /connect, sempre)
+       LoggedIn  = WhatsApp autenticado via QR (true APENAS após scan do QR code)
+    */
+    if (result.success && result.data) {
+      const d        = result.data as Record<string, unknown>;
+      const inner    = (d.data as Record<string, unknown>) || {};
+      const running  = inner.Connected === true;   /* processo rodando */
+      const loggedIn = inner.LoggedIn  === true;   /* WhatsApp autenticado via QR */
+
+      let newStatus: string | null = null;
+      if (loggedIn && currentDbStatus !== 'connected') {
+        /* QR foi scaneado e WhatsApp conectou */
+        newStatus = 'connected';
+      } else if (!loggedIn && currentDbStatus === 'connected') {
+        /* Era conectado mas foi desconectado externamente (sessão expirou, logout, etc.) */
+        newStatus = 'active';
+      }
+
+      if (newStatus) {
+        await supabaseAdmin
+          .from('instances')
+          .update({ status: newStatus })
+          .eq('instance_name', name);
+      }
+
+      /* Retornar campos normalizados para o frontend */
+      res.json({
+        success:   result.success,
+        data:      result.data,
+        connected: loggedIn,   /* true SOMENTE se WhatsApp autenticado via QR */
+        running,               /* true se o processo da instância está ativo */
+        dbStatus:  newStatus || currentDbStatus,
+      });
+      return;
+    }
+
     res.status(result.success ? 200 : (result.httpStatus || 502)).json(result);
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });

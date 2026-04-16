@@ -76,7 +76,11 @@ Obtém o QR code da instância.
 Obtém o status da instância.
 - **Auth:** token da instância
 - **Params:** nenhum (instância identificada pelo token)
-- **Resposta 200:** status da conexão
+- **Resposta 200:** `{ "data": { "Connected": bool, "LoggedIn": bool, "Name": string } }`
+- **Campos importantes:**
+  - `Connected: true` = o **processo** da instância está rodando (sempre true após `/connect`)
+  - `LoggedIn: true` = **WhatsApp autenticado** — o QR foi escaneado e sessão estabelecida
+- **Status no banco:** apenas quando `LoggedIn: true` o DB é atualizado para `'connected'`
 
 ---
 

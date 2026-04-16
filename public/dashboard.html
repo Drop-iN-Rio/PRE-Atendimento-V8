@@ -2987,8 +2987,8 @@
 
         _instances = json.data;
 
-        const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo' };
-        const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive' };
+        const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo', connected:'Conectado' };
+        const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive', connected:'badge-active' };
 
         el.innerHTML = json.data.map(inst => {
           const sCls  = badgeClass[inst.status] || 'badge-inactive';
@@ -2997,11 +2997,8 @@
             day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit',
           });
 
-          /* connected vem do metadata guardado na criação */
-          const meta      = inst.metadata;
-          const connRaw   = meta?.data?.connected ?? meta?.connected ?? null;
-          const isInactive = inst.status === 'inactive';
-          const connected  = isInactive ? false : (connRaw === true);
+          /* Status de conexão baseado exclusivamente em inst.status === 'connected' */
+          const connected  = inst.status === 'connected';
           const connCls    = connected ? 'connected' : 'disconnected';
           const connLbl    = connected ? '● Conectada' : '○ Desconectada';
 
@@ -3041,17 +3038,14 @@
       document.getElementById('is-name').textContent        = name;
 
       /* Status badge */
-      const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo' };
-      const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive' };
+      const statusLabel = { active:'Ativo', creating:'Criando', error:'Erro', inactive:'Inativo', connected:'Conectado' };
+      const badgeClass  = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive', connected:'badge-active' };
       const sCls = badgeClass[inst.status] || 'badge-inactive';
       const sLbl = statusLabel[inst.status] || inst.status;
       document.getElementById('is-status').innerHTML = `<span class="badge ${sCls}">${sLbl}</span>`;
 
-      /* Connection badge */
-      const meta       = inst.metadata;
-      const connRaw    = meta?.data?.connected ?? meta?.connected ?? null;
-      const isInactive = inst.status === 'inactive';
-      const connected  = isInactive ? false : (connRaw === true);
+      /* Connection badge — baseado exclusivamente em inst.status === 'connected' */
+      const connected = inst.status === 'connected';
       document.getElementById('is-connection').innerHTML = connected
         ? '<span class="conn-badge connected">● Conectada</span>'
         : '<span class="conn-badge disconnected">○ Desconectada</span>';
@@ -3103,6 +3097,10 @@
     const QR_POLL_MAX     = 25;     /* máx 25 tentativas × 3s = 75s de espera */
     const QR_POLL_INTERVAL= 3000;
 
+    /* ─── POLLING DE CONEXÃO (detectar scan do QR) ─── */
+    let _connPollTimer    = null;   /* detecta quando WhatsApp conecta após QR scan */
+    const CONN_POLL_INTERVAL = 4000; /* verifica a cada 4s */
+
     /* Extrai o token de instância dos dados da lista de instâncias */
     function _getInstanceToken(name) {
       /* Prioridade 1: token armazenado na criação mais recente */
@@ -3132,12 +3130,52 @@
       document.body.style.overflow = '';
       clearInterval(_qrTimer);
       clearTimeout(_qrPollingTimer);
+      clearTimeout(_connPollTimer);
       _qrTimer        = null;
       _qrPollingTimer = null;
+      _connPollTimer  = null;
       _qrCurrentName  = null;
       _qrCurrentToken = null;
       _qrPollingCount = 0;
       document.getElementById('qr-timer').textContent = '';
+    }
+
+    /* Inicia polling de status para detectar quando WhatsApp conecta após scan do QR */
+    function _startConnPoll(name) {
+      clearTimeout(_connPollTimer);
+      _connPollTimer = setTimeout(() => _pollConnection(name), CONN_POLL_INTERVAL);
+    }
+
+    async function _pollConnection(name) {
+      if (_qrCurrentName !== name) return;
+      try {
+        const r = await fetch(`/api/instances/${encodeURIComponent(name)}/status`);
+        const j = await r.json();
+        if (j.connected === true) {
+          /* WhatsApp conectou! */
+          clearInterval(_qrTimer);
+          clearTimeout(_qrPollingTimer);
+          clearTimeout(_connPollTimer);
+          _setQrStatus('✅ WhatsApp conectado com sucesso!', '#4ade80');
+          _setQrImg(`<div style="width:100%;height:100%;display:flex;flex-direction:column;
+            align-items:center;justify-content:center;background:#0f172a;border-radius:10px;gap:0.75rem">
+            <span style="font-size:3rem">✅</span>
+            <span style="color:#4ade80;font-weight:700;font-size:1.05rem">Conectado!</span>
+          </div>`);
+          document.getElementById('qr-timer').textContent = 'Fechando…';
+          setTimeout(() => {
+            closeQrModal();
+            loadInstances();
+            showToast('WhatsApp conectado com sucesso!', true);
+          }, 1800);
+          return;
+        }
+        /* Ainda não conectou — continua polling enquanto modal estiver aberto */
+        if (_qrCurrentName === name) _startConnPoll(name);
+      } catch {
+        /* Erro de rede — tentar novamente */
+        if (_qrCurrentName === name) _startConnPoll(name);
+      }
     }
 
     function _setQrStatus(msg, color) {
@@ -3300,6 +3338,7 @@
           _setQrImg(`<img src="${src}" alt="QR Code" style="width:100%;height:100%;object-fit:contain;border-radius:8px" />`);
           _setQrStatus('📱 Escaneie com o WhatsApp', '#4ade80');
           _startAutoRefresh(name);
+          _startConnPoll(name);   /* detecta quando WhatsApp conectar */
         } else if (code) {
           _setQrImg(`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
             background:#0f172a;border-radius:10px;">
@@ -3308,6 +3347,7 @@
           </div>`);
           _setQrStatus('📱 Digite o código no WhatsApp', '#4ade80');
           _startAutoRefresh(name);
+          _startConnPoll(name);   /* detecta quando WhatsApp conectar */
         } else {
           _setQrStatus('⚠️ QR Code não disponível na resposta. Tente atualizar.', '#fbbf24');
           _setQrImg(_qrPlaceholder('❓', '#fbbf24'));
