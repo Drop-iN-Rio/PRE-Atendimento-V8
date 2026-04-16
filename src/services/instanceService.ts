@@ -200,6 +200,11 @@ export async function deleteInstanceService(
   let result;
   if (uuid) {
     result = await callDelete(uuid, overrideUrl, overrideKey);
+    /* HTTP 404 = instância já não existe na API → tratar como sucesso */
+    if (!result.success && result.httpStatus === 404) {
+      console.warn(`[deleteInstanceService] Instância "${instanceName}" não encontrada na API (já deletada) — removendo do DB.`);
+      result = { success: true, data: result.data, error: undefined, httpStatus: 404 };
+    }
   } else {
     /* Sem UUID — apenas limpa do banco local */
     console.warn(`[deleteInstanceService] UUID não encontrado para "${instanceName}" — removendo apenas do DB.`);
