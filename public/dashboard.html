@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Evolution GO — Painel</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      overscroll-behavior: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+
+    /* ─── TOP BAR ─── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0 1rem;
+      padding-top: env(safe-area-inset-top);
+      height: calc(56px + env(safe-area-inset-top));
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding-bottom: 0.75rem;
+    }
+
+    .topbar-brand { display: flex; align-items: center; gap: 0.6rem; }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+    }
+
+    .logo-text { font-size: 1rem; font-weight: 800; color: #f1f5f9; letter-spacing: -0.01em; }
+    .logo-sub  { font-size: 0.65rem; color: #64748b; }
+
+    .topbar-right { display: flex; align-items: center; gap: 0.5rem; }
+
+    .user-avatar {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 800; color: white;
+      cursor: pointer; flex-shrink: 0;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1.5px solid #334155;
+      color: #94a3b8;
+      border-radius: 10px;
+      padding: 0 0.75rem;
+      height: 36px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-logout:active { border-color: #ef4444; color: #ef4444; }
+
+    /* ─── USER STRIP ─── */
+    .user-strip {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .user-strip-name { font-size: 0.85rem; font-weight: 600; color: #cbd5e1; }
+
+    .user-role-badge {
+      background: #1e3a5f;
+      color: #93c5fd;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── NAV TABS ─── */
+    .nav-tabs {
+      display: flex;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 0 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .nav-tabs::-webkit-scrollbar { display: none; }
+
+    .nav-tab {
+      flex-shrink: 0;
+      padding: 0.85rem 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      touch-action: manipulation;
+      white-space: nowrap;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .nav-tab.active { color: #818cf8; border-bottom-color: #6366f1; }
+
+    /* ─── MAIN ─── */
+    .main {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* ─── CARD ─── */
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+
+    .icon-purple { background: rgba(99,102,241,0.15); }
+    .icon-green  { background: rgba(34,197,94,0.12); }
+
+    .card-title { font-size: 1rem; font-weight: 700; color: #f1f5f9; }
+    .card-desc  { font-size: 0.8rem; color: #64748b; margin-top: 1px; }
+
+    /* ─── FORM ─── */
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      font-size: 16px;
+      padding: 0.9rem 1rem;
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 12px;
+      color: #f1f5f9;
+      outline: none;
+      transition: border-color 0.15s;
+      min-height: 52px;
+      -webkit-appearance: none;
+    }
+
+    input[type="text"]:focus { border-color: #6366f1; }
+    input[type="text"]::placeholder { color: #475569; }
+
+    .btn {
+      width: 100%;
+      min-height: 54px;
+      padding: 0 1rem;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 0.75rem;
+      transition: opacity 0.2s, transform 0.1s;
+      touch-action: manipulation;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+    }
+
+    .btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+    /* ─── ALERTS ─── */
+    .alert {
+      margin-top: 1rem;
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    .alert.success { background: #052e16; border: 1.5px solid #16a34a; color: #86efac; display: block; }
+    .alert.error   { background: #2d0a0a; border: 1.5px solid #dc2626; color: #fca5a5; display: block; }
+
+    .alert pre {
+      white-space: pre-wrap;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+      opacity: 0.85;
+    }
+
+    /* ─── INSTANCE LIST ─── */
+    .instances-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .instance-item {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      min-height: 64px;
+    }
+
+    .instance-info { flex: 1; min-width: 0; }
+
+    .instance-name {
+      font-weight: 700;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .instance-date { font-size: 0.75rem; color: #475569; margin-top: 2px; }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+    }
+
+    .badge-active   { background: #052e16; color: #4ade80; }
+    .badge-creating { background: #1c2a00; color: #a3e635; }
+    .badge-error    { background: #2d0a0a; color: #f87171; }
+    .badge-inactive { background: #1e293b; color: #64748b; }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn-refresh {
+      background: transparent;
+      border: 1.5px solid #334155;
+      color: #64748b;
+      border-radius: 10px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.2s;
+    }
+
+    .btn-refresh:active { border-color: #6366f1; color: #818cf8; }
+
+    .empty-state {
+      text-align: center;
+      color: #475569;
+      font-size: 0.9rem;
+      padding: 2.5rem 0;
+    }
+
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+    /* ─── BOTTOM NAV ─── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
+      background: #1e293b;
+      border-top: 1px solid #334155;
+      display: flex;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .bottom-nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.6rem 0.5rem;
+      cursor: pointer;
+      touch-action: manipulation;
+      color: #475569;
+      font-size: 0.65rem;
+      font-weight: 600;
+      gap: 3px;
+      min-height: 60px;
+      transition: color 0.15s;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .bottom-nav-item.active { color: #818cf8; }
+    .bottom-nav-icon { font-size: 1.4rem; line-height: 1; }
+
+    /* ─── SPINNER ─── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── DESKTOP ─── */
+    @media (min-width: 768px) {
+      .main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1.5rem 1.5rem 2rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        align-items: start;
+      }
+
+      .main .panel { display: block !important; }
+      .bottom-nav { display: none; }
+      .nav-tabs { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">Evolution GO</div>
+        <div class="logo-sub">PRE-Atendimento V8</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </nav>
+
+  <div class="user-strip">
+    <span class="user-strip-name" id="user-name">—</span>
+    <span class="user-role-badge" id="user-role">—</span>
+  </div>
+
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPanel('panel-create', this)">➕ Nova Instância</div>
+    <div class="nav-tab" onclick="showPanel('panel-list', this)">📋 Instâncias</div>
+  </div>
+
+  <div class="main">
+    <!-- CRIAR INSTÂNCIA -->
+    <div class="panel active" id="panel-create">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon icon-purple">⚡</div>
+          <div>
+            <div class="card-title">Nova Instância</div>
+            <div class="card-desc">Cria e registra na Evolution GO</div>
+          </div>
+        </div>
+        <form id="form-instance" novalidate>
+          <label for="instanceName">Nome da Instância</label>
+          <input type="text" id="instanceName"
+            placeholder="ex: minha-loja-01"
+            autocomplete="off" autocorrect="off"
+            autocapitalize="none" spellcheck="false" required />
+          <button type="submit" class="btn" id="btn-instance">Criar Instância</button>
+        </form>
+        <div class="alert" id="result-instance"></div>
+      </div>
+    </div>
+
+    <!-- LISTA -->
+    <div class="panel" id="panel-list">
+      <div class="card">
+        <div class="list-header">
+          <div class="card-header" style="margin-bottom:0">
+            <div class="card-icon icon-green">📋</div>
+            <div>
+              <div class="card-title">Instâncias</div>
+              <div class="card-desc">Registradas no Supabase</div>
+            </div>
+          </div>
+          <button class="btn-refresh" onclick="loadInstances()">↻ Atualizar</button>
+        </div>
+        <div style="margin-top:1rem">
+          <div class="instances-list" id="instances-list">
+            <div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="bottom-nav-item active" id="bnav-create"
+      onclick="showPanel('panel-create', null, 'bnav-create')">
+      <span class="bottom-nav-icon">➕</span>Nova
+    </div>
+    <div class="bottom-nav-item" id="bnav-list"
+      onclick="showPanel('panel-list', null, 'bnav-list')">
+      <span class="bottom-nav-icon">📋</span>Instâncias
+    </div>
+  </nav>
+
+  <script>
+    // ─── AUTH GUARD ───
+    const raw = localStorage.getItem('pa_session');
+    if (!raw) {
+      window.location.href = '/';
+    } else {
+      const user = JSON.parse(raw);
+      document.getElementById('user-name').textContent = user.name || user.email;
+      document.getElementById('user-role').textContent = user.role || 'user';
+      document.getElementById('user-avatar').textContent =
+        (user.name || user.email || '?')[0].toUpperCase();
+    }
+
+    function logout() {
+      localStorage.removeItem('pa_session');
+      window.location.href = '/';
+    }
+
+    function showPanel(panelId, tabEl, bnavId) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(panelId).classList.add('active');
+
+      if (tabEl) {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        tabEl.classList.add('active');
+      }
+
+      if (bnavId) {
+        document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+        document.getElementById(bnavId).classList.add('active');
+      }
+
+      if (panelId === 'panel-list') loadInstances();
+    }
+
+    document.getElementById('form-instance').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const instanceName = document.getElementById('instanceName').value.trim();
+      const btn   = document.getElementById('btn-instance');
+      const alert = document.getElementById('result-instance');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Criando...';
+      alert.className = 'alert';
+
+      try {
+        const res  = await fetch('/api/instances', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instanceName }),
+        });
+        const json = await res.json();
+
+        if (res.ok && json.success) {
+          alert.className = 'alert success';
+          alert.innerHTML = `✅ Instância criada!<pre>${JSON.stringify(json.data, null, 2)}</pre>`;
+          document.getElementById('instanceName').value = '';
+        } else {
+          alert.className = 'alert error';
+          alert.innerHTML = `❌ ${json.error || 'Erro desconhecido'}<pre>${JSON.stringify(json, null, 2)}</pre>`;
+        }
+        alert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (err) {
+        alert.className = 'alert error';
+        alert.textContent = `❌ Erro de conexão: ${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Criar Instância';
+      }
+    });
+
+    async function loadInstances() {
+      const el = document.getElementById('instances-list');
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>`;
+      try {
+        const res  = await fetch('/api/instances');
+        const json = await res.json();
+
+        if (!json.success || !json.data?.length) {
+          el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div>Nenhuma instância encontrada.</div>`;
+          return;
+        }
+
+        const badgeMap = { active:'badge-active', creating:'badge-creating', error:'badge-error', inactive:'badge-inactive' };
+
+        el.innerHTML = json.data.map(inst => {
+          const cls  = badgeMap[inst.status] || 'badge-inactive';
+          const date = new Date(inst.created_at).toLocaleString('pt-BR', {
+            day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit',
+          });
+          return `
+            <div class="instance-item">
+              <div class="instance-info">
+                <div class="instance-name">${inst.instance_name}</div>
+                <div class="instance-date">${date}</div>
+              </div>
+              <span class="badge ${cls}">${inst.status}</span>
+            </div>`;
+        }).join('');
+      } catch {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div>Erro ao carregar.</div>`;
+      }
+    }
+
+    loadInstances();
+  </script>
+</body>
+</html>
