@@ -629,9 +629,12 @@
         overflow-y: auto;
         padding: 1.5rem;
         padding-bottom: 2rem;
-        max-width: 860px;
+        max-width: 1200px;
         width: 100%;
       }
+
+      /* Lista de instâncias ocupa largura total sem padding duplo */
+      #panel-list { margin: -1.5rem; width: calc(100% + 3rem); }
 
       .panel { display: none; }
       .panel.active { display: block; }
@@ -950,50 +953,116 @@
     /* ─── INSTANCE LIST ─── */
     .instances-list { display: flex; flex-direction: column; gap: 0.75rem; }
 
-    .instance-item {
-      background: var(--bg);
-      border: 1px solid var(--border2);
-      border-radius: 14px;
-      overflow: hidden;
-      transition: border-color 0.15s;
-    }
+    /* ─── INSTANCE GRID — layout de cards ─── */
+    .inst-list-page { padding: 1.5rem 1.25rem; }
 
-    .inst-header {
+    .inst-page-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 0.75rem;
-      padding: 0.9rem 1rem;
+      gap: 1rem;
+      margin-bottom: 1rem;
       flex-wrap: wrap;
     }
+    .inst-page-title { font-size: 1.35rem; font-weight: 800; color: var(--tx1); }
+    .inst-page-desc  { font-size: 0.82rem; color: var(--tx4); margin-top: 0.2rem; }
 
-    .instance-info { flex: 1; min-width: 0; }
+    .btn-new-instance {
+      background: #16a34a; color: #fff; border: none; border-radius: 8px;
+      padding: 0.55rem 1.1rem; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap; transition: background 0.15s;
+      touch-action: manipulation; flex-shrink: 0;
+    }
+    .btn-new-instance:hover  { background: #15803d; }
+    .btn-new-instance:active { background: #166534; }
 
-    .instance-name {
-      font-weight: 700;
-      color: var(--tx1);
-      font-size: 0.95rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .inst-search-wrap {
+      display: flex; gap: 0.6rem; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap;
+    }
+    .inst-search-input {
+      padding: 0.5rem 0.9rem; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface); color: var(--tx1); font-size: 0.88rem;
+      outline: none; transition: border-color 0.15s; width: 22rem; max-width: 100%;
+    }
+    .inst-search-input:focus       { border-color: #6366f1; }
+    .inst-search-input::placeholder { color: var(--tx5); }
+
+    .inst-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 1100px) { .inst-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 780px)  { .inst-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 500px)  { .inst-grid { grid-template-columns: 1fr; } }
+
+    /* Card individual */
+    .inst-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      display: flex; flex-direction: column; overflow: hidden;
+      transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    .inst-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); border-color: #d1d5db; }
+
+    .inst-card-header  { padding: 1rem 1rem 0.65rem; }
+    .inst-card-title-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;
+    }
+    .inst-card-name {
+      font-weight: 700; font-size: 0.95rem; color: #111827;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+    }
+    .inst-card-subtitle {
+      font-size: 0.73rem; color: #9ca3af; margin-top: 0.2rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .inst-card-divider { border: none; border-top: 1px solid #f3f4f6; margin: 0; }
+    .inst-card-status  {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.55rem 1rem; font-size: 0.82rem;
+    }
+    .inst-card-status-label { color: #6b7280; font-weight: 500; }
+    .inst-card-status-value { font-family: 'Courier New', monospace; color: #374151; }
+    .inst-card-footer {
+      display: flex; align-items: center; justify-content: flex-end;
+      padding: 0.6rem 1rem; gap: 0.4rem;
+      border-top: 1px solid #f3f4f6; margin-top: auto;
     }
 
-    .instance-date { font-size: 0.75rem; color: var(--tx5); margin-top: 2px; }
-
-    .inst-badges { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; flex-shrink: 0; }
-
+    /* Badge de conexão */
     .conn-badge {
-      padding: 3px 9px;
-      border-radius: 99px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      flex-shrink: 0;
+      padding: 2px 8px; border-radius: 99px;
+      font-size: 0.7rem; font-weight: 600; flex-shrink: 0;
     }
-    .conn-badge.connected    { background: #052e16; color: #4ade80; border: 1px solid #16a34a33; }
-    .conn-badge.disconnected { background: #1e0a0a; color: #f87171; border: 1px solid #dc262633; }
-    .conn-badge.checking     { background: var(--surface); color: var(--tx4); border: 1px solid var(--border); letter-spacing: 0.1em; }
+    .conn-badge.connected    { background: #dcfce7; color: #15803d; }
+    .conn-badge.disconnected { background: #fef2f2; color: #ef4444; }
+    .conn-badge.checking     { background: #f1f5f9; color: #9ca3af; }
+
+    /* Botão Conectar */
+    .btn-connect {
+      display: flex; align-items: center; gap: 0.3rem;
+      padding: 0.38rem 0.8rem; border: 1.5px solid #16a34a; border-radius: 7px;
+      background: transparent; color: #16a34a; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: background 0.15s; touch-action: manipulation;
+    }
+    .btn-connect:hover  { background: #f0fdf4; }
+    .btn-connect:active { background: #dcfce7; }
+
+    /* Ícones de ação no card */
+    .btn-icon-card {
+      width: 30px; height: 30px; border: 1px solid #e5e7eb; border-radius: 7px;
+      background: transparent; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 0.88rem; transition: background 0.15s, border-color 0.15s;
+      touch-action: manipulation; flex-shrink: 0;
+    }
+    .btn-icon-card.settings { color: #6b7280; }
+    .btn-icon-card.settings:hover  { background: #f1f5f9; border-color: #94a3b8; }
+    .btn-icon-card.danger   { color: #ef4444; border-color: #fecaca; }
+    .btn-icon-card.danger:hover    { background: #fef2f2; border-color: #ef4444; }
 
     /* ─── BOTÃO QR CREATE ─── */
     .btn-qr-create {
@@ -1664,27 +1733,33 @@
     [data-theme="light"] .token-label { color: #94a3b8; }
     [data-theme="light"] .token-value { color: #0f172a; }
 
-    /* Lista de instâncias */
-    [data-theme="light"] .instance-item {
-      background: #ffffff;
-      border-color: #e2e8f0;
-    }
-    [data-theme="light"] .instance-item:hover  { background: #f8fafc; border-color: #c7d2fe; }
-    [data-theme="light"] .instance-name { color: #0f172a; }
-    [data-theme="light"] .instance-date { color: #94a3b8; }
+    /* Instância cards — tema claro (já são brancos por padrão) */
+    [data-theme="light"] .inst-page-title { color: #111827; }
+    [data-theme="light"] .inst-page-desc  { color: #6b7280; }
+    [data-theme="light"] .inst-search-input { background: #fff; border-color: #e5e7eb; color: #111827; }
     [data-theme="light"] .empty-state   { color: #94a3b8; }
-    [data-theme="light"] .list-header   { border-bottom-color: #e2e8f0; }
     [data-theme="light"] .btn-refresh {
-      color: #6366f1;
-      border-color: #c7d2fe;
-      background: #ede9fe;
+      color: #6366f1; border-color: #c7d2fe; background: #ede9fe;
     }
-    [data-theme="light"] .btn-gear {
-      background: #f1f5f9;
-      border-color: #e2e8f0;
-      color: #64748b;
+
+    /* Instância cards — tema escuro */
+    [data-theme="dark"] .inst-card {
+      background: var(--bg); border-color: var(--border2); box-shadow: none;
     }
-    [data-theme="light"] .btn-gear:hover { background: #e2e8f0; }
+    [data-theme="dark"] .inst-card:hover { border-color: var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+    [data-theme="dark"] .inst-card-name         { color: var(--tx1); }
+    [data-theme="dark"] .inst-card-subtitle      { color: var(--tx5); }
+    [data-theme="dark"] .inst-card-divider       { border-color: var(--border2); }
+    [data-theme="dark"] .inst-card-status-label  { color: var(--tx4); }
+    [data-theme="dark"] .inst-card-status-value  { color: var(--tx2); }
+    [data-theme="dark"] .inst-card-footer        { border-color: var(--border2); }
+    [data-theme="dark"] .btn-icon-card           { border-color: var(--border2); }
+    [data-theme="dark"] .btn-icon-card.settings  { color: var(--tx4); }
+    [data-theme="dark"] .btn-icon-card.settings:hover { background: var(--surface); border-color: var(--border); }
+    [data-theme="dark"] .btn-icon-card.danger    { color: #f87171; border-color: rgba(248,113,113,0.25); }
+    [data-theme="dark"] .conn-badge.connected    { background: #052e16; color: #4ade80; }
+    [data-theme="dark"] .conn-badge.disconnected { background: #1e0a0a; color: #f87171; }
+    [data-theme="dark"] .conn-badge.checking     { background: var(--surface); color: var(--tx4); }
 
     /* Instance settings panel */
     [data-theme="light"] #panel-instance { background: #f1f5f9; }
@@ -1821,10 +1896,6 @@
     [data-theme="light"] .token-copy       { border-color: #e2e8f0; color: #94a3b8; }
     [data-theme="light"] .token-copy:hover { border-color: #6366f1; color: #6366f1; }
 
-    /* Connection badges */
-    [data-theme="light"] .conn-badge.connected    { background: #dcfce7; color: #15803d; border-color: #86efac; }
-    [data-theme="light"] .conn-badge.disconnected { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
-    [data-theme="light"] .conn-badge.checking     { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
 
     /* Botões QR (lista e painel) */
     [data-theme="light"] .btn-qr {
@@ -2296,21 +2367,25 @@
 
       <!-- ── LISTA ── -->
       <div class="panel" id="panel-list">
-        <div class="card">
-          <div class="list-header">
-            <div class="card-header" style="margin-bottom:0">
-              <div class="card-icon icon-green">📋</div>
-              <div>
-                <div class="card-title">Instâncias</div>
-                <div class="card-desc">Registradas no Supabase</div>
-              </div>
+        <div class="inst-list-page">
+          <div class="inst-page-header">
+            <div>
+              <div class="inst-page-title">Instâncias</div>
+              <div class="inst-page-desc">Gerencie suas instâncias WhatsApp do Evolution GO</div>
             </div>
-            <button class="btn-refresh" onclick="loadInstances()">↻ Atualizar</button>
+            <button class="btn-new-instance"
+              onclick="showPanel('panel-create', null, 'bnav-create', 'snav-create')">
+              + Nova Instância
+            </button>
           </div>
-          <div style="margin-top:1rem">
-            <div class="instances-list" id="instances-list">
-              <div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>
-            </div>
+          <div class="inst-search-wrap">
+            <input type="text" class="inst-search-input" id="inst-search"
+              placeholder="🔍 Buscar instâncias..."
+              oninput="filterInstances(this.value)">
+            <button class="btn-refresh" onclick="loadInstances(); const s=document.getElementById('inst-search'); if(s) s.value='';">↻ Atualizar</button>
+          </div>
+          <div class="inst-grid" id="instances-list">
+            <div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>
           </div>
         </div>
       </div>
@@ -2986,26 +3061,28 @@
         _instances = json.data;
 
         el.innerHTML = json.data.map(inst => {
-          const date  = new Date(inst.created_at).toLocaleString('pt-BR', {
-            day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit',
-          });
-          const safeN = inst.instance_name.replace(/'/g, "\\'");
-          const bid   = `connbadge-${inst.instance_name}`;
+          const safeN   = inst.instance_name.replace(/'/g, "\\'");
+          const bid     = `connbadge-${inst.instance_name}`;
+          const svalid  = `statusval-${inst.instance_name}`;
 
           return `
-            <div class="instance-item" id="inst-${CSS.escape(inst.instance_name)}">
-              <div class="inst-header">
-                <div class="instance-info">
-                  <div class="instance-name">${inst.instance_name}</div>
-                  <div class="instance-date">Criada em ${date}</div>
+            <div class="inst-card" id="inst-${CSS.escape(inst.instance_name)}">
+              <div class="inst-card-header">
+                <div class="inst-card-title-row">
+                  <div class="inst-card-name">${inst.instance_name}</div>
+                  <span class="conn-badge checking" id="${bid}">···</span>
                 </div>
-                <div class="inst-header-right">
-                  <div class="inst-badges">
-                    <span class="conn-badge checking" id="${bid}">···</span>
-                  </div>
-                  <button class="btn-gear" onclick="openInstanceSettings('${safeN}')"
-                    title="Configurações da instância" aria-label="Configurações">⚙</button>
-                </div>
+                <div class="inst-card-subtitle">${inst.instance_name}</div>
+              </div>
+              <hr class="inst-card-divider">
+              <div class="inst-card-status">
+                <span class="inst-card-status-label">Status</span>
+                <span class="inst-card-status-value" id="${svalid}">···</span>
+              </div>
+              <div class="inst-card-footer">
+                <button class="btn-connect" onclick="openQrModal('${safeN}')">⏻ Conectar</button>
+                <button class="btn-icon-card settings" onclick="openInstanceSettings('${safeN}')" title="Configurações">⚙</button>
+                <button class="btn-icon-card danger"   onclick="confirmDelete('${safeN}')" title="Deletar">🗑</button>
               </div>
             </div>`;
         }).join('');
@@ -3029,22 +3106,26 @@
       }
     }
 
-    /* Atualiza badge na lista e, se o painel de configurações estiver aberto para este nome, também lá */
+    /* Atualiza badge, valor de status e painel de configurações */
     function _applyStatusBadge(name, connected) {
-      /* Badge na lista */
+      /* Badge de conexão na lista */
       const listBadge = document.getElementById(`connbadge-${name}`);
       if (listBadge) {
-        listBadge.className = `conn-badge ${connected ? 'connected' : 'disconnected'}`;
-        listBadge.textContent = connected ? '● Conectado' : '○ Desconectado';
+        listBadge.className   = `conn-badge ${connected ? 'connected' : 'disconnected'}`;
+        listBadge.textContent = connected ? 'Conectado' : 'Desconectado';
       }
+      /* Valor de status (close / open) na linha Status do card */
+      const statusVal = document.getElementById(`statusval-${name}`);
+      if (statusVal) statusVal.textContent = connected ? 'open' : 'close';
+
       /* Badge no painel de configurações (se estiver aberto para esta instância) */
       const topbar = document.getElementById('is-topbar-name');
       if (topbar && topbar.textContent === name) {
         const connEl = document.getElementById('is-connection');
         if (connEl) {
           connEl.innerHTML = connected
-            ? '<span class="conn-badge connected">● Conectado</span>'
-            : '<span class="conn-badge disconnected">○ Desconectado</span>';
+            ? '<span class="conn-badge connected">Conectado</span>'
+            : '<span class="conn-badge disconnected">Desconectado</span>';
         }
         const disconnBtn = document.getElementById('is-btn-disconnect');
         if (disconnBtn) {
@@ -3052,6 +3133,15 @@
           disconnBtn.title    = connected ? '' : 'Instância não conectada';
         }
       }
+    }
+
+    /* Filtro de busca — exibe/oculta cards sem recarregar */
+    function filterInstances(query) {
+      const q = (query || '').toLowerCase().trim();
+      document.querySelectorAll('.inst-card').forEach(card => {
+        const nm = (card.querySelector('.inst-card-name')?.textContent || '').toLowerCase();
+        card.style.display = (!q || nm.includes(q)) ? '' : 'none';
+      });
     }
 
     /* ─── INSTANCE SETTINGS (SPA navigation) ─── */
