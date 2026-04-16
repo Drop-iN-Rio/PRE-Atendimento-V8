@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { runMigrations } from './db/migrate.js';
 import { createInstanceAndPersist, listInstances } from './services/instanceService.js';
 
 dotenv.config();
@@ -39,7 +38,8 @@ app.post('/api/instances', async (req, res) => {
     if (result.success) {
       res.status(201).json(result);
     } else {
-      res.status(result.error?.includes('já existe') ? 409 : 502).json(result);
+      const status = result.error?.includes('já existe') ? 409 : 502;
+      res.status(status).json(result);
     }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -57,16 +57,7 @@ app.get('/api/instances', async (_req, res) => {
   }
 });
 
-async function start() {
-  try {
-    await runMigrations();
-  } catch (err) {
-    console.error('⚠️  Migrations falharam, mas o servidor vai iniciar mesmo assim:', err);
-  }
-
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  });
-}
-
-start();
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor rodando na porta ${PORT}`);
+  console.log(`📦 Supabase: ${process.env.SUPABASE_DB_URL ? '✅ configurado' : '⚠️  não configurado'}`);
+});

@@ -51,6 +51,7 @@ timeoutMs = 20000
 [userenv.shared]
 VITE_API_URL = ""
 JWT_SECRET = "$SESSION_SECRET"
+SUPABASE_POSTGRES_URL = "postgresql://postgres:E9sMkQeeki6HkpQ7@db.yikemdxcswfvmwdvykiw.supabase.co:5432/postgres"
 
 [userenv.production]
 
