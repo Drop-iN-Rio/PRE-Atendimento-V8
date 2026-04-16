@@ -954,14 +954,21 @@
                 autocapitalize="none" spellcheck="false" />
             </div>
 
-            <button type="submit" class="btn" id="btn-save-config" style="margin-top:1rem;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 16px rgba(16,185,129,0.3)">
-              ✅ Salvar Configuração
-            </button>
+            <div style="display:flex;gap:0.6rem;margin-top:1rem;flex-wrap:wrap">
+              <button type="submit" class="btn" id="btn-save-config" style="flex:1;min-width:10rem;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 16px rgba(16,185,129,0.3)">
+                ✅ Salvar Configuração
+              </button>
+              <button type="button" class="btn" id="btn-test-conn" style="flex:1;min-width:10rem;background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 4px 16px rgba(59,130,246,0.3)">
+                🔌 Testar Conexão
+              </button>
+            </div>
           </form>
 
           <div class="config-saved-badge" id="config-saved-badge">
             ✅ Configuração salva com sucesso.
           </div>
+
+          <div id="conn-test-result" style="display:none;margin-top:0.85rem;padding:0.75rem 1rem;border-radius:0.6rem;font-size:0.85rem;font-weight:600;line-height:1.4"></div>
 
           <div style="margin-top:1rem">
             <div class="config-status" id="config-status-url">
@@ -1134,6 +1141,52 @@
         setTimeout(() => badge.classList.remove('visible'), 3500);
 
         updateAdminConfigUI();
+      });
+    }
+
+    /* ── Testar conexão ── */
+    const btnTest = document.getElementById('btn-test-conn');
+    if (btnTest) {
+      btnTest.addEventListener('click', async () => {
+        const url = document.getElementById('cfg-url').value.trim();
+        const key = document.getElementById('cfg-key').value.trim();
+
+        const resultEl = document.getElementById('conn-test-result');
+        resultEl.style.display = 'block';
+        resultEl.style.background = 'rgba(71,85,105,0.25)';
+        resultEl.style.color = '#94a3b8';
+        resultEl.style.border = '1px solid rgba(148,163,184,0.2)';
+        resultEl.textContent = '⏳ Testando conexão…';
+        btnTest.disabled = true;
+
+        try {
+          const res  = await fetch('/api/admin/test-connection', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ evolutionUrl: url || undefined, apiKey: key || undefined }),
+          });
+          const json = await res.json();
+
+          if (json.success) {
+            resultEl.style.background = 'rgba(16,185,129,0.15)';
+            resultEl.style.color      = '#4ade80';
+            resultEl.style.border     = '1px solid rgba(74,222,128,0.3)';
+            resultEl.textContent      = `✅ Conexão OK — ${json.message}`;
+          } else {
+            resultEl.style.background = 'rgba(239,68,68,0.15)';
+            resultEl.style.color      = '#f87171';
+            resultEl.style.border     = '1px solid rgba(248,113,113,0.3)';
+            const detail = json.detail ? `\n↳ ${json.detail}` : '';
+            resultEl.textContent = `❌ ${json.error || 'Falha na conexão.'}${detail}`;
+          }
+        } catch (err) {
+          resultEl.style.background = 'rgba(239,68,68,0.15)';
+          resultEl.style.color      = '#f87171';
+          resultEl.style.border     = '1px solid rgba(248,113,113,0.3)';
+          resultEl.textContent      = `❌ Erro de rede: ${err.message}`;
+        } finally {
+          btnTest.disabled = false;
+        }
       });
     }
 

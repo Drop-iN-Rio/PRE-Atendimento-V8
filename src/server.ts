@@ -130,6 +130,52 @@ app.post('/api/instances', async (req, res) => {
   }
 });
 
+/* ── Teste de conexão Evolution GO (admin only) ── */
+app.post('/api/admin/test-connection', async (req, res) => {
+  const { evolutionUrl, apiKey } = req.body as { evolutionUrl?: string; apiKey?: string };
+
+  const baseUrl = (evolutionUrl?.trim()) || process.env.EVOLUTION_API_URL || '';
+  const key     = (apiKey?.trim())      || process.env.GLOBAL_API_KEY    || '';
+
+  if (!baseUrl) {
+    res.status(400).json({ success: false, error: 'URL da Evolution GO não informada.' });
+    return;
+  }
+  if (!key) {
+    res.status(400).json({ success: false, error: 'GLOBAL_API_KEY não informada.' });
+    return;
+  }
+
+  const url = `${baseUrl}/instance/all`;
+  console.log('[TestConn] GET', url);
+
+  const controller = new AbortController();
+  const timeout    = setTimeout(() => controller.abort(), 10_000);
+
+  try {
+    const r = await fetch(url, {
+      method:  'GET',
+      headers: { 'Content-Type': 'application/json', apikey: key },
+      signal:  controller.signal,
+    });
+    clearTimeout(timeout);
+
+    const text = await r.text();
+    console.log('[TestConn] status', r.status, 'body', text.slice(0, 200));
+
+    if (r.ok) {
+      res.json({ success: true, status: r.status, message: 'Conexão estabelecida com sucesso.' });
+    } else {
+      res.json({ success: false, status: r.status, error: `API retornou HTTP ${r.status}.`, detail: text.slice(0, 300) });
+    }
+  } catch (err: unknown) {
+    clearTimeout(timeout);
+    const msg = err instanceof Error ? err.message : 'Erro desconhecido';
+    const isTimeout = msg.includes('abort') || msg.includes('AbortError');
+    res.status(502).json({ success: false, error: isTimeout ? 'Tempo limite esgotado (10 s).' : `Falha de rede: ${msg}` });
+  }
+});
+
 app.get('/api/instances', async (_req, res) => {
   try {
     const result = await listInstances();
