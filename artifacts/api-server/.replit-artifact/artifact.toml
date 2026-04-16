@@ -1,0 +1,10 @@
+schema_version = 1
+id = "artifacts/api-server"
+kind = "web"
+title = "PRE-Atendimento V8"
+
+[[services]]
+name = "web"
+port = 5000
+previewPath = "/"
+devCommand = "npm run dev"
