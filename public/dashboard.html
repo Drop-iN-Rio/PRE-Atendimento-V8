@@ -3,8 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#0f172a" id="meta-theme-color" />
   <title>Pre-Atendimento — Painel</title>
+  <!-- Aplica o tema antes do render para evitar flash -->
+  <script>
+    (function () {
+      var t = localStorage.getItem('pa_theme') || 'system';
+      var r = t === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : t;
+      document.documentElement.setAttribute('data-theme', r);
+      document.documentElement.setAttribute('data-theme-mode', t);
+    })();
+  </script>
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -1503,6 +1514,402 @@
     }
 
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ════════════════════════════════════════
+       TEMA CLARO — overrides
+       ════════════════════════════════════════ */
+
+    [data-theme="light"] {
+      color-scheme: light;
+    }
+
+    [data-theme="light"] body {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    /* Topbar */
+    [data-theme="light"] .topbar {
+      background: #ffffff;
+      border-bottom-color: #e2e8f0;
+    }
+    [data-theme="light"] .logo-text  { color: #0f172a; }
+    [data-theme="light"] .logo-sub   { color: #94a3b8; }
+    [data-theme="light"] .btn-hamburger {
+      border-color: #e2e8f0;
+      color: #475569;
+    }
+    [data-theme="light"] .btn-hamburger:active { border-color: #6366f1; color: #6366f1; }
+
+    /* Bottom nav */
+    [data-theme="light"] .bottom-nav {
+      background: #ffffff;
+      border-top-color: #e2e8f0;
+    }
+    [data-theme="light"] .bottom-nav-item       { color: #94a3b8; }
+    [data-theme="light"] .bottom-nav-item.active { color: #6366f1; }
+
+    /* Sidebar (desktop) */
+    [data-theme="light"] .sidebar {
+      background: #ffffff;
+      border-right-color: #e2e8f0;
+    }
+    [data-theme="light"] .sidebar-brand  { border-bottom-color: #e2e8f0; }
+    [data-theme="light"] .sidebar-logo-text { color: #0f172a; }
+    [data-theme="light"] .sidebar-logo-sub  { color: #94a3b8; }
+    [data-theme="light"] .sidebar-user  { border-bottom-color: #f1f5f9; }
+    [data-theme="light"] .sidebar-user-name { color: #0f172a; }
+    [data-theme="light"] .sidebar-user-role { color: #64748b; }
+    [data-theme="light"] .sidebar-nav-item {
+      color: #475569;
+    }
+    [data-theme="light"] .sidebar-nav-item:hover  { background: #f1f5f9; color: #0f172a; }
+    [data-theme="light"] .sidebar-nav-item.active {
+      background: #ede9fe;
+      color: #6366f1;
+    }
+    [data-theme="light"] .sidebar-footer { border-top-color: #e2e8f0; }
+    [data-theme="light"] .sidebar-logout {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+      color: #475569;
+    }
+    [data-theme="light"] .sidebar-logout:hover { background: #fee2e2; color: #ef4444; }
+    [data-theme="light"] .sidebar-config-status { color: #94a3b8; }
+    [data-theme="light"] .sidebar-config-status.ok  { color: #16a34a; }
+    [data-theme="light"] .sidebar-config-status.nok { color: #dc2626; }
+
+    /* Drawer mobile */
+    [data-theme="light"] .drawer {
+      background: #ffffff;
+      border-right-color: #e2e8f0;
+    }
+    [data-theme="light"] .drawer-header {
+      background: #ffffff;
+      border-bottom-color: #e2e8f0;
+    }
+    [data-theme="light"] .drawer-brand-text { color: #0f172a; }
+    [data-theme="light"] .btn-drawer-close  { color: #94a3b8; }
+    [data-theme="light"] .drawer-user       { border-bottom-color: #f1f5f9; }
+    [data-theme="light"] .drawer-user-name  { color: #0f172a; }
+    [data-theme="light"] .drawer-user-role  { color: #64748b; }
+    [data-theme="light"] .drawer-nav-item   { color: #475569; }
+    [data-theme="light"] .drawer-nav-item:hover  { background: #f1f5f9; }
+    [data-theme="light"] .drawer-nav-item.active { background: #ede9fe; color: #6366f1; }
+    [data-theme="light"] .drawer-footer     { border-top-color: #e2e8f0; }
+    [data-theme="light"] .drawer-logout     { color: #475569; }
+    [data-theme="light"] .drawer-logout:hover { color: #ef4444; }
+    [data-theme="light"] .drawer-cfg-status { color: #94a3b8; }
+
+    /* Cards */
+    [data-theme="light"] .card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .card-title { color: #0f172a; }
+    [data-theme="light"] .card-desc  { color: #64748b; }
+
+    /* Labels e inputs */
+    [data-theme="light"] label { color: #475569; }
+    [data-theme="light"] input[type="text"],
+    [data-theme="light"] input[type="password"],
+    [data-theme="light"] input[type="email"] {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      color: #0f172a;
+    }
+    [data-theme="light"] input::placeholder { color: #94a3b8; }
+    [data-theme="light"] input:focus {
+      border-color: #6366f1;
+      background: #ffffff;
+    }
+
+    /* Token block */
+    [data-theme="light"] .token-block {
+      background: #f0f7ff;
+      border-color: #bfdbfe;
+    }
+    [data-theme="light"] .token-block-title { color: #16a34a; }
+    [data-theme="light"] .token-block.warn  { background: #fffbeb; border-color: #fcd34d; }
+    [data-theme="light"] .token-block.warn .token-block-title { color: #b45309; }
+    [data-theme="light"] .token-row {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .token-label { color: #94a3b8; }
+    [data-theme="light"] .token-value { color: #0f172a; }
+
+    /* Lista de instâncias */
+    [data-theme="light"] .instance-item {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .instance-item:hover  { background: #f8fafc; border-color: #c7d2fe; }
+    [data-theme="light"] .instance-name { color: #0f172a; }
+    [data-theme="light"] .instance-date { color: #94a3b8; }
+    [data-theme="light"] .empty-state   { color: #94a3b8; }
+    [data-theme="light"] .list-header   { border-bottom-color: #e2e8f0; }
+    [data-theme="light"] .btn-refresh {
+      color: #6366f1;
+      border-color: #c7d2fe;
+      background: #ede9fe;
+    }
+    [data-theme="light"] .btn-gear {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      color: #64748b;
+    }
+    [data-theme="light"] .btn-gear:hover { background: #e2e8f0; }
+
+    /* Instance settings panel */
+    [data-theme="light"] #panel-instance { background: #f1f5f9; }
+    [data-theme="light"] .is-topbar {
+      background: #ffffff;
+      border-bottom-color: #e2e8f0;
+    }
+    [data-theme="light"] .is-topbar-name { color: #0f172a; }
+    [data-theme="light"] .btn-back { color: #6366f1; }
+    [data-theme="light"] .is-section {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .is-section-title { color: #64748b; border-bottom-color: #f1f5f9; }
+    [data-theme="light"] .is-row { border-bottom-color: #f1f5f9; }
+    [data-theme="light"] .is-row-label { color: #94a3b8; }
+    [data-theme="light"] .is-row-value { color: #0f172a; }
+    [data-theme="light"] .is-desc      { color: #64748b; }
+
+    /* Modal QR Code */
+    [data-theme="light"] .qr-modal    { background: rgba(0,0,0,0.4); }
+    [data-theme="light"] .qr-box {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .qr-box-title  { color: #0f172a; }
+    [data-theme="light"] .qr-box-name   { color: #6366f1; }
+    [data-theme="light"] .btn-qr-close  { color: #94a3b8; }
+    [data-theme="light"] .btn-qr-close:hover { color: #0f172a; }
+    [data-theme="light"] .qr-img-area   { background: #f8fafc; border-color: #e2e8f0; }
+    [data-theme="light"] .qr-status     { color: #475569; }
+    [data-theme="light"] .qr-timer      { color: #94a3b8; }
+    [data-theme="light"] .qr-btn-refresh {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      color: #475569;
+    }
+    [data-theme="light"] .qr-btn-close-bottom {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      color: #475569;
+    }
+
+    /* Modal confirmação */
+    [data-theme="light"] .modal-overlay { background: rgba(0,0,0,0.4); }
+    [data-theme="light"] .modal-box {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .modal-title       { color: #0f172a; }
+    [data-theme="light"] .modal-desc        { color: #64748b; }
+    [data-theme="light"] .modal-instance-name { color: #475569; }
+    [data-theme="light"] .modal-btn-cancel {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+      color: #475569;
+    }
+
+    /* Raw response */
+    [data-theme="light"] .raw-resp-details {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .raw-resp-details summary { color: #94a3b8; }
+    [data-theme="light"] .raw-resp-pre {
+      color: #1d4ed8;
+      border-top-color: #e2e8f0;
+    }
+    [data-theme="light"] .qr-raw-details {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+    [data-theme="light"] .qr-raw-details summary { color: #94a3b8; }
+    [data-theme="light"] .qr-raw-pre {
+      color: #1d4ed8;
+      border-top-color: #e2e8f0;
+    }
+
+    /* Alert boxes */
+    [data-theme="light"] .alert.error {
+      background: #fff1f2;
+      border-color: #fca5a5;
+      color: #b91c1c;
+    }
+    [data-theme="light"] .alert.success {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #15803d;
+    }
+    [data-theme="light"] .alert pre { color: #b91c1c; }
+
+    /* Config status badges */
+    [data-theme="light"] .config-status { color: #94a3b8; background: #f8fafc; border-color: #e2e8f0; }
+    [data-theme="light"] .config-status.ok  { color: #15803d; }
+    [data-theme="light"] .config-status.nok { color: #dc2626; }
+    [data-theme="light"] #conn-test-result  { background: #f8fafc !important; }
+
+    /* User strip */
+    [data-theme="light"] .user-strip        { background: #f8fafc; border-bottom-color: #e2e8f0; }
+    [data-theme="light"] .user-strip-name   { color: #475569; }
+
+    /* ═══════════════════════════════════════
+       BOTÃO TEMA + DROPDOWN
+       ═══════════════════════════════════════ */
+
+    .theme-menu-wrap {
+      position: relative;
+    }
+
+    .btn-theme {
+      width: 40px; height: 40px;
+      background: transparent;
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      color: #94a3b8;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      touch-action: manipulation;
+      transition: all 0.18s;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .btn-theme:active,
+    .btn-theme.open {
+      border-color: #6366f1;
+      color: #818cf8;
+      background: rgba(99,102,241,0.08);
+    }
+
+    [data-theme="light"] .btn-theme {
+      border-color: #e2e8f0;
+      color: #475569;
+    }
+
+    [data-theme="light"] .btn-theme:active,
+    [data-theme="light"] .btn-theme.open {
+      border-color: #6366f1;
+      color: #6366f1;
+      background: rgba(99,102,241,0.08);
+    }
+
+    /* Dropdown */
+    .theme-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 130px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      z-index: 500;
+      overflow: hidden;
+      animation: dd-in 0.15s ease;
+    }
+
+    .theme-dropdown.open { display: block; }
+
+    @keyframes dd-in {
+      from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    [data-theme="light"] .theme-dropdown {
+      background: #ffffff;
+      border-color: #e2e8f0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    .theme-opt {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      width: 100%;
+      padding: 0.7rem 1rem;
+      background: transparent;
+      border: none;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.13s;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .theme-opt:last-child { border-bottom: none; }
+
+    .theme-opt:hover {
+      background: rgba(255,255,255,0.07);
+      color: #f1f5f9;
+    }
+
+    .theme-opt.active {
+      color: #818cf8;
+      font-weight: 700;
+    }
+
+    .theme-opt .theme-opt-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #6366f1;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .theme-opt.active .theme-opt-dot { opacity: 1; }
+
+    [data-theme="light"] .theme-opt {
+      color: #475569;
+      border-bottom-color: #f1f5f9;
+    }
+
+    [data-theme="light"] .theme-opt:hover { background: #f8fafc; color: #0f172a; }
+    [data-theme="light"] .theme-opt.active { color: #6366f1; }
+
+    /* Sidebar theme button (desktop) */
+    .sidebar-theme-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1.25rem;
+      border-bottom: 1px solid #334155;
+      flex-shrink: 0;
+    }
+
+    [data-theme="light"] .sidebar-theme-row { border-bottom-color: #e2e8f0; }
+
+    .sidebar-theme-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    [data-theme="light"] .sidebar-theme-label { color: #94a3b8; }
+
+    /* Theme dropdown opening to the right on sidebar */
+    .sidebar-theme-row .theme-dropdown {
+      top: calc(100% + 4px);
+      right: 1.25rem;
+    }
   </style>
 </head>
 <body>
@@ -1541,6 +1948,29 @@
         <span class="sidebar-nav-icon">⚙️</span> Configuração
       </button>
     </nav>
+
+    <!-- Seletor de tema (desktop sidebar) -->
+    <div class="sidebar-theme-row">
+      <span class="sidebar-theme-label">Tema</span>
+      <div class="theme-menu-wrap">
+        <button class="btn-theme" id="btn-theme-side"
+          onclick="toggleThemeMenu('side')" aria-label="Tema" aria-haspopup="true">
+          <span class="btn-theme-icon">🌙</span>
+        </button>
+        <div class="theme-dropdown" id="theme-dd-side" role="menu"
+          style="right:0;top:calc(100% + 6px)">
+          <button class="theme-opt" data-theme="light" onclick="applyTheme('light')">
+            <span class="theme-opt-dot"></span> Claro
+          </button>
+          <button class="theme-opt" data-theme="dark" onclick="applyTheme('dark')">
+            <span class="theme-opt-dot"></span> Escuro
+          </button>
+          <button class="theme-opt" data-theme="system" onclick="applyTheme('system')">
+            <span class="theme-opt-dot"></span> Sistema
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="sidebar-footer">
       <div class="sidebar-config-status admin-only" id="sidebar-cfg-status">○ API não configurada</div>
@@ -1610,7 +2040,27 @@
           <div class="logo-sub">Painel de Controle</div>
         </div>
       </div>
-      <button class="btn-hamburger" onclick="openDrawer()" aria-label="Abrir menu">☰</button>
+      <div style="display:flex;align-items:center;gap:0.45rem">
+        <!-- Botão de tema -->
+        <div class="theme-menu-wrap">
+          <button class="btn-theme" id="btn-theme-top"
+            onclick="toggleThemeMenu('top')" aria-label="Tema" aria-haspopup="true">
+            <span class="btn-theme-icon">🌙</span>
+          </button>
+          <div class="theme-dropdown" id="theme-dd-top" role="menu">
+            <button class="theme-opt" data-theme="light" onclick="applyTheme('light')">
+              <span class="theme-opt-dot"></span> Claro
+            </button>
+            <button class="theme-opt" data-theme="dark" onclick="applyTheme('dark')">
+              <span class="theme-opt-dot"></span> Escuro
+            </button>
+            <button class="theme-opt" data-theme="system" onclick="applyTheme('system')">
+              <span class="theme-opt-dot"></span> Sistema
+            </button>
+          </div>
+        </div>
+        <button class="btn-hamburger" onclick="openDrawer()" aria-label="Abrir menu">☰</button>
+      </div>
     </nav>
 
     <!-- PANELS -->
@@ -1909,6 +2359,96 @@
   </div>
 
   <script>
+    /* ══════════════════════════════════════════
+       TEMA — inicialização, aplicação, dropdown
+       ══════════════════════════════════════════ */
+
+    const THEME_KEY = 'pa_theme';
+    let _themeMediaQuery = null;
+
+    function _getSystemTheme() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function _resolvedTheme(mode) {
+      return mode === 'system' ? _getSystemTheme() : mode;
+    }
+
+    function _themeIcon(resolved) {
+      return resolved === 'dark' ? '🌙' : '☀️';
+    }
+
+    function _syncThemeUI(mode) {
+      const resolved = _resolvedTheme(mode);
+      document.documentElement.setAttribute('data-theme', resolved);
+      document.documentElement.setAttribute('data-theme-mode', mode);
+
+      /* Ícone em todos os botões */
+      const icon = _themeIcon(resolved);
+      document.querySelectorAll('.btn-theme-icon').forEach(el => { el.textContent = icon; });
+
+      /* Marca opção ativa nos dropdowns */
+      document.querySelectorAll('.theme-opt').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === mode);
+      });
+
+      /* Abre/fecha botão visual */
+      document.querySelectorAll('.btn-theme').forEach(btn => {
+        btn.classList.remove('open');
+      });
+
+      /* Atualiza meta theme-color */
+      const metaColor = document.getElementById('meta-theme-color');
+      if (metaColor) {
+        metaColor.content = resolved === 'dark' ? '#0f172a' : '#f1f5f9';
+      }
+    }
+
+    function applyTheme(mode) {
+      localStorage.setItem(THEME_KEY, mode);
+      _syncThemeUI(mode);
+      closeAllThemeMenus();
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY) || 'system';
+      _syncThemeUI(saved);
+
+      /* Reage a mudança no tema do sistema quando mode === 'system' */
+      if (_themeMediaQuery) {
+        _themeMediaQuery.removeEventListener('change', _onSystemThemeChange);
+      }
+      _themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      _themeMediaQuery.addEventListener('change', _onSystemThemeChange);
+    }
+
+    function _onSystemThemeChange() {
+      const mode = localStorage.getItem(THEME_KEY) || 'system';
+      if (mode === 'system') _syncThemeUI('system');
+    }
+
+    function toggleThemeMenu(id) {
+      const dd  = document.getElementById('theme-dd-' + id);
+      const btn = document.getElementById('btn-theme-' + id);
+      if (!dd || !btn) return;
+      const isOpen = dd.classList.contains('open');
+      closeAllThemeMenus();
+      if (!isOpen) {
+        dd.classList.add('open');
+        btn.classList.add('open');
+      }
+    }
+
+    function closeAllThemeMenus() {
+      document.querySelectorAll('.theme-dropdown').forEach(d => d.classList.remove('open'));
+      document.querySelectorAll('.btn-theme').forEach(b => b.classList.remove('open'));
+    }
+
+    /* Fecha dropdown ao clicar fora */
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.theme-menu-wrap')) closeAllThemeMenus();
+    });
+
     /* ─── AUTH GUARD ─── */
     const raw = localStorage.getItem('pa_session');
     if (!raw) {
@@ -2667,6 +3207,7 @@
     }
 
     /* ─── INIT ─── */
+    initTheme();
     loadInstances();
     updateAdminConfigUI();
   </script>
