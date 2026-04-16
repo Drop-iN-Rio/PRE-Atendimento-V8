@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { runMigrations } from './db/migrate.js';
 import { createInstanceAndPersist, listInstances } from './services/instanceService.js';
 
 dotenv.config();
@@ -57,7 +58,17 @@ app.get('/api/instances', async (_req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor rodando na porta ${PORT}`);
-  console.log(`📦 Supabase: ${process.env.SUPABASE_DB_URL ? '✅ configurado' : '⚠️  não configurado'}`);
-});
+async function start() {
+  try {
+    await runMigrations();
+  } catch (err) {
+    console.error('⚠️  Migrations falharam, servidor iniciará mesmo assim:', err);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    console.log(`📦 Supabase: ${process.env.SUPABASE_DB_URL ? '✅ configurado' : '⚠️  não configurado'}`);
+  });
+}
+
+start();
