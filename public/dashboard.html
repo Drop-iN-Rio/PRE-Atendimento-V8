@@ -2215,7 +2215,7 @@
 
             <div style="margin-top:0.85rem">
               <button class="btn-qr-create" id="tk-btn-qr"
-                onclick="_lastCreatedName && openQrModal(_lastCreatedName)">
+                onclick="_lastCreatedName && openQrModal(_lastCreatedName, _qrCurrentToken)">
                 📷 Pegar QRCode
               </button>
             </div>
@@ -2776,8 +2776,10 @@
             createdEl.textContent = '—';
           }
 
-          /* Guardar nome para o botão "Pegar QRCode" */
-          _lastCreatedName = inner.name || inner.instanceName || data.instance_name || instanceName;
+          /* Guardar nome e token para o botão "Pegar QRCode" */
+          _lastCreatedName  = inner.name || inner.instanceName || data.instance_name || instanceName;
+          _qrCurrentToken   = data.instance_token || inner.token || inner.apikey || null;
+          _qrCurrentName    = _lastCreatedName;
 
           /* Mostrar resposta completa da API */
           const rawEl = document.getElementById('tk-raw-details');
@@ -2798,7 +2800,7 @@
           tb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
           /* Abrir QR Code automaticamente após o scroll */
-          setTimeout(() => openQrModal(_lastCreatedName), 700);
+          setTimeout(() => openQrModal(_lastCreatedName, _qrCurrentToken), 700);
 
         } else {
           /* ── ERRO ── mostrar resposta completa da API */
@@ -3092,15 +3094,36 @@
     let _lastCreatedName = null;
 
     /* ─── QR CODE ─── */
-    let _qrTimer       = null;
-    let _qrCurrentName = null;
-    let _qrCountdown   = 20;
+    let _qrTimer          = null;
+    let _qrCurrentName    = null;
+    let _qrCurrentToken   = null;   /* token da instância para auth no /instance/qr */
+    let _qrCountdown      = 20;
+    let _qrPollingTimer   = null;   /* polling quando QR ainda não está disponível */
+    let _qrPollingCount   = 0;
+    const QR_POLL_MAX     = 25;     /* máx 25 tentativas × 3s = 75s de espera */
+    const QR_POLL_INTERVAL= 3000;
 
-    function openQrModal(name) {
-      _qrCurrentName = name;
+    /* Extrai o token de instância dos dados da lista de instâncias */
+    function _getInstanceToken(name) {
+      /* Prioridade 1: token armazenado na criação mais recente */
+      if (_qrCurrentToken && _qrCurrentName === name) return _qrCurrentToken;
+
+      /* Prioridade 2: buscar na lista carregada */
+      const inst = _instances.find(i => i.instance_name === name);
+      if (!inst) return '';
+
+      const meta       = inst.metadata || {};
+      const createData = meta.create?.data || meta.data || {};
+      return createData.token || '';
+    }
+
+    function openQrModal(name, token) {
+      _qrCurrentName  = name;
+      _qrCurrentToken = token || _getInstanceToken(name) || null;
       document.getElementById('qr-box-name').textContent = name;
       document.getElementById('qr-modal').classList.add('open');
       document.body.style.overflow = 'hidden';
+      _qrPollingCount = 0;
       fetchQr(name);
     }
 
@@ -3108,8 +3131,12 @@
       document.getElementById('qr-modal').classList.remove('open');
       document.body.style.overflow = '';
       clearInterval(_qrTimer);
-      _qrTimer = null;
-      _qrCurrentName = null;
+      clearTimeout(_qrPollingTimer);
+      _qrTimer        = null;
+      _qrPollingTimer = null;
+      _qrCurrentName  = null;
+      _qrCurrentToken = null;
+      _qrPollingCount = 0;
       document.getElementById('qr-timer').textContent = '';
     }
 
@@ -3128,10 +3155,14 @@
               background:#0f172a;border-radius:10px;color:${color};font-size:2.5rem">${icon}</div>`;
     }
 
+    /* Countdown após QR exibido (para atualizar antes de expirar) */
     function _startAutoRefresh(name) {
       clearInterval(_qrTimer);
-      _qrCountdown = 20;
-      const timerEl = document.getElementById('qr-timer');
+      clearTimeout(_qrPollingTimer);
+      _qrPollingTimer = null;
+      _qrPollingCount = 0;
+      _qrCountdown    = 20;
+      const timerEl   = document.getElementById('qr-timer');
       timerEl.textContent = `Atualizando em ${_qrCountdown}s…`;
 
       _qrTimer = setInterval(() => {
@@ -3147,38 +3178,82 @@
       }, 1000);
     }
 
-    async function fetchQr(name) {
+    /* Polling enquanto o QR ainda não está disponível */
+    function _scheduleQrPoll(name) {
+      clearTimeout(_qrPollingTimer);
+      _qrPollingCount++;
+      const remaining = QR_POLL_MAX - _qrPollingCount;
+
+      if (_qrPollingCount > QR_POLL_MAX) {
+        _setQrStatus('⏱️ Tempo esgotado. O QR Code não foi gerado. Tente atualizar manualmente.', '#fbbf24');
+        _setQrImg(_qrPlaceholder('⏱️', '#fbbf24'));
+        document.getElementById('qr-btn-refresh').disabled = false;
+        document.getElementById('qr-timer').textContent = '';
+        return;
+      }
+
+      const secs = Math.ceil(QR_POLL_INTERVAL / 1000);
+      document.getElementById('qr-timer').textContent =
+        `Gerando QR Code… tentativa ${_qrPollingCount}/${QR_POLL_MAX} (próxima em ${secs}s)`;
+
+      _qrPollingTimer = setTimeout(() => {
+        if (_qrCurrentName !== name) return;
+        fetchQr(name, true /* isPolling */);
+      }, QR_POLL_INTERVAL);
+    }
+
+    async function fetchQr(name, isPollingRetry) {
       if (!name) return;
       clearInterval(_qrTimer);
       _qrTimer = null;
-      document.getElementById('qr-timer').textContent = '';
+
+      if (!isPollingRetry) {
+        /* Reset do polling ao buscar manualmente */
+        clearTimeout(_qrPollingTimer);
+        _qrPollingTimer = null;
+        _qrPollingCount = 0;
+        document.getElementById('qr-timer').textContent = '';
+        _setQrStatus('⏳ Buscando QR Code…');
+        _setQrImg(_qrPlaceholder('⏳', '#475569'));
+      }
+
       document.getElementById('qr-btn-refresh').disabled = true;
       document.getElementById('qr-raw-details').style.display = 'none';
-      _setQrStatus('⏳ Buscando QR Code…');
-      _setQrImg(_qrPlaceholder('⏳', '#475569'));
 
       try {
-        const overrides = getApiOverrides();
-        const params    = new URLSearchParams();
+        const overrides       = getApiOverrides();
+        const instanceToken   = _qrCurrentToken || _getInstanceToken(name);
+        const params          = new URLSearchParams();
         if (overrides.evolutionUrl) params.set('evolutionUrl', overrides.evolutionUrl);
-        if (overrides.apiKey)       params.set('apiKey', overrides.apiKey);
+        if (instanceToken)          params.set('instanceToken', instanceToken);
 
-        /* GET /instance/get-qr-code?instanceName={name} — endpoint único oficial */
-        const url = `/api/instances/${encodeURIComponent(name)}/qrcode${params.size ? '?' + params.toString() : ''}`;
+        const url  = `/api/instances/${encodeURIComponent(name)}/qrcode${params.size ? '?' + params.toString() : ''}`;
         const res  = await fetch(url);
         const json = await res.json();
 
         /* Log completo no console para diagnóstico */
         console.group('[QRCode] Resposta do servidor');
-        console.log('Instância   :', name);
-        console.log('URL chamada :', json.urlCalled || url);
-        console.log('HTTP status :', res.status);
-        console.log('success     :', json.success);
-        console.log('error       :', json.error);
-        console.log('data        :', json.data);
+        console.log('Instância    :', name);
+        console.log('Token        :', instanceToken ? '***' : '(não disponível)');
+        console.log('URL chamada  :', json.urlCalled || url);
+        console.log('HTTP status  :', res.status);
+        console.log('success      :', json.success);
+        console.log('polling      :', json.polling);
+        console.log('error        :', json.error);
+        console.log('data         :', json.data);
         console.groupEnd();
 
-        /* Exibir resposta completa da API sempre */
+        /* ── Polling: QR ainda não está disponível (HTTP 202) ── */
+        if (res.status === 202 && json.polling) {
+          if (!isPollingRetry) {
+            _setQrImg(_qrPlaceholder('⏳', '#475569'));
+          }
+          _setQrStatus('⏳ Gerando QR Code, aguarde…', '#94a3b8');
+          _scheduleQrPoll(name);
+          return;
+        }
+
+        /* Exibir resposta completa da API */
         const rawDetails = document.getElementById('qr-raw-details');
         const rawPre     = document.getElementById('qr-raw-pre');
         if (rawDetails && rawPre) {
@@ -3187,9 +3262,8 @@
         }
 
         if (!res.ok || !json.success) {
-          const errMsg = json.error || `Erro HTTP ${res.status}`;
-          const urlInfo = json.urlCalled
-            ? `\nURL: ${json.urlCalled}` : '';
+          const errMsg  = json.error || `Erro HTTP ${res.status}`;
+          const urlInfo = json.urlCalled ? `URL: ${json.urlCalled}` : '';
           _setQrStatus(`❌ ${errMsg}`, '#f87171');
           _setQrImg(`<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;
             justify-content:center;background:#0f172a;border-radius:10px;gap:0.4rem;padding:0.75rem">
@@ -3200,27 +3274,33 @@
           return;
         }
 
-        /* Normalizar resposta Evolution GO:
-           Formatos possíveis:
-           { base64, code }                    — direto
-           { qrcode: { base64, code } }        — encapsulado
-           { data: { base64, code } }          — em data
-           { instance: {...}, qrcode: {...} }  — resposta do /create
+        /* ── Normalizar resposta Evolution GO ──
+           Evolution GO /instance/qr retorna:
+             { data: { data: { Qrcode: "data:image/png;base64,...", Code: "..." } } }
+           Outros formatos possíveis (fallback):
+             { data: { base64, code } }
+             { base64, code }
+             { qrcode: { base64, code } }
         */
-        const d      = json.data || {};
+        const outer  = json.data || json;
+        const inner  = outer?.data || outer;
+
         const base64 =
-          d?.base64 || d?.qrcode?.base64 || d?.data?.base64 || null;
+          inner?.Qrcode || inner?.qrcode ||                            /* Evolution GO */
+          outer?.base64 || outer?.qrcode?.base64 || inner?.base64 ||   /* outros formatos */
+          null;
+
         const code =
-          d?.code   || d?.qrcode?.code   || d?.data?.code   || null;
+          inner?.Code   || inner?.code   ||                            /* Evolution GO */
+          outer?.code   || outer?.qrcode?.code   || inner?.code_text || /* outros formatos */
+          null;
 
         if (base64) {
-          /* Garante que a string é uma data URL válida */
           const src = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
           _setQrImg(`<img src="${src}" alt="QR Code" style="width:100%;height:100%;object-fit:contain;border-radius:8px" />`);
           _setQrStatus('📱 Escaneie com o WhatsApp', '#4ade80');
           _startAutoRefresh(name);
         } else if (code) {
-          /* Código de pareamento em texto */
           _setQrImg(`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
             background:#0f172a;border-radius:10px;">
             <div style="font-family:'Courier New',monospace;font-size:1.5rem;color:#818cf8;

@@ -129,13 +129,39 @@ export async function listInstances() {
   return { success: true, data };
 }
 
-/* ── Desconectar (POST /instance/disconnect) ── */
+/* ── Extrair UUID e token do metadata de uma instância ── */
+async function getInstanceMeta(instanceName: string): Promise<{ uuid: string; token: string }> {
+  const { data: inst } = await supabaseAdmin
+    .from('instances')
+    .select('metadata')
+    .eq('instance_name', instanceName)
+    .maybeSingle();
+
+  if (!inst?.metadata) return { uuid: '', token: '' };
+  const meta       = inst.metadata as Record<string, unknown>;
+  const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
+  return {
+    uuid:  String(createData?.id    || ''),
+    token: String(createData?.token || ''),
+  };
+}
+
+/* ── Desconectar (POST /instance/disconnect) ──
+   Evolution GO exige o TOKEN DA INSTÂNCIA no header apikey (não GLOBAL_API_KEY).
+*/
 export async function disconnectInstanceService(
-  instanceName: string,
-  overrideUrl?: string,
-  overrideKey?: string,
+  instanceName:   string,
+  instanceToken?: string,   /* token da instância — buscado no DB se não informado */
+  overrideUrl?:   string,
 ) {
-  const result = await callDisconnect(instanceName, overrideUrl, overrideKey);
+  /* Obter token da instância se não fornecido */
+  let token = instanceToken || '';
+  if (!token) {
+    const meta = await getInstanceMeta(instanceName);
+    token = meta.token;
+  }
+
+  const result = await callDisconnect(instanceName, token, overrideUrl);
 
   if (result.success) {
     await supabaseAdmin
@@ -158,24 +184,37 @@ export async function disconnectInstanceService(
   return { success: result.success, data: result.data, error: result.error };
 }
 
-/* ── Deletar (DELETE /instance/delete) ── */
+/* ── Deletar (DELETE /instance/delete/{uuid}) ──
+   Evolution GO usa UUID no path (não instanceName no body).
+   O UUID vem do metadata.create.data.id armazenado no banco.
+*/
 export async function deleteInstanceService(
   instanceName: string,
   overrideUrl?: string,
   overrideKey?: string,
 ) {
-  const result = await callDelete(instanceName, overrideUrl, overrideKey);
+  /* Buscar UUID no banco */
+  const meta = await getInstanceMeta(instanceName);
+  const uuid = meta.uuid;
 
-  if (result.success) {
-    const { data: inst } = await supabaseAdmin
-      .from('instances').select('id').eq('instance_name', instanceName).maybeSingle();
-
-    if (inst?.id) {
-      await supabaseAdmin.from('instance_logs').delete().eq('instance_id', inst.id);
-    }
-
-    await supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
+  let result;
+  if (uuid) {
+    result = await callDelete(uuid, overrideUrl, overrideKey);
+  } else {
+    /* Sem UUID — apenas limpa do banco local */
+    console.warn(`[deleteInstanceService] UUID não encontrado para "${instanceName}" — removendo apenas do DB.`);
+    result = { success: true, data: null, error: undefined };
   }
+
+  /* Limpar do banco local independente do resultado da API */
+  const { data: inst } = await supabaseAdmin
+    .from('instances').select('id').eq('instance_name', instanceName).maybeSingle();
+
+  if (inst?.id) {
+    await supabaseAdmin.from('instance_logs').delete().eq('instance_id', inst.id);
+  }
+
+  await supabaseAdmin.from('instances').delete().eq('instance_name', instanceName);
 
   return { success: result.success, data: result.data, error: result.error };
 }

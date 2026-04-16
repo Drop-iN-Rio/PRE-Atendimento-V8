@@ -77,7 +77,8 @@ async function callApi(
 /* ── 1. Criar instância ──────────────────────────────────────────────
    POST /instance/create
    Header: apikey: GLOBAL_API_KEY
-   Body:   { instanceName, qrcode: true, token (opcional) }
+   Body:   { name, qrcode: true, token? }
+   NOTA: Evolution GO usa "name", não "instanceName"
 */
 export async function createInstance(
   instanceName: string,
@@ -88,7 +89,7 @@ export async function createInstance(
   return callApi(
     'POST',
     '/instance/create',
-    { instanceName, qrcode: true, token: token || '' },
+    { name: instanceName, qrcode: true, token: token || '' },
     overrideUrl,
     overrideKey,
   );
@@ -96,13 +97,14 @@ export async function createInstance(
 
 /* ── 2. Conectar instância ───────────────────────────────────────────
    POST /instance/connect
-   Header: apikey: <token da instância retornado pelo /create>
-            *** NÃO usar GLOBAL_API_KEY aqui ***
+   Header: apikey: <token da instância>  *** NÃO usar GLOBAL_API_KEY ***
    Body:   { instanceName }
+   Resposta: { data: { eventString, jid, webhookUrl } }
+   (Inicia o cliente WhatsApp — gera QR code assincronamente)
 */
 export async function connectInstance(
   instanceName:  string,
-  instanceToken: string,   // token retornado pelo createInstance, NÃO o GLOBAL_API_KEY
+  instanceToken: string,
   overrideUrl?:  string,
 ): Promise<EvolutionResponse> {
   if (!instanceToken) {
@@ -113,63 +115,92 @@ export async function connectInstance(
     '/instance/connect',
     { instanceName },
     overrideUrl,
-    instanceToken,    // passa o token da instância como apikey
+    instanceToken,
   );
 }
 
 /* ── 3. Obter QR Code ────────────────────────────────────────────────
-   GET /instance/get-qr-code?instanceName={name}
-   Header: apikey: GLOBAL_API_KEY
-   Sem fallbacks — endpoint único e oficial.
+   GET /instance/qr?instanceName={name}
+   Header: apikey: <token da instância>  *** NÃO usar GLOBAL_API_KEY ***
+   Retorna HTTP 400 com "no QR code available. Please wait a moment and try again"
+   enquanto o cliente está iniciando — fazer polling até obter sucesso.
+   NOTA: O endpoint correto é /instance/qr (não /instance/get-qr-code que retorna 404)
 */
 export async function getQrCode(
-  instanceName: string,
-  overrideUrl?: string,
-  overrideKey?: string,
+  instanceName:  string,
+  instanceToken: string,
+  overrideUrl?:  string,
+): Promise<EvolutionResponse> {
+  if (!instanceToken) {
+    return { success: false, error: 'Token da instância não fornecido para buscar QR Code.' };
+  }
+  const enc = encodeURIComponent(instanceName);
+  return callApi(
+    'GET',
+    `/instance/qr?instanceName=${enc}`,
+    undefined,
+    overrideUrl,
+    instanceToken,
+  );
+}
+
+/* ── 4. Status da instância ──────────────────────────────────────────
+   GET /instance/status?instanceName={name}
+   Header: apikey: <token da instância>
+   Retorna: { error: "client disconnected" } ou { error: "no active session found" }
+*/
+export async function getInstanceStatus(
+  instanceName:  string,
+  instanceToken: string,
+  overrideUrl?:  string,
 ): Promise<EvolutionResponse> {
   const enc = encodeURIComponent(instanceName);
   return callApi(
     'GET',
-    `/instance/get-qr-code?instanceName=${enc}`,
+    `/instance/status?instanceName=${enc}`,
     undefined,
     overrideUrl,
-    overrideKey,
+    instanceToken,
   );
 }
 
-/* ── 4. Desconectar instância ────────────────────────────────────────
+/* ── 5. Desconectar instância ────────────────────────────────────────
    POST /instance/disconnect
-   Header: apikey: GLOBAL_API_KEY
+   Header: apikey: <token da instância>  *** NÃO usar GLOBAL_API_KEY (retorna 401) ***
    Body:   { instanceName }
 */
 export async function disconnectInstance(
-  instanceName: string,
-  overrideUrl?: string,
-  overrideKey?: string,
+  instanceName:  string,
+  instanceToken: string,
+  overrideUrl?:  string,
 ): Promise<EvolutionResponse> {
+  if (!instanceToken) {
+    return { success: false, error: 'Token da instância não fornecido para desconectar.' };
+  }
   return callApi(
     'POST',
     '/instance/disconnect',
     { instanceName },
     overrideUrl,
-    overrideKey,
+    instanceToken,
   );
 }
 
-/* ── 5. Deletar instância ────────────────────────────────────────────
-   DELETE /instance/delete
+/* ── 6. Deletar instância ────────────────────────────────────────────
+   DELETE /instance/delete/{uuid}
    Header: apikey: GLOBAL_API_KEY
-   Body:   { instanceName }
+   NOTA: O path usa UUID (não instanceName no body).
+         O UUID vem da resposta do /instance/create (data.id) ou /instance/all.
 */
 export async function deleteInstance(
-  instanceName: string,
+  instanceUuid: string,   /* UUID da instância (não o nome) */
   overrideUrl?: string,
   overrideKey?: string,
 ): Promise<EvolutionResponse> {
   return callApi(
     'DELETE',
-    '/instance/delete',
-    { instanceName },
+    `/instance/delete/${encodeURIComponent(instanceUuid)}`,
+    undefined,
     overrideUrl,
     overrideKey,
   );
