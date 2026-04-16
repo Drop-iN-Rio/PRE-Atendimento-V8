@@ -279,6 +279,60 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── AVISO DE CONFIGURAÇÃO ── */
+    .config-warning {
+      display: none;
+      background: rgba(78, 42, 0, 0.85);
+      border: 1.5px solid rgba(234, 179, 8, 0.55);
+      border-radius: 14px;
+      padding: 1rem 1.1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .config-warning.visible { display: block; }
+
+    .config-warning-title {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #fde68a;
+      margin-bottom: 0.45rem;
+    }
+
+    .config-warning-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .config-warning-body {
+      font-size: 0.78rem;
+      color: rgba(253, 230, 138, 0.75);
+      line-height: 1.55;
+    }
+
+    .config-warning-vars {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .config-var-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      border-radius: 6px;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.72rem;
+      font-family: 'Menlo', 'Consolas', monospace;
+      color: #fcd34d;
+      width: fit-content;
+    }
+
     /* ── RODAPÉ ── */
     .card-footer {
       margin-top: 1.25rem;
@@ -326,6 +380,19 @@
     <!-- Título dinâmico -->
     <div class="page-title" id="page-title">Acesse sua<br/>conta</div>
     <p class="page-sub" id="page-sub">Gerencie suas instâncias WhatsApp</p>
+
+    <!-- Aviso de configuração incompleta -->
+    <div class="config-warning" id="config-warning">
+      <div class="config-warning-title">
+        <span class="config-warning-icon">⚠️</span>
+        Configuração do Supabase incompleta
+      </div>
+      <div class="config-warning-body">
+        As seguintes variáveis de ambiente estão ausentes no servidor.
+        Login e cadastro estão bloqueados até que a configuração seja corrigida.
+        <div class="config-warning-vars" id="config-warning-vars"></div>
+      </div>
+    </div>
 
     <!-- Tabs -->
     <div class="tabs">
@@ -390,6 +457,21 @@
 
   <script>
     let supabase = null;
+    let configReady = false;
+
+    function showConfigWarning(missing) {
+      const box  = document.getElementById('config-warning');
+      const list = document.getElementById('config-warning-vars');
+
+      list.innerHTML = missing
+        .map(v => `<span class="config-var-tag">✗ ${v}</span>`)
+        .join('');
+
+      box.classList.add('visible');
+
+      document.getElementById('btn-login').disabled    = true;
+      document.getElementById('btn-register').disabled = true;
+    }
 
     async function init() {
       if (localStorage.getItem('pa_session')) {
@@ -398,6 +480,13 @@
       }
       try {
         const cfg = await fetch('/api/config').then(r => r.json());
+
+        if (!cfg.ready) {
+          showConfigWarning(cfg.missing || ['Configuração desconhecida']);
+          return;
+        }
+
+        configReady = true;
         supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
       } catch (err) {
         showAlert('error', 'Erro ao conectar com o servidor. Tente novamente.');
@@ -447,6 +536,11 @@
     document.getElementById('form-login').addEventListener('submit', async (e) => {
       e.preventDefault();
       hideAlert();
+
+      if (!configReady || !supabase) {
+        showAlert('error', 'Configuração do Supabase incompleta. Login indisponível.');
+        return;
+      }
 
       const email    = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
@@ -499,6 +593,11 @@
     document.getElementById('form-register').addEventListener('submit', async (e) => {
       e.preventDefault();
       hideAlert();
+
+      if (!configReady || !supabase) {
+        showAlert('error', 'Configuração do Supabase incompleta. Cadastro indisponível.');
+        return;
+      }
 
       const name     = document.getElementById('reg-name').value.trim();
       const email    = document.getElementById('reg-email').value.trim();

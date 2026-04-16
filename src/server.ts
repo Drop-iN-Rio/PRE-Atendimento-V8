@@ -19,9 +19,24 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/api/config', (_req, res) => {
+  const supabaseUrl     = process.env.SUPABASE_DB_URL    || '';
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY  || '';
+  const jwtConfigured   = !!process.env.SUPABASE_JWT_SECRET;
+  const dbConfigured    = !!process.env.SUPABASE_POSTGRES_URL;
+
+  const missing: string[] = [];
+  if (!supabaseUrl)     missing.push('SUPABASE_DB_URL');
+  if (!supabaseAnonKey) missing.push('SUPABASE_ANON_KEY');
+  if (!jwtConfigured)   missing.push('SUPABASE_JWT_SECRET');
+  if (!dbConfigured)    missing.push('SUPABASE_POSTGRES_URL');
+
   res.json({
-    supabaseUrl: process.env.SUPABASE_DB_URL || '',
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+    supabaseUrl,
+    supabaseAnonKey,
+    jwtConfigured,
+    dbConfigured,
+    ready: missing.length === 0,
+    missing,
   });
 });
 
