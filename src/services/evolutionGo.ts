@@ -64,12 +64,10 @@ export async function getQrCode(
 
   const enc = encodeURIComponent(instanceName);
 
-  /* ── Candidatos em ordem de prioridade (baseado na documentação oficial Evolution GO) ──
-     1. GET  /instance/get-qr-code?instanceName={name}   ← Evolution GO oficial (query param)
-     2. GET  /instance/{name}/qrcode                     ← citado nas notas da doc Evolution GO
-     3. POST /instance/connect  body:{instanceName}       ← Evolution GO "conectar + retorna QR"
-     4. GET  /instance/connect/{name}                    ← Evolution API v2.0
-     5. GET  /instance/connectionState/{name}            ← v2.0 status (pode ter QR)
+  /* ── Candidatos em ordem de prioridade (Evolution GO exclusivamente) ──
+     1. GET  /instance/get-qr-code?instanceName={name}  ← Evolution GO oficial (query param)
+     2. GET  /instance/{name}/qrcode                    ← variante citada nas notas da doc
+     3. POST /instance/connect  body:{instanceName}      ← Evolution GO: conectar + retorna QR
   */
   type Candidate = { method: 'GET' | 'POST'; path: string; body?: string };
   const candidates: Candidate[] = [
@@ -77,8 +75,6 @@ export async function getQrCode(
     { method: 'GET',  path: `/instance/${enc}/qrcode` },
     { method: 'POST', path: `/instance/connect`,
       body: JSON.stringify({ instanceName }) },
-    { method: 'GET',  path: `/instance/connect/${enc}` },
-    { method: 'GET',  path: `/instance/connectionState/${enc}` },
   ];
 
   const headers  = { 'Content-Type': 'application/json', apikey: apiKey };

@@ -1,5 +1,8 @@
 # Evolution GO — Endpoints Oficiais
 
+> **Atenção:** Estes endpoints são exclusivos da **Evolution GO**.
+> Não misturar com Evolution API v2.0 ou outras versões — são APIs diferentes.
+
 Base URL: `https://evogo.pre-atendimento.com` (env: `EVOLUTION_API_URL`)
 
 Headers obrigatórios em todas as requisições:
@@ -66,15 +69,21 @@ apikey: <GLOBAL_API_KEY>
 
 ### GET /instance/get-qr-code — Detalhes
 
-O instanceName é passado como **query parameter**:
+O `instanceName` é passado como **query parameter** (sem barra no path):
 
 ```
 GET /instance/get-qr-code?instanceName=minha-instancia
 ```
 
-Variante alternativa mencionada na documentação:
+Variante alternativa citada nas notas da documentação:
 ```
 GET /instance/{instanceName}/qrcode
+```
+
+Caso a instância ainda não esteja em processo de conexão, usar primeiro:
+```
+POST /instance/connect
+Body: { "instanceName": "minha-instancia" }
 ```
 
 ---
@@ -159,8 +168,7 @@ GET /instance/{instanceName}/qrcode
 
 ## Notas de implementação
 
-- O `instanceName` é usado em todos os endpoints de instância.
-- Para QR Code: testar primeiro `GET /instance/get-qr-code?instanceName={name}`.
-- A autenticação é sempre via header `apikey`.
-- Erros seguem o padrão `{ "error": "mensagem" }` ou `{ "message": "mensagem" }`.
-- Endpoints de instância usam os verbos DELETE para operações destrutivas.
+- **Autenticação:** sempre via header `apikey` (não Bearer, não Basic).
+- **QR Code:** usar `GET /instance/get-qr-code?instanceName={name}` como primeira opção.
+- **Erros:** padrão `{ "error": "mensagem" }` ou `{ "message": "mensagem" }`.
+- **NÃO usar** endpoints da Evolution API v2.0 (`/instance/connect/{name}`, `/instance/connectionState/{name}`, etc.) — são de API diferente.
