@@ -551,6 +551,7 @@
         }
 
         localStorage.setItem('pa_session', JSON.stringify(data.user));
+        localStorage.setItem('pa_jwt', data.token || '');
         showAlert('success', `Bem-vindo, ${data.user.name}! Redirecionando...`);
         setTimeout(() => { window.location.href = '/dashboard.html'; }, 900);
       } catch (err) {

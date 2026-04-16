@@ -103,6 +103,61 @@ const SQL_MIGRATIONS: { name: string; sql: string }[] = [
       EXCEPTION WHEN duplicate_object THEN NULL; END $$;
     `,
   },
+  /* ── 006: Tabela de tenants (clientes/organizações) ── */
+  {
+    name: '006_create_tenants_table',
+    sql: `
+      CREATE TABLE IF NOT EXISTS public.tenants (
+        id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name       TEXT NOT NULL,
+        slug       TEXT NOT NULL UNIQUE,
+        active     BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_tenants_slug ON public.tenants (slug);
+
+      ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
+      DO $$ BEGIN
+        CREATE POLICY "service_role_all_tenants" ON public.tenants
+          FOR ALL TO service_role USING (true) WITH CHECK (true);
+      EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
+      INSERT INTO public.tenants (name, slug)
+      VALUES ('Default', 'default')
+      ON CONFLICT (slug) DO NOTHING;
+    `,
+  },
+  /* ── 007: tenant_id em users ── */
+  {
+    name: '007_add_tenant_to_users',
+    sql: `
+      ALTER TABLE public.users
+        ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES public.tenants(id);
+
+      UPDATE public.users
+      SET tenant_id = (SELECT id FROM public.tenants WHERE slug = 'default')
+      WHERE tenant_id IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_users_tenant_id ON public.users (tenant_id);
+    `,
+  },
+  /* ── 008: tenant_id + created_by em instances ── */
+  {
+    name: '008_add_tenant_to_instances',
+    sql: `
+      ALTER TABLE public.instances
+        ADD COLUMN IF NOT EXISTS tenant_id  UUID REFERENCES public.tenants(id),
+        ADD COLUMN IF NOT EXISTS created_by UUID REFERENCES public.users(id);
+
+      UPDATE public.instances
+      SET tenant_id = (SELECT id FROM public.tenants WHERE slug = 'default')
+      WHERE tenant_id IS NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_instances_tenant_id ON public.instances (tenant_id);
+      CREATE INDEX IF NOT EXISTS idx_instances_created_by ON public.instances (created_by);
+    `,
+  },
 ];
 
 export async function runMigrations(): Promise<void> {

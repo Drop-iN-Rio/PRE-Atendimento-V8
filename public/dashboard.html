@@ -2586,31 +2586,49 @@
       applyTheme(saved);
     }
 
-    /* ─── AUTH GUARD ─── */
-    const raw = localStorage.getItem('pa_session');
-    if (!raw) {
+    /* ─── AUTH GUARD + JWT ─── */
+    const _jwt  = localStorage.getItem('pa_jwt') || '';
+    const _raw  = localStorage.getItem('pa_session');
+    if (!_jwt || !_raw) {
+      localStorage.removeItem('pa_jwt');
+      localStorage.removeItem('pa_session');
       window.location.href = '/';
-    } else {
-      const user    = JSON.parse(raw);
-      const isAdmin = user.role === 'admin';
-      const display = user.name || user.email || '?';
-      const initial = display[0].toUpperCase();
+    }
 
-      /* mobile drawer user info */
+    const _currentUser = _raw ? JSON.parse(_raw) : {};
+    const _isAdmin     = _currentUser.role === 'admin';
+
+    /* Helper: headers para todas as requisições autenticadas */
+    function getAuthHeaders(extra = {}) {
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt, ...extra };
+    }
+
+    /* Helper: redireciona para login em caso de 401 */
+    function handle401(json) {
+      if (json?.error?.includes('Token') || json?.error?.includes('utenticaç')) {
+        localStorage.removeItem('pa_jwt');
+        localStorage.removeItem('pa_session');
+        window.location.href = '/?expired=1';
+        return true;
+      }
+      return false;
+    }
+
+    {
+      const display = _currentUser.name || _currentUser.email || '?';
+      const initial = display[0].toUpperCase();
+      const tenantLabel = _currentUser.tenantName || _currentUser.tenantSlug || '';
+
       document.getElementById('drawer-avatar').textContent = initial;
       document.getElementById('drawer-name').textContent   = display;
-      document.getElementById('drawer-role').textContent   = user.role || 'user';
+      document.getElementById('drawer-role').textContent   = (_currentUser.role || 'user') + (tenantLabel ? ` · ${tenantLabel}` : '');
 
-      /* desktop sidebar user info */
       document.getElementById('sidebar-avatar').textContent = initial;
       document.getElementById('sidebar-name').textContent   = display;
-      document.getElementById('sidebar-role').textContent   = user.role || 'user';
+      document.getElementById('sidebar-role').textContent   = (_currentUser.role || 'user') + (tenantLabel ? ` · ${tenantLabel}` : '');
 
-      /* ── Mostrar elementos exclusivos de admin ── */
-      if (isAdmin) {
-        document.querySelectorAll('.admin-only').forEach(el => {
-          el.classList.remove('admin-only');
-        });
+      if (_isAdmin) {
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('admin-only'));
       }
     }
 
@@ -2629,6 +2647,7 @@
 
     function logout() {
       localStorage.removeItem('pa_session');
+      localStorage.removeItem('pa_jwt');
       window.location.href = '/';
     }
 
@@ -2740,7 +2759,7 @@
         try {
           const res  = await fetch('/api/admin/test-connection', {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body:    JSON.stringify({ evolutionUrl: url || undefined, apiKey: key || undefined }),
           });
           const json = await res.json();
@@ -2815,7 +2834,7 @@
       try {
         const res  = await fetch('/api/instances', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getAuthHeaders(),
           body: JSON.stringify((() => {
             const adminCfg = loadAdminConfig ? loadAdminConfig() : null;
             return {
@@ -3007,7 +3026,7 @@
     }
 
     async function executePurge(name) {
-      const res  = await fetch(`/api/instances/${encodeURIComponent(name)}/purge`, { method: 'DELETE' });
+      const res  = await fetch(`/api/instances/${encodeURIComponent(name)}/purge`, { method: 'DELETE', headers: getAuthHeaders() });
       const json = await res.json();
       if (json.success) {
         showToast('✅ Registro órfão removido com sucesso.', 'ok');
@@ -3026,7 +3045,7 @@
       const overrides = getApiOverrides();
       const res  = await fetch(`/api/instances/${encodeURIComponent(name)}/disconnect`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body:    JSON.stringify(overrides),
       });
       const json = await res.json();
@@ -3043,7 +3062,7 @@
       const overrides = getApiOverrides();
       const res  = await fetch(`/api/instances/${encodeURIComponent(name)}`, {
         method:  'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body:    JSON.stringify(overrides),
       });
       const json = await res.json();
@@ -3090,8 +3109,10 @@
       const el = document.getElementById('instances-list');
       el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔄</div>Carregando...</div>`;
       try {
-        const res  = await fetch('/api/instances');
+        const res  = await fetch('/api/instances', { headers: getAuthHeaders() });
         const json = await res.json();
+
+        if (res.status === 401) { handle401(json); return; }
 
         if (!json.success || !json.data?.length) {
           _instances = [];
@@ -3185,7 +3206,7 @@
     /* Busca o status real da instância na API e atualiza todos os badges da tela */
     async function _fetchLiveStatus(name) {
       try {
-        const r = await fetch(`/api/instances/${encodeURIComponent(name)}/status`);
+        const r = await fetch(`/api/instances/${encodeURIComponent(name)}/status`, { headers: getAuthHeaders() });
         const j = await r.json();
         _applyStatusBadge(name, j.connected === true);
       } catch {
@@ -3346,7 +3367,7 @@
     async function _pollConnection(name) {
       if (_qrCurrentName !== name) return;
       try {
-        const r = await fetch(`/api/instances/${encodeURIComponent(name)}/status`);
+        const r = await fetch(`/api/instances/${encodeURIComponent(name)}/status`, { headers: getAuthHeaders() });
         const j = await r.json();
         if (j.connected === true) {
           /* WhatsApp conectou! — atualizar badge imediatamente */
@@ -3464,7 +3485,7 @@
         if (instanceToken)          params.set('instanceToken', instanceToken);
 
         const url  = `/api/instances/${encodeURIComponent(name)}/qrcode${params.size ? '?' + params.toString() : ''}`;
-        const res  = await fetch(url);
+        const res  = await fetch(url, { headers: getAuthHeaders() });
         const json = await res.json();
 
         /* Log completo no console para diagnóstico */

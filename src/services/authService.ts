@@ -1,13 +1,16 @@
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
 
-interface User {
+interface UserRow {
   id: string;
   name: string;
   email: string;
   password_hash: string;
   role: string;
   active: boolean;
+  tenant_id: string | null;
+  tenant_name: string | null;
+  tenant_slug: string | null;
 }
 
 function getClient() {
@@ -21,10 +24,12 @@ export async function loginUser(email: string, password: string) {
   const client = getClient();
   try {
     await client.connect();
-    const { rows } = await client.query<User>(
-      `SELECT id, name, email, password_hash, role, active
-       FROM public.users
-       WHERE email = $1
+    const { rows } = await client.query<UserRow>(
+      `SELECT u.id, u.name, u.email, u.password_hash, u.role, u.active,
+              u.tenant_id, t.name AS tenant_name, t.slug AS tenant_slug
+       FROM public.users u
+       LEFT JOIN public.tenants t ON t.id = u.tenant_id
+       WHERE u.email = $1
        LIMIT 1`,
       [email.toLowerCase().trim()]
     );
@@ -46,7 +51,15 @@ export async function loginUser(email: string, password: string) {
 
     return {
       success: true,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id:         user.id,
+        name:       user.name,
+        email:      user.email,
+        role:       user.role,
+        tenantId:   user.tenant_id   || null,
+        tenantName: user.tenant_name || 'Default',
+        tenantSlug: user.tenant_slug || 'default',
+      },
     };
   } finally {
     await client.end();
@@ -57,7 +70,8 @@ export async function registerUser(
   name: string,
   email: string,
   password: string,
-  role: string
+  role: string,
+  tenantId?: string,
 ) {
   const client = getClient();
   try {
@@ -72,19 +86,34 @@ export async function registerUser(
       return { success: false, error: 'Já existe uma conta com este e-mail.' };
     }
 
+    /* Se não foi passado tenant_id, usar o tenant "default" */
+    let resolvedTenantId = tenantId || null;
+    if (!resolvedTenantId) {
+      const { rows: tenantRows } = await client.query<{ id: string }>(
+        `SELECT id FROM public.tenants WHERE slug = 'default' LIMIT 1`
+      );
+      resolvedTenantId = tenantRows[0]?.id || null;
+    }
+
     const password_hash = await bcrypt.hash(password, 10);
 
-    const { rows } = await client.query<User>(
-      `INSERT INTO public.users (name, email, password_hash, role, active)
-       VALUES ($1, $2, $3, $4, true)
-       RETURNING id, name, email, role`,
-      [name.trim(), email.toLowerCase().trim(), password_hash, role]
+    const { rows } = await client.query<{ id: string; name: string; email: string; role: string; tenant_id: string }>(
+      `INSERT INTO public.users (name, email, password_hash, role, active, tenant_id)
+       VALUES ($1, $2, $3, $4, true, $5)
+       RETURNING id, name, email, role, tenant_id`,
+      [name.trim(), email.toLowerCase().trim(), password_hash, role, resolvedTenantId]
     );
 
     const user = rows[0];
     return {
       success: true,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id:       user.id,
+        name:     user.name,
+        email:    user.email,
+        role:     user.role,
+        tenantId: user.tenant_id || null,
+      },
     };
   } finally {
     await client.end();
