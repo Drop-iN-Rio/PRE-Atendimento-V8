@@ -8,9 +8,16 @@ import {
   createInstanceAndPersist,
   listInstances,
   disconnectInstanceService,
+  logoutInstanceService,
   deleteInstanceService,
 } from './services/instanceService.js';
-import { getQrCode, connectInstance } from './services/evolutionGo.js';
+import {
+  getQrCode,
+  connectInstance,
+  getInstanceStatus,
+  getAllInstances,
+  pairInstance,
+} from './services/evolutionGo.js';
 import { supabaseAdmin } from './services/supabase.js';
 import { loginUser, registerUser } from './services/authService.js';
 
@@ -94,8 +101,9 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-/* ── Criar instância ──
-   Fluxo interno: POST /instance/create → POST /instance/connect
+/* ── Criar instância ─────────────────────────────────────────────────
+   Swagger: POST /instance/create → body { name, token? }
+   Fluxo interno: create → connect
 */
 app.post('/api/instances', async (req, res) => {
   const { instanceName, token, evolutionUrl, apiKey } = req.body as {
@@ -123,7 +131,7 @@ app.post('/api/instances', async (req, res) => {
   }
 });
 
-/* ── Listar instâncias ── */
+/* ── Listar instâncias (banco local) ── */
 app.get('/api/instances', async (_req, res) => {
   try {
     const result = await listInstances();
@@ -133,16 +141,15 @@ app.get('/api/instances', async (_req, res) => {
   }
 });
 
-/* ── QR Code — GET /instance/qr?instanceName={name} ──────────────────
-   Endpoint correto: /instance/qr (não /instance/get-qr-code que retorna 404)
-   Auth:             token da instância (não GLOBAL_API_KEY)
-   Polling:          retorna { polling: true } quando QR ainda não está disponível,
-                     para o frontend saber que deve tentar novamente.
+/* ── QR Code — GET /instance/qr ─────────────────────────────────────
+   Swagger: GET /instance/qr — sem params; instância identificada pelo token.
+   Polling: retorna HTTP 202 { polling: true } enquanto QR não está disponível.
+   Campos na resposta: data.data.Qrcode (base64), data.data.Code (pairing code)
 */
 app.get('/api/instances/:name/qrcode', async (req, res) => {
   const { name } = req.params;
-  const evolutionUrl   = (req.query.evolutionUrl   as string | undefined)?.trim() || undefined;
-  let   instanceToken  = (req.query.instanceToken  as string | undefined)?.trim() || '';
+  const evolutionUrl  = (req.query.evolutionUrl  as string | undefined)?.trim() || undefined;
+  let   instanceToken = (req.query.instanceToken as string | undefined)?.trim() || '';
 
   /* Se token não veio do frontend, buscar no banco via metadata */
   if (!instanceToken) {
@@ -154,7 +161,7 @@ app.get('/api/instances/:name/qrcode', async (req, res) => {
         .maybeSingle();
 
       if (inst?.metadata) {
-        const meta = inst.metadata as Record<string, unknown>;
+        const meta       = inst.metadata as Record<string, unknown>;
         const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
         instanceToken = String(createData?.token || '');
       }
@@ -164,9 +171,9 @@ app.get('/api/instances/:name/qrcode', async (req, res) => {
   }
 
   try {
-    const result = await getQrCode(name, instanceToken, evolutionUrl);
+    const result = await getQrCode(instanceToken, evolutionUrl);
 
-    /* HTTP 400 com "no QR code available" = polling em andamento, não é erro fatal */
+    /* HTTP 400 "no QR code available" = geração em andamento, não é erro fatal */
     const isPolling400 = !result.success &&
       result.httpStatus === 400 &&
       typeof result.error === 'string' &&
@@ -182,7 +189,7 @@ app.get('/api/instances/:name/qrcode', async (req, res) => {
       return;
     }
 
-    /* HTTP 200 mas QR code vazio = API retornou sucesso mas QR ainda não gerado */
+    /* HTTP 200 mas Qrcode vazio = polling */
     if (result.success) {
       const d     = result.data as Record<string, unknown> | undefined;
       const inner = (d?.data as Record<string, unknown>) || d || {};
@@ -204,30 +211,90 @@ app.get('/api/instances/:name/qrcode', async (req, res) => {
   }
 });
 
-/* ── Conectar instância manualmente — POST /instance/connect ── */
-app.post('/api/instances/:name/connect', async (req, res) => {
+/* ── Status da instância — GET /instance/status ─────────────────────
+   Swagger: GET /instance/status — sem params; instância identificada pelo token.
+*/
+app.get('/api/instances/:name/status', async (req, res) => {
   const { name } = req.params;
-  const { instanceToken, evolutionUrl } = req.body as {
-    instanceToken?: string;
-    evolutionUrl?:  string;
-  };
+  const evolutionUrl  = (req.query.evolutionUrl  as string | undefined)?.trim() || undefined;
+  let   instanceToken = (req.query.instanceToken as string | undefined)?.trim() || '';
 
   if (!instanceToken) {
-    res.status(400).json({ success: false, error: 'instanceToken é obrigatório para conectar.' });
-    return;
+    try {
+      const { data: inst } = await supabaseAdmin
+        .from('instances')
+        .select('metadata')
+        .eq('instance_name', name)
+        .maybeSingle();
+
+      if (inst?.metadata) {
+        const meta       = inst.metadata as Record<string, unknown>;
+        const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
+        instanceToken = String(createData?.token || '');
+      }
+    } catch { /* continua */ }
   }
 
   try {
-    const result = await connectInstance(name, instanceToken, evolutionUrl?.trim() || undefined);
+    const result = await getInstanceStatus(instanceToken, evolutionUrl);
     res.status(result.success ? 200 : (result.httpStatus || 502)).json(result);
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });
   }
 });
 
-/* ── Desconectar — POST /instance/disconnect ──
-   Evolution GO: precisa do token da instância (não GLOBAL_API_KEY).
-   instanceToken pode vir no body ou é buscado no banco automaticamente.
+/* ── Conectar instância manualmente — POST /instance/connect ─────────
+   Swagger: body ConnectStruct { immediate?, phone?, subscribe?, webhookUrl? }
+   Instância identificada pelo token no header.
+*/
+app.post('/api/instances/:name/connect', async (req, res) => {
+  const { name } = req.params;
+  const { instanceToken, evolutionUrl, immediate, phone, subscribe, webhookUrl } = req.body as {
+    instanceToken?: string;
+    evolutionUrl?:  string;
+    immediate?:     boolean;
+    phone?:         string;
+    subscribe?:     string[];
+    webhookUrl?:    string;
+  };
+
+  /* Se token não veio no body, buscar no banco */
+  let token = instanceToken?.trim() || '';
+  if (!token) {
+    try {
+      const { data: inst } = await supabaseAdmin
+        .from('instances')
+        .select('metadata')
+        .eq('instance_name', name)
+        .maybeSingle();
+
+      if (inst?.metadata) {
+        const meta       = inst.metadata as Record<string, unknown>;
+        const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
+        token = String(createData?.token || '');
+      }
+    } catch { /* continua */ }
+  }
+
+  if (!token) {
+    res.status(400).json({ success: false, error: 'instanceToken é obrigatório para conectar.' });
+    return;
+  }
+
+  try {
+    const result = await connectInstance(
+      token,
+      evolutionUrl?.trim() || undefined,
+      { immediate, phone, subscribe, webhookUrl },
+    );
+    res.status(result.success ? 200 : (result.httpStatus || 502)).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Desconectar — POST /instance/disconnect ─────────────────────────
+   Swagger: sem body; instância identificada pelo token.
 */
 app.post('/api/instances/:name/disconnect', async (req, res) => {
   const { name } = req.params;
@@ -247,7 +314,78 @@ app.post('/api/instances/:name/disconnect', async (req, res) => {
   }
 });
 
-/* ── Deletar — DELETE /instance/delete ── */
+/* ── Logout — DELETE /instance/logout ───────────────────────────────
+   Swagger: sem body; instância identificada pelo token.
+   Remove a sessão WhatsApp (diferente de disconnect que apenas pausa).
+*/
+app.delete('/api/instances/:name/logout', async (req, res) => {
+  const { name } = req.params;
+  const { instanceToken, evolutionUrl } = req.body as {
+    instanceToken?: string;
+    evolutionUrl?:  string;
+  };
+  try {
+    const result = await logoutInstanceService(
+      name,
+      instanceToken?.trim() || undefined,
+      evolutionUrl?.trim()  || undefined,
+    );
+    res.status(result.success ? 200 : 502).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Código de pareamento — POST /instance/pair ──────────────────────
+   Swagger: body PairStruct { phone, subscribe? }
+   Alternativa ao QR: envia código via número de telefone.
+*/
+app.post('/api/instances/:name/pair', async (req, res) => {
+  const { name } = req.params;
+  const { instanceToken, evolutionUrl, phone, subscribe } = req.body as {
+    instanceToken?: string;
+    evolutionUrl?:  string;
+    phone?:         string;
+    subscribe?:     string[];
+  };
+
+  let token = instanceToken?.trim() || '';
+  if (!token) {
+    try {
+      const { data: inst } = await supabaseAdmin
+        .from('instances')
+        .select('metadata')
+        .eq('instance_name', name)
+        .maybeSingle();
+
+      if (inst?.metadata) {
+        const meta       = inst.metadata as Record<string, unknown>;
+        const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
+        token = String(createData?.token || '');
+      }
+    } catch { /* continua */ }
+  }
+
+  if (!token) {
+    res.status(400).json({ success: false, error: 'instanceToken é obrigatório para pair.' });
+    return;
+  }
+  if (!phone) {
+    res.status(400).json({ success: false, error: 'phone é obrigatório para pair.' });
+    return;
+  }
+
+  try {
+    const result = await pairInstance(token, phone, subscribe, evolutionUrl?.trim() || undefined);
+    res.status(result.success ? 200 : (result.httpStatus || 502)).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Deletar — DELETE /instance/delete/{instanceId} ─────────────────
+   Swagger: path param instanceId = UUID da instância.
+*/
 app.delete('/api/instances/:name', async (req, res) => {
   const { name } = req.params;
   const { evolutionUrl, apiKey } = req.body as { evolutionUrl?: string; apiKey?: string };
@@ -258,6 +396,18 @@ app.delete('/api/instances/:name', async (req, res) => {
       apiKey?.trim()       || undefined,
     );
     res.status(result.success ? 200 : 502).json(result);
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
+/* ── Listar instâncias na Evolution GO API (admin) ── */
+app.get('/api/admin/instances', async (req, res) => {
+  const evolutionUrl = (req.query.evolutionUrl as string | undefined)?.trim() || undefined;
+  const apiKey       = (req.query.apiKey       as string | undefined)?.trim() || undefined;
+  try {
+    const result = await getAllInstances(evolutionUrl, apiKey);
+    res.status(result.success ? 200 : (result.httpStatus || 502)).json(result);
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: (err as Error).message });
   }

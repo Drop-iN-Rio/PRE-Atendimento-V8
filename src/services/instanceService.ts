@@ -1,38 +1,54 @@
 import { supabaseAdmin } from './supabase.js';
 import {
-  createInstance  as callCreate,
-  connectInstance as callConnect,
+  createInstance    as callCreate,
+  connectInstance   as callConnect,
   disconnectInstance as callDisconnect,
-  deleteInstance  as callDelete,
+  logoutInstance    as callLogout,
+  deleteInstance    as callDelete,
 } from './evolutionGo.js';
 
 /* Extrai o token da instância da resposta do /instance/create.
-   A Evolution GO pode retornar em diferentes formas:
-   { data: { token } } | { hash: { apikey } } | { token } | { apikey }
+   Formato verificado: { data: { token, id, name, ... } }
 */
 function extractInstanceToken(data: unknown): string {
   if (!data || typeof data !== 'object') return '';
   const d = data as Record<string, unknown>;
 
-  /* Formato: { data: { token, name, ... } } */
   const inner = d.data as Record<string, unknown> | undefined;
   if (inner?.token)  return String(inner.token);
   if (inner?.apikey) return String(inner.apikey);
 
-  /* Formato: { hash: { token, apikey } } */
   const hash = d.hash as Record<string, unknown> | undefined;
   if (hash?.token)  return String(hash.token);
   if (hash?.apikey) return String(hash.apikey);
 
-  /* Formato direto */
   if (d.token)  return String(d.token);
   if (d.apikey) return String(d.apikey);
 
   return '';
 }
 
-/* ── Criar e persistir instância ──
-   Fluxo: criar → conectar → salvar no banco → retornar
+/* ── Buscar UUID e token da instância no banco ── */
+async function getInstanceMeta(instanceName: string): Promise<{ uuid: string; token: string }> {
+  const { data: inst } = await supabaseAdmin
+    .from('instances')
+    .select('metadata')
+    .eq('instance_name', instanceName)
+    .maybeSingle();
+
+  if (!inst?.metadata) return { uuid: '', token: '' };
+  const meta       = inst.metadata as Record<string, unknown>;
+  const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
+  return {
+    uuid:  String(createData?.id    || ''),
+    token: String(createData?.token || ''),
+  };
+}
+
+/* ── Criar e persistir instância ──────────────────────────────────────
+   Swagger:
+     1. POST /instance/create  → body { name, token? }        (GLOBAL_API_KEY)
+     2. POST /instance/connect → body {} ConnectStruct vazio   (token instância)
 */
 export async function createInstanceAndPersist(
   instanceName: string,
@@ -65,17 +81,17 @@ export async function createInstanceAndPersist(
     return { success: false, error: insertError?.message || 'Erro ao salvar instância.' };
   }
 
-  /* 3. POST /instance/create — com instanceName e qrcode:true */
+  /* 3. POST /instance/create */
   console.log('[instanceService] ▶ Passo 1/2: criar instância na API');
   const createResult = await callCreate(instanceName, token, overrideUrl, overrideKey);
 
-  /* 4. POST /instance/connect — com token da própria instância */
+  /* 4. POST /instance/connect — sem body, instância identificada pelo token */
   let connectResult = null;
   const instanceToken = extractInstanceToken(createResult.data);
 
   if (createResult.success && instanceToken) {
     console.log('[instanceService] ▶ Passo 2/2: conectar instância (token da instância)');
-    connectResult = await callConnect(instanceName, instanceToken, overrideUrl);
+    connectResult = await callConnect(instanceToken, overrideUrl);
   } else if (createResult.success && !instanceToken) {
     console.warn('[instanceService] ⚠️  Token da instância não encontrado na resposta do /create — pulando connect');
   }
@@ -118,7 +134,7 @@ export async function createInstanceAndPersist(
   };
 }
 
-/* ── Listar instâncias ── */
+/* ── Listar instâncias (banco local) ── */
 export async function listInstances() {
   const { data, error } = await supabaseAdmin
     .from('instances')
@@ -129,39 +145,21 @@ export async function listInstances() {
   return { success: true, data };
 }
 
-/* ── Extrair UUID e token do metadata de uma instância ── */
-async function getInstanceMeta(instanceName: string): Promise<{ uuid: string; token: string }> {
-  const { data: inst } = await supabaseAdmin
-    .from('instances')
-    .select('metadata')
-    .eq('instance_name', instanceName)
-    .maybeSingle();
-
-  if (!inst?.metadata) return { uuid: '', token: '' };
-  const meta       = inst.metadata as Record<string, unknown>;
-  const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
-  return {
-    uuid:  String(createData?.id    || ''),
-    token: String(createData?.token || ''),
-  };
-}
-
-/* ── Desconectar (POST /instance/disconnect) ──
-   Evolution GO exige o TOKEN DA INSTÂNCIA no header apikey (não GLOBAL_API_KEY).
+/* ── Desconectar (POST /instance/disconnect) ─────────────────────────
+   Swagger: sem body; instância identificada pelo token da instância no header.
 */
 export async function disconnectInstanceService(
   instanceName:   string,
-  instanceToken?: string,   /* token da instância — buscado no DB se não informado */
+  instanceToken?: string,
   overrideUrl?:   string,
 ) {
-  /* Obter token da instância se não fornecido */
   let token = instanceToken || '';
   if (!token) {
     const meta = await getInstanceMeta(instanceName);
     token = meta.token;
   }
 
-  const result = await callDisconnect(instanceName, token, overrideUrl);
+  const result = await callDisconnect(token, overrideUrl);
 
   if (result.success) {
     await supabaseAdmin
@@ -184,34 +182,70 @@ export async function disconnectInstanceService(
   return { success: result.success, data: result.data, error: result.error };
 }
 
-/* ── Deletar (DELETE /instance/delete/{uuid}) ──
-   Evolution GO usa UUID no path (não instanceName no body).
-   O UUID vem do metadata.create.data.id armazenado no banco.
+/* ── Logout (DELETE /instance/logout) ───────────────────────────────
+   Swagger: sem body; instância identificada pelo token.
+   Remove a sessão WhatsApp (diferente de disconnect que apenas pausa).
+*/
+export async function logoutInstanceService(
+  instanceName:   string,
+  instanceToken?: string,
+  overrideUrl?:   string,
+) {
+  let token = instanceToken || '';
+  if (!token) {
+    const meta = await getInstanceMeta(instanceName);
+    token = meta.token;
+  }
+
+  const result = await callLogout(token, overrideUrl);
+
+  if (result.success) {
+    await supabaseAdmin
+      .from('instances')
+      .update({ status: 'inactive' })
+      .eq('instance_name', instanceName);
+
+    const { data: inst } = await supabaseAdmin
+      .from('instances').select('id').eq('instance_name', instanceName).maybeSingle();
+
+    if (inst?.id) {
+      await supabaseAdmin.from('instance_logs').insert({
+        instance_id: inst.id,
+        event:   'logout',
+        payload: result.data as object ?? {},
+      });
+    }
+  }
+
+  return { success: result.success, data: result.data, error: result.error };
+}
+
+/* ── Deletar (DELETE /instance/delete/{instanceId}) ─────────────────
+   Swagger: path param instanceId = UUID.
+   UUID vem de metadata.create.data.id no banco.
+   HTTP 404 da API → tratado como sucesso (já deletado).
 */
 export async function deleteInstanceService(
   instanceName: string,
   overrideUrl?: string,
   overrideKey?: string,
 ) {
-  /* Buscar UUID no banco */
   const meta = await getInstanceMeta(instanceName);
   const uuid = meta.uuid;
 
   let result;
   if (uuid) {
     result = await callDelete(uuid, overrideUrl, overrideKey);
-    /* HTTP 404 = instância já não existe na API → tratar como sucesso */
     if (!result.success && result.httpStatus === 404) {
       console.warn(`[deleteInstanceService] Instância "${instanceName}" não encontrada na API (já deletada) — removendo do DB.`);
       result = { success: true, data: result.data, error: undefined, httpStatus: 404 };
     }
   } else {
-    /* Sem UUID — apenas limpa do banco local */
     console.warn(`[deleteInstanceService] UUID não encontrado para "${instanceName}" — removendo apenas do DB.`);
     result = { success: true, data: null, error: undefined };
   }
 
-  /* Limpar do banco local independente do resultado da API */
+  /* Limpar banco local independente do resultado da API */
   const { data: inst } = await supabaseAdmin
     .from('instances').select('id').eq('instance_name', instanceName).maybeSingle();
 

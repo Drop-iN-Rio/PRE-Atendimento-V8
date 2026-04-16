@@ -1,176 +1,157 @@
-# Evolution GO — Endpoints Descobertos por Testes
+# Evolution GO — Referência de Endpoints
 
-> **Atenção:** Estes endpoints são exclusivos da **Evolution GO** (versão em Go).
-> NÃO misturar com Evolution API v2/v1 (Node.js/Baileys) — são APIs completamente diferentes.
-> As informações abaixo foram verificadas por testes diretos em `https://evogo.pre-atendimento.com`.
-
-Base URL: `https://evogo.pre-atendimento.com` (env: `EVOLUTION_API_URL`)
+> **Fonte oficial:** `https://evogo.pre-atendimento.com/swagger/doc.json`
+> Todos os endpoints abaixo foram extraídos diretamente do Swagger da API.
+> Não usar suposições ou documentação de outros projetos (Evolution API Node.js/Baileys).
 
 ---
 
-## AUTENTICAÇÃO
+## Autenticação
 
-| Endpoint                  | Auth Header               | Notas                                        |
-|---------------------------|---------------------------|----------------------------------------------|
-| `/instance/create`        | `apikey: GLOBAL_API_KEY`  | Única rota que usa a chave global            |
-| `/instance/all`           | `apikey: GLOBAL_API_KEY`  | Única rota que usa a chave global            |
-| `/instance/connect`       | `apikey: <token_instância>`| Usa o token devolvido pelo `/create`         |
-| `/instance/qr`            | `apikey: <token_instância>`| Usa o token da instância, NÃO o global      |
-| `/instance/status`        | `apikey: <token_instância>`| Usa o token da instância                    |
-| `/instance/disconnect`    | `apikey: GLOBAL_API_KEY`  |                                              |
-| `/instance/delete`        | `apikey: GLOBAL_API_KEY`  |                                              |
-| `/instance/logout`        | `apikey: <token_instância>`|                                              |
+Todos os endpoints utilizam o header `apikey`. O valor varia por operação:
+
+| Operação | Valor do `apikey` |
+|---|---|
+| `GET /instance/all` | `GLOBAL_API_KEY` |
+| `POST /instance/create` | `GLOBAL_API_KEY` |
+| `DELETE /instance/delete/{instanceId}` | `GLOBAL_API_KEY` |
+| Todos os outros `/instance/*` | Token da instância (`data.token` do `/instance/create`) |
 
 ---
 
-## INSTÂNCIAS
+## Endpoints de Instance
 
-### POST /instance/create
-**Auth:** `apikey: GLOBAL_API_KEY`
-
-**Body crítico (campo `name`, NÃO `instanceName`):**
-```json
-{
-  "name": "minha-instancia",
-  "qrcode": true,
-  "token": "token-personalizado-opcional"
-}
-```
-
-> ⚠️ **IMPORTANTE:** O campo é `name` (não `instanceName`).
-> Usar `instanceName` retorna `{"error":"name is required"}`.
-
-**Resposta:**
-```json
-{
-  "data": {
-    "id": "uuid",
-    "name": "minha-instancia",
-    "token": "token-personalizado-opcional",
-    "connected": false,
-    "qrcode": "",
-    "createdAt": "2026-04-16T..."
-  },
-  "message": "success"
-}
-```
+### `GET /instance/all`
+Lista todas as instâncias.
+- **Auth:** `GLOBAL_API_KEY`
+- **Params:** nenhum
+- **Resposta 200:** lista de instâncias
 
 ---
 
-### POST /instance/connect
-**Auth:** `apikey: <token_instância>`
-
-**Body:**
-```json
-{ "instanceName": "minha-instancia" }
-```
-
-**Resposta (configura eventos, inicia cliente WhatsApp assincronamente):**
-```json
-{
-  "data": {
-    "eventString": "MESSAGE",
-    "jid": "",
-    "webhookUrl": ""
-  },
-  "message": "success"
-}
-```
-
-> ℹ️ Esta chamada inicia o processo WhatsApp em background.
-> Após ~5-15s o cliente passa de "no active session found" para "client disconnected".
-> O QR Code fica disponível no endpoint `/instance/qr` após a inicialização.
-
----
-
-### GET /instance/qr
-**Auth:** `apikey: <token_instância>` (NÃO usar GLOBAL_API_KEY — retorna 401)
-
-**Query:** `?instanceName=minha-instancia`
-
-**Resposta enquanto o QR ainda não está pronto (HTTP 400):**
-```json
-{ "error": "no QR code available. Please wait a moment and try again" }
-```
-
-**Resposta quando o QR está disponível (HTTP 200):**
-```json
-{
-  "data": {
-    "base64": "data:image/png;base64,...",
-    "code": "..."
+### `POST /instance/create`
+Cria uma nova instância.
+- **Auth:** `GLOBAL_API_KEY`
+- **Body (`CreateStruct`):**
+  ```json
+  {
+    "name": "string",
+    "token": "string",
+    "proxy": {}
   }
-}
-```
-
-> ⚠️ **ENDPOINT CORRETO:** `/instance/qr` (NÃO `/instance/get-qr-code` — retorna 404 sempre).
-> Fazer polling com intervalo de 3s. Máximo ~75s de espera.
+  ```
+- **Resposta 200:** `{ "data": { "id": "<uuid>", "name": "...", "token": "...", ... } }`
+- **Importante:** campo `name` (não `instanceName`). Sem `qrcode` no body (não existe no spec).
 
 ---
 
-### GET /instance/status
-**Auth:** `apikey: <token_instância>`
-
-**Query:** `?instanceName=minha-instancia`
-
-**Possíveis respostas:**
-- `{"error":"no active session found"}` HTTP 400 — cliente ainda não iniciou
-- `{"error":"client disconnected"}` HTTP 400 — cliente iniciou mas não conectou ao WhatsApp
-- HTTP 200 com dados — instância conectada
-
----
-
-### GET /instance/all
-**Auth:** `apikey: GLOBAL_API_KEY`
-
-**Resposta:**
-```json
-{
-  "data": [
-    {
-      "id": "uuid",
-      "name": "minha-instancia",
-      "token": "...",
-      "connected": false,
-      "qrcode": "",
-      "jid": "",
-      "events": "MESSAGE"
-    }
-  ]
-}
-```
-
-> ℹ️ O campo `qrcode` na lista `/instance/all` fica vazio mesmo quando o QR está sendo exibido.
-> O QR Code real deve ser obtido via `GET /instance/qr`.
+### `POST /instance/connect`
+Inicia o cliente WhatsApp (gera QR code assincronamente).
+- **Auth:** token da instância
+- **Body (`ConnectStruct`):** todos os campos são opcionais; pode-se enviar `{}`
+  ```json
+  {
+    "immediate": false,
+    "phone": "string",
+    "subscribe": [],
+    "webhookUrl": "string"
+  }
+  ```
+- **Resposta 200:** `{ "data": { "eventString": "...", "jid": "...", "webhookUrl": "..." } }`
+- **Importante:** instância identificada pelo token no header, NÃO por `instanceName` no body (não existe no spec).
 
 ---
 
-## ENDPOINTS QUE NÃO EXISTEM NESTA VERSÃO
-
-| Endpoint                    | Status  | Notas                           |
-|-----------------------------|---------|----------------------------------|
-| `GET /instance/get-qr-code` | 404     | Use `/instance/qr` em vez disso |
-| `GET /instance`             | 404     | Use `/instance/all`             |
-| `GET /instance/{name}`      | 404     | Não existe nesta versão         |
+### `GET /instance/qr`
+Obtém o QR code da instância.
+- **Auth:** token da instância
+- **Params:** nenhum (instância identificada pelo token)
+- **Resposta 200:** `{ "data": { "Qrcode": "data:image/png;base64,...", "Code": "..." } }`
+- **Resposta 400:** `"no QR code available. Please wait a moment and try again"` → fazer polling
+- **Importante:** campo `Qrcode` com Q maiúsculo. Sem `?instanceName=` na query string (não existe no spec).
 
 ---
 
-## FLUXO CORRETO PARA CRIAR E CONECTAR
+### `GET /instance/status`
+Obtém o status da instância.
+- **Auth:** token da instância
+- **Params:** nenhum (instância identificada pelo token)
+- **Resposta 200:** status da conexão
+
+---
+
+### `POST /instance/disconnect`
+Desconecta a instância (pausa a sessão WhatsApp).
+- **Auth:** token da instância
+- **Body:** nenhum (sem parâmetros no spec)
+- **Resposta 200:** sucesso
+
+---
+
+### `DELETE /instance/logout`
+Remove a sessão WhatsApp da instância (diferente de disconnect).
+- **Auth:** token da instância
+- **Params:** nenhum
+- **Resposta 200:** sucesso
+
+---
+
+### `POST /instance/pair`
+Solicita código de pareamento por número de telefone (alternativa ao QR).
+- **Auth:** token da instância
+- **Body (`PairStruct`):**
+  ```json
+  {
+    "phone": "5511999999999",
+    "subscribe": []
+  }
+  ```
+- **Resposta 200:** código de pareamento
+
+---
+
+### `DELETE /instance/delete/{instanceId}`
+Deleta uma instância permanentemente.
+- **Auth:** `GLOBAL_API_KEY`
+- **Path:** `instanceId` = UUID da instância (campo `id` da resposta do `/instance/create`)
+- **Resposta 200:** `{ "message": "success" }`
+- **Resposta 404:** instância não encontrada → tratar como sucesso (limpar DB local)
+- **Importante:** UUID no path, não nome no body.
+
+---
+
+### `DELETE /instance/proxy/{instanceId}`
+Remove configuração de proxy de uma instância.
+- **Auth:** `GLOBAL_API_KEY`
+- **Path:** `instanceId` = UUID da instância
+
+---
+
+## Fluxo Completo de Criação com QR
 
 ```
 1. POST /instance/create
    Header: apikey: GLOBAL_API_KEY
-   Body:   { "name": "inst-name", "qrcode": true, "token": "opt-token" }
-   → Salvar token da resposta: data.token
+   Body:   { "name": "minha-instancia", "token": "meu-token" }
+   → Salva: data.id (UUID), data.token (token da instância)
 
 2. POST /instance/connect
-   Header: apikey: <token da instância>
-   Body:   { "instanceName": "inst-name" }
-   → Inicia o cliente WhatsApp (processo assíncrono)
+   Header: apikey: <data.token>
+   Body:   {}
+   → Inicia cliente WhatsApp assincronamente
 
-3. Polling: GET /instance/qr?instanceName=inst-name
-   Header: apikey: <token da instância>
-   → Repetir a cada 3s por até 75s
-   → HTTP 400 = ainda gerando, continue
-   → HTTP 200 = QR code disponível em data.base64
+3. GET /instance/qr   (polling a cada 3s, máx 75s)
+   Header: apikey: <data.token>
+   → 400 = QR ainda gerando → tentar novamente
+   → 200 = { data: { Qrcode: "data:image/png;base64,...", Code: "..." } }
 ```
+
+---
+
+## Notas de Implementação
+
+- O backend retorna **HTTP 202** com `{ polling: true }` quando QR ainda não está disponível
+- O frontend faz polling automático a cada 3s por até 25 tentativas (75s)
+- UUID da instância armazenado em `metadata.create.data.id` no banco local
+- Token da instância armazenado em `metadata.create.data.token` no banco local
+- Instâncias sem UUID no DB têm apenas o banco limpo na deleção (sem chamada à API)

@@ -33,7 +33,7 @@ async function callApi(
   };
 
   console.log(`[Evolution GO] ▶ ${method} ${url}`);
-  if (body) console.log('[Evolution GO] Body:', JSON.stringify(body));
+  if (body && Object.keys(body).length > 0) console.log('[Evolution GO] Body:', JSON.stringify(body));
 
   const controller = new AbortController();
   const timeout    = setTimeout(() => controller.abort(), 15_000);
@@ -74,11 +74,23 @@ async function callApi(
   }
 }
 
-/* ── 1. Criar instância ──────────────────────────────────────────────
-   POST /instance/create
-   Header: apikey: GLOBAL_API_KEY
-   Body:   { name, qrcode: true, token? }
-   NOTA: Evolution GO usa "name", não "instanceName"
+/* ── 1. Listar todas as instâncias ───────────────────────────────────
+   Swagger: GET /instance/all
+   Header:  apikey: GLOBAL_API_KEY
+   Params:  nenhum
+*/
+export async function getAllInstances(
+  overrideUrl?: string,
+  overrideKey?: string,
+): Promise<EvolutionResponse> {
+  return callApi('GET', '/instance/all', undefined, overrideUrl, overrideKey);
+}
+
+/* ── 2. Criar instância ──────────────────────────────────────────────
+   Swagger: POST /instance/create
+   Header:  apikey: GLOBAL_API_KEY
+   Body:    CreateStruct { name, proxy?, token? }
+   Resposta: { data: { id, name, token, ... } }
 */
 export async function createInstance(
   instanceName: string,
@@ -89,23 +101,28 @@ export async function createInstance(
   return callApi(
     'POST',
     '/instance/create',
-    { name: instanceName, qrcode: true, token: token || '' },
+    { name: instanceName, token: token || '' },
     overrideUrl,
     overrideKey,
   );
 }
 
-/* ── 2. Conectar instância ───────────────────────────────────────────
-   POST /instance/connect
-   Header: apikey: <token da instância>  *** NÃO usar GLOBAL_API_KEY ***
-   Body:   { instanceName }
+/* ── 3. Conectar instância ───────────────────────────────────────────
+   Swagger: POST /instance/connect
+   Header:  apikey: <token da instância>
+   Body:    ConnectStruct { immediate?, phone?, subscribe?, webhookUrl? }
+            (todos os campos opcionais; instância identificada pelo token)
    Resposta: { data: { eventString, jid, webhookUrl } }
-   (Inicia o cliente WhatsApp — gera QR code assincronamente)
 */
 export async function connectInstance(
-  instanceName:  string,
   instanceToken: string,
   overrideUrl?:  string,
+  opts?: {
+    immediate?:  boolean;
+    phone?:      string;
+    subscribe?:  string[];
+    webhookUrl?: string;
+  },
 ): Promise<EvolutionResponse> {
   if (!instanceToken) {
     return { success: false, error: 'Token da instância não fornecido para conexão.' };
@@ -113,87 +130,109 @@ export async function connectInstance(
   return callApi(
     'POST',
     '/instance/connect',
-    { instanceName },
+    opts ?? {},
     overrideUrl,
     instanceToken,
   );
 }
 
-/* ── 3. Obter QR Code ────────────────────────────────────────────────
-   GET /instance/qr?instanceName={name}
-   Header: apikey: <token da instância>  *** NÃO usar GLOBAL_API_KEY ***
-   Retorna HTTP 400 com "no QR code available. Please wait a moment and try again"
-   enquanto o cliente está iniciando — fazer polling até obter sucesso.
-   NOTA: O endpoint correto é /instance/qr (não /instance/get-qr-code que retorna 404)
+/* ── 4. Obter QR Code ────────────────────────────────────────────────
+   Swagger: GET /instance/qr
+   Header:  apikey: <token da instância>
+   Params:  nenhum (instância identificada pelo token)
+   Retorna: HTTP 400 "no QR code available" enquanto gerando → fazer polling.
+   Campos na resposta: data.data.Qrcode (base64 PNG), data.data.Code (pairing)
 */
 export async function getQrCode(
-  instanceName:  string,
   instanceToken: string,
   overrideUrl?:  string,
 ): Promise<EvolutionResponse> {
   if (!instanceToken) {
     return { success: false, error: 'Token da instância não fornecido para buscar QR Code.' };
   }
-  const enc = encodeURIComponent(instanceName);
-  return callApi(
-    'GET',
-    `/instance/qr?instanceName=${enc}`,
-    undefined,
-    overrideUrl,
-    instanceToken,
-  );
+  return callApi('GET', '/instance/qr', undefined, overrideUrl, instanceToken);
 }
 
-/* ── 4. Status da instância ──────────────────────────────────────────
-   GET /instance/status?instanceName={name}
-   Header: apikey: <token da instância>
-   Retorna: { error: "client disconnected" } ou { error: "no active session found" }
+/* ── 5. Status da instância ──────────────────────────────────────────
+   Swagger: GET /instance/status
+   Header:  apikey: <token da instância>
+   Params:  nenhum (instância identificada pelo token)
 */
 export async function getInstanceStatus(
-  instanceName:  string,
   instanceToken: string,
   overrideUrl?:  string,
 ): Promise<EvolutionResponse> {
-  const enc = encodeURIComponent(instanceName);
-  return callApi(
-    'GET',
-    `/instance/status?instanceName=${enc}`,
-    undefined,
-    overrideUrl,
-    instanceToken,
-  );
+  if (!instanceToken) {
+    return { success: false, error: 'Token da instância não fornecido para verificar status.' };
+  }
+  return callApi('GET', '/instance/status', undefined, overrideUrl, instanceToken);
 }
 
-/* ── 5. Desconectar instância ────────────────────────────────────────
-   POST /instance/disconnect
-   Header: apikey: <token da instância>  *** NÃO usar GLOBAL_API_KEY (retorna 401) ***
-   Body:   { instanceName }
+/* ── 6. Desconectar instância ────────────────────────────────────────
+   Swagger: POST /instance/disconnect
+   Header:  apikey: <token da instância>
+   Params:  nenhum (sem body)
 */
 export async function disconnectInstance(
-  instanceName:  string,
   instanceToken: string,
   overrideUrl?:  string,
 ): Promise<EvolutionResponse> {
   if (!instanceToken) {
     return { success: false, error: 'Token da instância não fornecido para desconectar.' };
   }
+  return callApi('POST', '/instance/disconnect', {}, overrideUrl, instanceToken);
+}
+
+/* ── 7. Logout da instância ──────────────────────────────────────────
+   Swagger: DELETE /instance/logout
+   Header:  apikey: <token da instância>
+   Params:  nenhum
+   (Remove a sessão WhatsApp — diferente de disconnect que apenas pausa)
+*/
+export async function logoutInstance(
+  instanceToken: string,
+  overrideUrl?:  string,
+): Promise<EvolutionResponse> {
+  if (!instanceToken) {
+    return { success: false, error: 'Token da instância não fornecido para logout.' };
+  }
+  return callApi('DELETE', '/instance/logout', undefined, overrideUrl, instanceToken);
+}
+
+/* ── 8. Solicitar código de pareamento ───────────────────────────────
+   Swagger: POST /instance/pair
+   Header:  apikey: <token da instância>
+   Body:    PairStruct { phone, subscribe? }
+   (Alternativa ao QR: envia código de pareamento por número de telefone)
+*/
+export async function pairInstance(
+  instanceToken: string,
+  phone:         string,
+  subscribe?:    string[],
+  overrideUrl?:  string,
+): Promise<EvolutionResponse> {
+  if (!instanceToken) {
+    return { success: false, error: 'Token da instância não fornecido para pair.' };
+  }
+  if (!phone) {
+    return { success: false, error: 'Número de telefone é obrigatório para pair.' };
+  }
   return callApi(
     'POST',
-    '/instance/disconnect',
-    { instanceName },
+    '/instance/pair',
+    { phone, ...(subscribe ? { subscribe } : {}) },
     overrideUrl,
     instanceToken,
   );
 }
 
-/* ── 6. Deletar instância ────────────────────────────────────────────
-   DELETE /instance/delete/{uuid}
-   Header: apikey: GLOBAL_API_KEY
-   NOTA: O path usa UUID (não instanceName no body).
-         O UUID vem da resposta do /instance/create (data.id) ou /instance/all.
+/* ── 9. Deletar instância ────────────────────────────────────────────
+   Swagger: DELETE /instance/delete/{instanceId}
+   Header:  apikey: GLOBAL_API_KEY
+   Path:    instanceId = UUID da instância (vem de data.id no /instance/create)
 */
 export async function deleteInstance(
-  instanceUuid: string,   /* UUID da instância (não o nome) */
+  instanceUuid: string,
   overrideUrl?: string,
   overrideKey?: string,
 ): Promise<EvolutionResponse> {
