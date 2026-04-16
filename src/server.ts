@@ -23,6 +23,19 @@ import { loginUser, registerUser } from './services/authService.js';
 
 dotenv.config();
 
+/* ── Extrai token de instância do metadata (compatível com formato antigo e novo) ──
+   Formato novo: metadata.create.data.token
+   Formato antigo (instâncias criadas antes da refatoração): metadata.data.token
+*/
+function extractInstanceToken(meta: Record<string, unknown>): string {
+  const newPath = ((meta.create as Record<string, unknown> | undefined)
+    ?.data as Record<string, unknown> | undefined)?.token;
+  if (newPath) return String(newPath);
+  const oldPath = (meta.data as Record<string, unknown> | undefined)?.token;
+  if (oldPath) return String(oldPath);
+  return '';
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
@@ -161,9 +174,8 @@ app.get('/api/instances/:name/qrcode', async (req, res) => {
         .maybeSingle();
 
       if (inst?.metadata) {
-        const meta       = inst.metadata as Record<string, unknown>;
-        const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
-        instanceToken = String(createData?.token || '');
+        const meta = inst.metadata as Record<string, unknown>;
+        instanceToken = extractInstanceToken(meta);
       }
     } catch {
       /* Continua sem token — getQrCode retornará erro explicativo */
@@ -232,9 +244,8 @@ app.get('/api/instances/:name/status', async (req, res) => {
       .maybeSingle();
 
     if (inst?.metadata) {
-      const meta       = inst.metadata as Record<string, unknown>;
-      const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
-      if (!instanceToken) instanceToken = String(createData?.token || '');
+      const meta = inst.metadata as Record<string, unknown>;
+      if (!instanceToken) instanceToken = extractInstanceToken(meta);
     }
     currentDbStatus = inst?.status || '';
   } catch { /* continua */ }
@@ -279,9 +290,13 @@ app.get('/api/instances/:name/status', async (req, res) => {
       return;
     }
 
-    res.status(result.success ? 200 : (result.httpStatus || 502)).json(result);
+    /* API retornou erro (ex: "no active session found") — sem sessão = desconectado */
+    if (currentDbStatus === 'connected') {
+      await supabaseAdmin.from('instances').update({ status: 'active' }).eq('instance_name', name);
+    }
+    res.json({ success: true, connected: false, running: false, dbStatus: currentDbStatus });
   } catch (err: unknown) {
-    res.status(500).json({ success: false, error: (err as Error).message });
+    res.status(500).json({ success: false, connected: false, error: (err as Error).message });
   }
 });
 
@@ -311,9 +326,8 @@ app.post('/api/instances/:name/connect', async (req, res) => {
         .maybeSingle();
 
       if (inst?.metadata) {
-        const meta       = inst.metadata as Record<string, unknown>;
-        const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
-        token = String(createData?.token || '');
+        const meta = inst.metadata as Record<string, unknown>;
+        token = extractInstanceToken(meta);
       }
     } catch { /* continua */ }
   }
@@ -401,9 +415,8 @@ app.post('/api/instances/:name/pair', async (req, res) => {
         .maybeSingle();
 
       if (inst?.metadata) {
-        const meta       = inst.metadata as Record<string, unknown>;
-        const createData = (meta.create as Record<string, unknown> | undefined)?.data as Record<string, unknown> | undefined;
-        token = String(createData?.token || '');
+        const meta = inst.metadata as Record<string, unknown>;
+        token = extractInstanceToken(meta);
       }
     } catch { /* continua */ }
   }
