@@ -640,6 +640,60 @@ app.delete('/api/instances/:name/purge', requireAuth, async (req, res) => {
   }
 });
 
+/* ── Admin: Atribuir dono de instância ──────────────────────────────── */
+app.patch('/api/instances/:name/owner', requireAuth, requireAdmin, async (req, res) => {
+  const { name }   = req.params;
+  const { userId } = req.body as { userId?: string };
+
+  /* userId ausente na body = erro; userId explicitamente null = remover atribuição */
+  if (userId === undefined) {
+    res.status(400).json({ success: false, error: 'userId é obrigatório (envie null para remover a atribuição).' });
+    return;
+  }
+
+  try {
+    let owner: { id: string; name: string; email: string; role: string } | null = null;
+
+    if (userId) {
+      /* Confirmar que o usuário existe */
+      const { data: u, error: ownerErr } = await supabaseAdmin
+        .from('users')
+        .select('id, name, email, role')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (ownerErr || !u) {
+        res.status(404).json({ success: false, error: 'Usuário não encontrado.' });
+        return;
+      }
+      owner = u;
+    }
+
+    /* Atualizar created_by na instância (null remove a atribuição) */
+    const { data, error } = await supabaseAdmin
+      .from('instances')
+      .update({ created_by: userId || null })
+      .eq('instance_name', name)
+      .select('id, instance_name, created_by, tenant_id')
+      .maybeSingle();
+
+    if (error || !data) {
+      res.status(404).json({ success: false, error: error?.message || 'Instância não encontrada.' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        ...data,
+        owner: owner ? { id: owner.id, name: owner.name, email: owner.email, role: owner.role } : null,
+      },
+    });
+  } catch (err: unknown) {
+    res.status(500).json({ success: false, error: (err as Error).message });
+  }
+});
+
 /* ── Admin: Listar instâncias na Evolution GO API ───────────────────── */
 app.get('/api/admin/instances', requireAuth, requireAdmin, async (req, res) => {
   const evolutionUrl = (req.query.evolutionUrl as string | undefined)?.trim() || undefined;

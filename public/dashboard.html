@@ -2602,6 +2602,26 @@
             </div>
           </div>
 
+          <!-- Atribuir ao Usuário — visível apenas para admin -->
+          <div class="is-section admin-only" id="is-section-assign">
+            <div class="is-section-title" style="color:#a78bfa;border-color:rgba(139,92,246,0.2)">👤 Atribuir ao Usuário</div>
+            <div class="is-section-body">
+              <p class="is-desc" style="margin-bottom:0.9rem">Selecione o usuário responsável por esta instância. A atribuição define quem pode visualizá-la e gerenciá-la.</p>
+              <div id="is-assign-current" style="font-size:0.78rem;color:#94a3b8;margin-bottom:0.65rem;min-height:1rem"></div>
+              <div class="field-wrap" style="margin-bottom:0.85rem">
+                <select id="is-assign-user"
+                  style="width:100%;padding:0.75rem 1rem;border-radius:10px;border:1.5px solid rgba(99,102,241,0.25);background:var(--card);color:var(--tx1);font-size:0.88rem;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none">
+                  <option value="">Carregando usuários…</option>
+                </select>
+              </div>
+              <button class="btn" id="is-btn-assign"
+                style="width:100%;background:linear-gradient(135deg,#7c3aed,#6366f1);box-shadow:0 4px 14px rgba(99,102,241,0.30)">
+                💾 Salvar Atribuição
+              </button>
+              <div id="is-assign-alert" class="alert" style="margin-top:0.75rem"></div>
+            </div>
+          </div>
+
           <!-- Zona de Perigo -->
           <div class="is-section is-section-danger" style="border-color:rgba(127,29,29,0.3)">
             <div class="is-section-title" style="color:#f87171;border-color:rgba(127,29,29,0.25)">⚠ Zona de Perigo</div>
@@ -3499,6 +3519,15 @@
       /* Buscar status real via API (sem cache) */
       _fetchLiveStatus(name);
 
+      /* Admin: seção de atribuição de dono */
+      if (_isAdmin) {
+        const assignAlert = document.getElementById('is-assign-alert');
+        assignAlert.className = 'alert';
+        assignAlert.textContent = '';
+        document.getElementById('is-btn-assign').onclick = () => assignInstanceOwner(name);
+        _loadAssignUsers(name, inst.created_by || null);
+      }
+
       /* Navigate */
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       const panel = document.getElementById('panel-instance');
@@ -3518,6 +3547,103 @@
         document.querySelector('.bottom-nav').style.display = '';
         showPanel('panel-list', null, 'bnav-list', 'snav-list');
       }, 195);
+    }
+
+    /* ── Carrega usuários no select de atribuição ─────────────────── */
+    async function _loadAssignUsers(instanceName, currentOwnerId) {
+      const sel     = document.getElementById('is-assign-user');
+      const current = document.getElementById('is-assign-current');
+
+      sel.innerHTML = '<option value="">Carregando…</option>';
+      sel.disabled  = true;
+
+      try {
+        const res  = await fetch('/api/users', { headers: getAuthHeaders() });
+        const json = await res.json();
+
+        if (!json.success) {
+          sel.innerHTML = '<option value="">Erro ao carregar usuários</option>';
+          return;
+        }
+
+        sel.innerHTML = '<option value="">— Sem atribuição —</option>' +
+          json.data.map(u =>
+            `<option value="${u.id}">${u.name} (${u.email})${u.role === 'admin' ? ' · Admin' : ''}</option>`
+          ).join('');
+
+        if (currentOwnerId) {
+          sel.value = currentOwnerId;
+          const owner = json.data.find(u => u.id === currentOwnerId);
+          if (owner) {
+            current.textContent = `Dono atual: ${owner.name} — ${owner.email}`;
+          } else {
+            current.textContent = `Dono atual: ID ${currentOwnerId}`;
+          }
+        } else {
+          sel.value = '';
+          current.textContent = 'Dono atual: nenhum (sem atribuição)';
+        }
+
+        sel.disabled = false;
+      } catch {
+        sel.innerHTML = '<option value="">Erro de conexão</option>';
+      }
+    }
+
+    /* ── Salva a atribuição de dono ───────────────────────────────── */
+    async function assignInstanceOwner(instanceName) {
+      const sel   = document.getElementById('is-assign-user');
+      const alert = document.getElementById('is-assign-alert');
+      const btn   = document.getElementById('is-btn-assign');
+      const userId = sel.value;
+
+      alert.className   = 'alert';
+      alert.textContent = '';
+
+      btn.disabled    = true;
+      btn.textContent = 'Salvando…';
+
+      try {
+        const res  = await fetch(`/api/instances/${encodeURIComponent(instanceName)}/owner`, {
+          method:  'PATCH',
+          headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ userId: userId || null }),
+        });
+        const json = await res.json();
+
+        if (!json.success) {
+          alert.className   = 'alert error';
+          alert.textContent = json.error || 'Erro ao atualizar atribuição.';
+          return;
+        }
+
+        /* Atualizar o cache local de instâncias */
+        const idx = _instances.findIndex(i => i.instance_name === instanceName);
+        if (idx !== -1) _instances[idx].created_by = userId || null;
+
+        /* Atualizar label de dono atual */
+        const current = document.getElementById('is-assign-current');
+        if (json.data?.owner) {
+          current.textContent = `Dono atual: ${json.data.owner.name} — ${json.data.owner.email}`;
+        } else {
+          current.textContent = 'Dono atual: nenhum (sem atribuição)';
+        }
+
+        alert.className   = 'alert success';
+        alert.textContent = json.data?.owner
+          ? `✅ Instância atribuída a ${json.data.owner.name} com sucesso.`
+          : '✅ Atribuição removida com sucesso.';
+
+        showToast(json.data?.owner
+          ? `Instância atribuída a ${json.data.owner.name}.`
+          : 'Atribuição removida.', true);
+      } catch {
+        alert.className   = 'alert error';
+        alert.textContent = 'Erro de conexão. Tente novamente.';
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = '💾 Salvar Atribuição';
+      }
     }
 
     let _lastCreatedName = null;
